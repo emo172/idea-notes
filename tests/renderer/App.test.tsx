@@ -61,6 +61,7 @@ function readRendererStyles(rendererSrc: string): string {
     "styles.css",
     "styles/base.css",
     "styles/buttons.css",
+    "styles/dropdown.css",
     "styles/layout.css",
     "styles/sidebar.css",
     "styles/toolbar.css",
@@ -73,6 +74,13 @@ function readRendererStyles(rendererSrc: string): string {
   return styleFiles
     .map((file) => readFileSync(resolve(rendererSrc, file), "utf8"))
     .join("\n");
+}
+
+function readCssRuleBlock(styles: string, selector: string): string {
+  const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return (
+    styles.match(new RegExp(`${escapedSelector}\\s*\\{[^}]*\\}`))?.[0] ?? ""
+  );
 }
 
 describe("App", () => {
@@ -206,17 +214,33 @@ describe("App", () => {
 
   it("标题栏置顶和设置按钮使用图标并保留可访问名称", async () => {
     installApi(getDefaultData(Date.parse("2026-05-29T08:00:00.000Z")));
+    const user = userEvent.setup();
 
     render(<App />);
 
     await screen.findByText("重构 Desktop App 导航栏");
-    const pinButton = screen.getByRole("button", { name: "始终置顶" });
+    const pinButton = screen.getByRole("button", { name: "置顶" });
     const settingsButton = screen.getByRole("button", { name: "设置" });
+    const pinIcon = pinButton.querySelector("svg");
 
-    expect(pinButton.querySelector("svg")).toBeTruthy();
+    expect(pinIcon).toBeTruthy();
+    expect(pinIcon?.classList.contains("titlebar-pin-icon-unpinned")).toBe(
+      true,
+    );
+    expect(pinButton.getAttribute("title")).toBe("置顶");
     expect(settingsButton.querySelector("svg")).toBeTruthy();
     expect(pinButton.textContent?.trim()).toBe("");
     expect(settingsButton.textContent?.trim()).toBe("");
+
+    await user.click(pinButton);
+    const pinnedButton = await screen.findByRole("button", {
+      name: "取消置顶",
+    });
+    const pinnedIcon = pinnedButton.querySelector("svg");
+    expect(pinnedButton.getAttribute("title")).toBe("取消置顶");
+    expect(pinnedIcon?.classList.contains("titlebar-pin-icon-pinned")).toBe(
+      true,
+    );
   });
 
   it("标题栏图标组件从 Phosphor 图标库导入", () => {
@@ -261,10 +285,10 @@ describe("App", () => {
     const completedNavButton = screen.getByRole("button", { name: /已完成/ });
     const trashNavButton = screen.getByRole("button", { name: /回收站/ });
     const tagSettingsButton = screen.getByRole("button", {
-      name: "标签与设置",
+      name: "标签设置",
     });
     const completeButton = screen.getAllByRole("button", {
-      name: "标为完成",
+      name: "完成",
     })[0];
     const deleteButton = screen.getAllByRole("button", { name: "删除" })[0];
 
@@ -299,6 +323,14 @@ describe("App", () => {
     const rendererSrc = resolve("src/renderer/src");
     const appButtonPath = resolve(rendererSrc, "components/ui/AppButton.tsx");
     const styles = readRendererStyles(rendererSrc);
+    const noteCompleteActionBlock = readCssRuleBlock(
+      styles,
+      ".note-complete-action",
+    );
+    const noteDeleteActionBlock = readCssRuleBlock(
+      styles,
+      ".note-delete-action",
+    );
     const titlebarIcons = readFileSync(
       resolve(rendererSrc, "components/titlebar/TitlebarIcons.tsx"),
       "utf8",
@@ -326,6 +358,17 @@ describe("App", () => {
     expect(styles).not.toContain("width: 104px;");
     expect(styles).toContain("justify-content: flex-start;");
     expect(styles).toContain("margin-left: auto;");
+    expect(styles).toContain(".note-complete-action");
+    expect(styles).toContain(".note-delete-action");
+    expect(noteCompleteActionBlock).toContain(
+      "--button-bg: color-mix(in oklab, var(--success), transparent 90%);",
+    );
+    expect(noteDeleteActionBlock).toContain(
+      "--button-bg: color-mix(in oklab, var(--danger), transparent 92%);",
+    );
+    expect(noteCompleteActionBlock).not.toBe(noteDeleteActionBlock);
+    expect(styles).toContain(".titlebar-pin-icon-unpinned");
+    expect(styles).toContain(".titlebar-pin-icon-pinned");
     expect(styles).toContain("--button-icon-size: 20px");
     expect(styles).not.toContain("fill: none;");
     expect(styles).not.toContain("stroke-width: 1.8");
@@ -341,12 +384,84 @@ describe("App", () => {
     expect(styles).not.toContain(".btn-primary {");
   });
 
+  it("暗色主题通过 token 提供更深背景和完整按钮状态色", () => {
+    const rendererSrc = resolve("src/renderer/src");
+    const styles = readRendererStyles(rendererSrc);
+    const darkBlock = readCssRuleBlock(styles, ".app-window.dark");
+    const darkButtonHoverBlock = readCssRuleBlock(
+      styles,
+      ".app-window.dark .app-button:hover,\n.app-window.dark .app-button.active",
+    );
+    const darkPrimaryBlock = readCssRuleBlock(
+      styles,
+      ".app-window.dark .app-button-variant-primary",
+    );
+    const darkPrimaryHoverBlock = readCssRuleBlock(
+      styles,
+      ".app-window.dark .app-button-variant-primary:hover",
+    );
+
+    expect(darkBlock).toContain("--bg: #050816;");
+    expect(darkBlock).toContain("--surface: #0d1424;");
+    expect(darkBlock).toContain("--surface-warm: #111c33;");
+    expect(darkBlock).toContain("--button-bg: #121c31;");
+    expect(darkBlock).toContain("--button-border: #2a3a57;");
+    expect(darkBlock).toContain(
+      "--button-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);",
+    );
+    expect(darkBlock).toContain(
+      "--button-hover-shadow: 0 10px 22px rgba(0, 0, 0, 0.34);",
+    );
+    expect(darkButtonHoverBlock).toContain("--button-bg: #19243b;");
+    expect(darkButtonHoverBlock).toContain("--button-border: #3b4d6d;");
+    expect(darkPrimaryBlock).toContain("--button-bg: #ff7a1a;");
+    expect(darkPrimaryBlock).toContain("--button-border: #ff9a4d;");
+    expect(darkPrimaryBlock).toContain("color: #111827;");
+    expect(darkPrimaryHoverBlock).toContain("--button-bg: #ff8f3d;");
+  });
+
+  it("暗色模式默认背景不以内联样式覆盖根主题背景", async () => {
+    const darkData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    darkData.settings = {
+      ...darkData.settings,
+      themeMode: "dark",
+    };
+    installApi(darkData);
+
+    const { container } = render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    const appWindow = container.querySelector(
+      ".app-window.dark",
+    ) as HTMLElement;
+    expect(appWindow).toBeTruthy();
+    expect(appWindow.style.backgroundColor).toBe("");
+  });
+
+  it("浅色模式继续允许自定义背景以内联样式覆盖", async () => {
+    const lightData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    lightData.settings = {
+      ...lightData.settings,
+      backgroundColor: "#102030",
+    };
+    installApi(lightData);
+
+    const { container } = render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    const appWindow = container.querySelector(".app-window") as HTMLElement;
+    expect(appWindow).toBeTruthy();
+    expect(appWindow.classList.contains("dark")).toBe(false);
+    expect(appWindow.style.backgroundColor).toBe("rgb(16, 32, 48)");
+  });
+
   it("渲染层样式入口拆分为按职责维护的目录文件", () => {
     const rendererSrc = resolve("src/renderer/src");
     const styleEntry = readFileSync(resolve(rendererSrc, "styles.css"), "utf8");
     const styleFiles = [
       "base.css",
       "buttons.css",
+      "dropdown.css",
       "layout.css",
       "sidebar.css",
       "toolbar.css",
@@ -363,6 +478,23 @@ describe("App", () => {
 
     expect(styleEntry).not.toContain(".note-card {");
     expect(styleEntry).not.toContain(".settings-view {");
+  });
+
+  it("下拉按钮和菜单组件按 ui 子目录独立维护", () => {
+    const rendererSrc = resolve("src/renderer/src");
+    const dropdownDir = resolve(rendererSrc, "components/ui/dropdown");
+    const styleEntry = readFileSync(resolve(rendererSrc, "styles.css"), "utf8");
+    const dropdownStyles = readFileSync(
+      resolve(rendererSrc, "styles/dropdown.css"),
+      "utf8",
+    );
+
+    expect(existsSync(resolve(dropdownDir, "DropdownButton.tsx"))).toBe(true);
+    expect(existsSync(resolve(dropdownDir, "DropdownMenu.tsx"))).toBe(true);
+    expect(styleEntry).toContain('@import "./styles/dropdown.css";');
+    expect(dropdownStyles).toContain(".dropdown-anchor");
+    expect(dropdownStyles).toContain(".dropdown-menu");
+    expect(dropdownStyles).toContain(".dropdown-menu button:hover");
   });
 
   it("拆分后的样式模块不混入其他页面职责", () => {
@@ -426,7 +558,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "标签与设置" }));
+    await user.click(await screen.findByRole("button", { name: "标签设置" }));
     expect(screen.getByRole("heading", { name: "标签设置" })).toBeTruthy();
     expect(
       screen.getByText(
@@ -459,7 +591,7 @@ describe("App", () => {
 
     render(<App />);
 
-    await user.click(await screen.findByRole("button", { name: "标签与设置" }));
+    await user.click(await screen.findByRole("button", { name: "标签设置" }));
     const tagSettings = screen.getByRole("region", { name: "标签设置" });
     expect(tagSettings).toBeTruthy();
     expect(tagSettings.classList.contains("scrollable-panel")).toBe(true);
@@ -620,7 +752,7 @@ describe("App", () => {
     );
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
 
-    expect(screen.getByRole("button", { name: "Always on top" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Pin" })).toBeTruthy();
     expect(screen.getByRole("button", { name: "Settings" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "Back" }));
@@ -695,7 +827,7 @@ describe("App", () => {
     expect(actions).toBeTruthy();
 
     expect(
-      within(actions as HTMLElement).getByRole("button", { name: "标为完成" }),
+      within(actions as HTMLElement).getByRole("button", { name: "完成" }),
     ).toBeTruthy();
     expect(
       within(actions as HTMLElement).getByRole("button", { name: "删除" }),
@@ -834,7 +966,7 @@ describe("App", () => {
       }),
     ).toBeNull();
     const checklistInput = within(card as HTMLElement).getByRole("checkbox", {
-      name: "增加始终置顶按钮",
+      name: "增加置顶按钮",
     }) as HTMLInputElement;
     expect(checklistInput.disabled).toBe(true);
     await user.click(checklistInput);
@@ -880,7 +1012,7 @@ describe("App", () => {
       }),
     ).toBeNull();
     const checklistInput = within(card as HTMLElement).getByRole("checkbox", {
-      name: "增加始终置顶按钮",
+      name: "增加置顶按钮",
     }) as HTMLInputElement;
     expect(checklistInput.disabled).toBe(true);
     await user.click(checklistInput);
