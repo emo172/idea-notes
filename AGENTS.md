@@ -54,6 +54,15 @@
 - `tests/renderer/App.test.tsx` 负向锁定了多个文件名约定：不要新增 `src/renderer/src/App.tsx`、`components/icons.tsx`、`i18n/copy.ts` 或 `utils/noteHelpers.ts` 来绕过现有结构。
 - 完成前至少跑 `npm test`；涉及构建、打包、入口或样式拆分时再跑 `npm run build`。
 
+## 提交规范
+
+- 提交前先检查 `git status --short`、`git diff`、`git diff --staged` 和最近提交风格；提交信息使用约定式提交：`type(scope): 中文摘要`。
+- 常用类型限定为 `feat`、`fix`、`refactor`、`style`、`chore`、`test`、`docs`、`build`、`ci`、`perf`、`revert`；摘要保持一句话，不超过 72 个字符。
+- 默认拆分为原子提交；不要把功能、修复、重构、格式化、文档或构建配置混在同一次提交中。
+- 测试与对应实现拆开会导致中间提交不完整时，测试必须和实现放在同一提交；纯测试补充可单独使用 `test:`。
+- 暂存时使用精确文件列表或非交互补丁；不要用交互式暂存，也不要把 `out/`、`release/`、`node_modules/`、`docs/`、`.omo/` 或敏感文件加入提交。
+- 未经用户明确要求，不要提交、推送、改写历史或 amend；若用户授权提交，每次提交前后都要核对暂存内容和工作区状态。
+
 ## 本地运行坑
 
 - 当前 Linux 环境可能因 Electron `chrome-sandbox` 权限失败；surface smoke 可先用 `ELECTRON_DISABLE_SANDBOX=1`。
