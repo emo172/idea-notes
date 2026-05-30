@@ -9,16 +9,25 @@ import { join } from "node:path";
 import { readData, saveData } from "./store";
 import type { DesktopWindowState, IdeaNotesData } from "@shared/types";
 
-// Linux 开发环境可能无法启动 GPU 进程，必须在 app ready 前禁用 sandbox/GPU 相关启动路径。
-if (process.platform === "linux" && !app.isPackaged) {
-  app.disableHardwareAcceleration();
-  app.commandLine.appendSwitch("no-sandbox");
-  app.commandLine.appendSwitch("disable-gpu");
-  app.commandLine.appendSwitch("disable-software-rasterizer");
+if (process.platform === "linux") {
+  app.setName("idea-notes");
+
+  // Linux 开发环境可能无法启动 GPU 进程，必须在 app ready 前禁用 sandbox/GPU 相关启动路径。
+  if (!app.isPackaged) {
+    app.disableHardwareAcceleration();
+    app.commandLine.appendSwitch("no-sandbox");
+    app.commandLine.appendSwitch("disable-gpu-sandbox");
+    app.commandLine.appendSwitch("in-process-gpu");
+  }
 }
 
 // 主窗口引用只保存在主进程内，用于校验 IPC 请求来源和管理窗口生命周期。
 let mainWindow: BrowserWindow | null = null;
+
+const desktopWindowIconPath =
+  process.platform === "linux" || process.platform === "win32"
+    ? join(__dirname, "../../build/icons/icon.png")
+    : undefined;
 
 // 将 Electron 的窗口状态压缩成 renderer 需要展示的最小状态对象。
 function getWindowState(window: BrowserWindow): DesktopWindowState {
@@ -47,6 +56,7 @@ function createWindow(): void {
     frame: false,
     titleBarStyle: "hidden",
     backgroundColor: "#f8fafc",
+    icon: desktopWindowIconPath,
     webPreferences: {
       // preload 是 renderer 唯一能接触桌面能力的桥接入口。
       preload: join(__dirname, "../preload/index.mjs"),
@@ -56,6 +66,7 @@ function createWindow(): void {
       sandbox: false,
     },
   });
+  if (desktopWindowIconPath) mainWindow.setIcon(desktopWindowIconPath);
 
   // 开发时加载 Vite dev server，生产/预览时加载构建后的静态入口。
   if (process.env.ELECTRON_RENDERER_URL) {

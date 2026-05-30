@@ -9,7 +9,9 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 type PackageJson = {
+  desktopName?: string;
   type?: string;
+  scripts?: Record<string, string>;
 };
 
 describe("主进程 preload 路径", () => {
@@ -31,9 +33,25 @@ describe("主进程 preload 路径", () => {
   it("本地开发脚本在 Electron 启动前禁用 Linux sandbox", () => {
     const packageJson = JSON.parse(
       readFileSync(resolve("package.json"), "utf8"),
-    ) as PackageJson & { scripts?: Record<string, string> };
+    ) as PackageJson;
 
-    expect(packageJson.scripts?.dev).toBe("NO_SANDBOX=1 electron-vite dev");
+    expect(packageJson.scripts?.dev).toBe(
+      "NO_SANDBOX=1 electron-vite dev -- --class=idea-notes",
+    );
+  });
+
+  it("为 Linux 开发窗口声明稳定桌面标识", () => {
+    const packageJson = JSON.parse(
+      readFileSync(resolve("package.json"), "utf8"),
+    ) as PackageJson;
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+    const appReadyIndex = mainSource.indexOf("app.whenReady()");
+    const beforeAppReady = mainSource.slice(0, appReadyIndex);
+
+    expect(packageJson.desktopName).toBe("idea-notes.desktop");
+    expect(packageJson.scripts?.dev).toContain("--class=idea-notes");
+    expect(beforeAppReady).toContain('app.setName("idea-notes")');
+    expect(beforeAppReady).not.toContain("app.setDesktopName");
   });
 
   it("在应用 ready 前禁用 Linux 开发环境 GPU 后备以避开本地 GPU 进程崩溃", () => {
@@ -48,10 +66,25 @@ describe("主进程 preload 路径", () => {
     for (const gpuFallback of [
       "app.disableHardwareAcceleration();",
       'app.commandLine.appendSwitch("no-sandbox");',
-      'app.commandLine.appendSwitch("disable-gpu");',
-      'app.commandLine.appendSwitch("disable-software-rasterizer");',
+      'app.commandLine.appendSwitch("disable-gpu-sandbox");',
+      'app.commandLine.appendSwitch("in-process-gpu");',
     ]) {
       expect(beforeAppReady).toContain(gpuFallback);
     }
+    expect(beforeAppReady).not.toContain('appendSwitch("disable-gpu")');
+    expect(beforeAppReady).not.toContain("disable-software-rasterizer");
+  });
+
+  it("在 Linux 和 Windows 本地窗口中使用桌面应用图标", () => {
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+
+    expect(mainSource).toContain("const desktopWindowIconPath");
+    expect(mainSource).toContain(
+      'join(__dirname, "../../build/icons/icon.png")',
+    );
+    expect(mainSource).toContain('process.platform === "linux"');
+    expect(mainSource).toContain('process.platform === "win32"');
+    expect(mainSource).toContain("icon: desktopWindowIconPath");
+    expect(mainSource).toContain("mainWindow.setIcon(desktopWindowIconPath)");
   });
 });
