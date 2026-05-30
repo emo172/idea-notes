@@ -59,7 +59,10 @@ export interface AppCopy {
   sortImportant: string;
   sortNewest: string;
   sortProgress: string;
-  clearTags: string;
+  resetFilters: string;
+  clearTrash: string;
+  clearTrashConfirmTitle: string;
+  clearTrashConfirmBody: string;
   emptyNotes: string;
   loadingNotes: string;
   loadingTags: string;
@@ -93,6 +96,10 @@ export interface AppCopy {
   body: string;
   bodyPlaceholder: string;
   dueAt: string;
+  deadlineOverdue: string;
+  deadlinePending: string;
+  createdAt: string;
+  updatedAt: string;
   tags: string;
   tagSettingsDescription: string;
   newTagPlaceholder: string;

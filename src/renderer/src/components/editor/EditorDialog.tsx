@@ -4,14 +4,17 @@
 // 2. 只维护传入草稿的字段变更，不直接保存本地数据。
 import type { Dispatch, ReactElement, SetStateAction } from "react";
 import { ArrowLeftIcon, FloppyDiskIcon } from "@phosphor-icons/react";
-import type { NoteDraft, NotePriority } from "@shared/types";
+import type { AppLanguage, NoteDraft, NotePriority } from "@shared/types";
 import { AppButton } from "../ui/AppButton";
 import type { AppCopy } from "../../i18n";
+import { formatDate } from "../../utils/dateFormatting";
 
 interface EditorDialogProps {
   draft: NoteDraft;
   tags: string[];
   copy: AppCopy;
+  language: AppLanguage;
+  noteTimestamps?: { createdAt: number; updatedAt: number };
   setDraft: Dispatch<SetStateAction<NoteDraft>>;
   onToggleTag: (tag: string) => void;
   onCancel: () => void;
@@ -22,6 +25,8 @@ export function EditorDialog({
   draft,
   tags,
   copy,
+  language,
+  noteTimestamps,
   setDraft,
   onToggleTag,
   onCancel,
@@ -104,6 +109,7 @@ export function EditorDialog({
             <label className="form-field">
               <span>{copy.priority}</span>
               <select
+                className="priority-select"
                 value={draft.priority}
                 onChange={(event) =>
                   setDraft((currentDraft) => ({
@@ -112,9 +118,15 @@ export function EditorDialog({
                   }))
                 }
               >
-                <option value="high">{copy.priorityLabels.high}</option>
-                <option value="medium">{copy.priorityLabels.medium}</option>
-                <option value="low">{copy.priorityLabels.low}</option>
+                <option className="priority-option-high" value="high">
+                  {copy.priorityLabels.high}
+                </option>
+                <option className="priority-option-medium" value="medium">
+                  {copy.priorityLabels.medium}
+                </option>
+                <option className="priority-option-low" value="low">
+                  {copy.priorityLabels.low}
+                </option>
               </select>
             </label>
             <label className="form-field">
@@ -130,6 +142,28 @@ export function EditorDialog({
                 }
               />
             </label>
+            {noteTimestamps && (
+              <>
+                <div className="form-field">
+                  <span>{copy.createdAt}</span>
+                  <time
+                    className="timestamp-value"
+                    dateTime={new Date(noteTimestamps.createdAt).toISOString()}
+                  >
+                    {formatDate(noteTimestamps.createdAt, language, copy)}
+                  </time>
+                </div>
+                <div className="form-field">
+                  <span>{copy.updatedAt}</span>
+                  <time
+                    className="timestamp-value"
+                    dateTime={new Date(noteTimestamps.updatedAt).toISOString()}
+                  >
+                    {formatDate(noteTimestamps.updatedAt, language, copy)}
+                  </time>
+                </div>
+              </>
+            )}
             <div className="form-field">
               <span>{copy.tags}</span>
               <div className="tag-picker">

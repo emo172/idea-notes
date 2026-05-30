@@ -8,18 +8,29 @@ import { AppButton } from "../ui/AppButton";
 import type { AppCopy } from "../../i18n";
 
 interface ConfirmDialogProps {
-  noteTitle: string;
+  title?: string;
+  body?: string;
+  noteTitle?: string;
   copy: AppCopy;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
 }
 
 export function ConfirmDialog({
+  title,
+  body,
   noteTitle,
   copy,
   onCancel,
   onConfirm,
 }: ConfirmDialogProps): ReactElement {
+  const confirmTitle = title ?? copy.deleteConfirmTitle;
+  const confirmBody =
+    body ??
+    (noteTitle
+      ? `${copy.deleteConfirmBody}：${noteTitle}`
+      : copy.deleteConfirmBody);
+
   return (
     <div className="confirm-overlay">
       <section
@@ -28,10 +39,8 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby="delete-confirm-title"
       >
-        <h2 id="delete-confirm-title">{copy.deleteConfirmTitle}</h2>
-        <p>
-          {copy.deleteConfirmBody}：{noteTitle}
-        </p>
+        <h2 id="delete-confirm-title">{confirmTitle}</h2>
+        <p>{confirmBody}</p>
         <div className="confirm-actions">
           <AppButton icon={<XIcon weight="bold" />} onClick={onCancel}>
             {copy.cancel}

@@ -7,11 +7,11 @@
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
 import {
+  ArrowCounterClockwiseIcon,
   CheckCircleIcon,
   PlusIcon,
   TagIcon,
   TrashIcon,
-  XCircleIcon,
 } from "@phosphor-icons/react";
 import { defaultSettings } from "@shared/defaultData";
 import {
@@ -19,6 +19,7 @@ import {
   duplicateNote,
   filterAndSortNotes,
   moveNoteToTrash,
+  permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
   renameTag,
   restoreNoteFromTrash,
@@ -77,6 +78,7 @@ export default function App(): ReactElement {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<IdeaNote | null>(null);
+  const [isClearTrashConfirmOpen, setIsClearTrashConfirmOpen] = useState(false);
   const [tagName, setTagName] = useState("");
   const [windowState, setWindowState] = useState<DesktopWindowState>({
     isAlwaysOnTop: false,
@@ -196,6 +198,15 @@ export default function App(): ReactElement {
     setDeleteTarget(null);
   }
 
+  async function handleClearTrash(): Promise<void> {
+    if (!data) return;
+    await persist({
+      ...data,
+      notes: permanentlyDeleteAllTrash(data.notes),
+    });
+    setIsClearTrashConfirmOpen(false);
+  }
+
   async function handleAddTag(): Promise<void> {
     if (!data) return;
     const nextTag = tagName.trim();
@@ -246,6 +257,13 @@ export default function App(): ReactElement {
     );
   }
 
+  function resetFilters(): void {
+    setSearchQuery("");
+    setPriority("all");
+    setSortMode("important");
+    setSelectedTags([]);
+  }
+
   function toggleDraftTag(tag: string): void {
     setDraft((currentDraft) => ({
       ...currentDraft,
@@ -256,6 +274,7 @@ export default function App(): ReactElement {
   }
 
   const notes = data?.notes ?? [];
+  const editingNote = notes.find((note) => note.id === draft.id);
   const counts = {
     active: notes.filter((note) => note.status === "active").length,
     completed: notes.filter((note) => note.status === "completed").length,
@@ -266,10 +285,7 @@ export default function App(): ReactElement {
     data?.settings.themeMode === "dark" ? "app-window dark" : "app-window";
   const backgroundColor = data?.settings.backgroundColor;
   const appStyle =
-    data?.settings.themeMode === "dark" &&
-    backgroundColor === defaultSettings.backgroundColor
-      ? undefined
-      : { backgroundColor };
+    data?.settings.themeMode === "dark" ? undefined : { backgroundColor };
   const appBodyClassName = isSidebarCollapsed
     ? "app-body sidebar-collapsed"
     : "app-body";
@@ -427,15 +443,22 @@ export default function App(): ReactElement {
                 <label className="toolbar-select-group">
                   <span>{copy.priority}</span>
                   <select
+                    className="priority-select"
                     value={priority}
                     onChange={(event) =>
                       setPriority(event.target.value as NotePriority | "all")
                     }
                   >
                     <option value="all">{copy.all}</option>
-                    <option value="high">{copy.priorityLabels.high}</option>
-                    <option value="medium">{copy.priorityLabels.medium}</option>
-                    <option value="low">{copy.priorityLabels.low}</option>
+                    <option className="priority-option-high" value="high">
+                      {copy.priorityLabels.high}
+                    </option>
+                    <option className="priority-option-medium" value="medium">
+                      {copy.priorityLabels.medium}
+                    </option>
+                    <option className="priority-option-low" value="low">
+                      {copy.priorityLabels.low}
+                    </option>
                   </select>
                 </label>
                 <label className="toolbar-select-group">
@@ -453,11 +476,20 @@ export default function App(): ReactElement {
                 </label>
                 <AppButton
                   className="btn-subtle"
-                  icon={<XCircleIcon weight="bold" />}
-                  onClick={() => setSelectedTags([])}
+                  icon={<ArrowCounterClockwiseIcon weight="bold" />}
+                  onClick={resetFilters}
                 >
-                  {copy.clearTags}
+                  {copy.resetFilters}
                 </AppButton>
+                {noteViewMode === "trash" && counts.trash > 0 && (
+                  <AppButton
+                    className="danger"
+                    icon={<TrashIcon weight="bold" />}
+                    onClick={() => setIsClearTrashConfirmOpen(true)}
+                  >
+                    {copy.clearTrash}
+                  </AppButton>
+                )}
               </section>
 
               <section
@@ -513,6 +545,8 @@ export default function App(): ReactElement {
           draft={draft}
           tags={data?.tags ?? []}
           copy={copy}
+          language={currentLanguage}
+          noteTimestamps={editingNote}
           setDraft={setDraft}
           onToggleTag={toggleDraftTag}
           onCancel={() => setIsEditorOpen(false)}
@@ -528,6 +562,16 @@ export default function App(): ReactElement {
           onConfirm={() => handlePermanentDelete(deleteTarget.id)}
         />
       ) : null}
+
+      {isClearTrashConfirmOpen && (
+        <ConfirmDialog
+          title={copy.clearTrashConfirmTitle}
+          body={copy.clearTrashConfirmBody}
+          copy={copy}
+          onCancel={() => setIsClearTrashConfirmOpen(false)}
+          onConfirm={handleClearTrash}
+        />
+      )}
     </div>
   );
 }

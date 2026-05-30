@@ -1,6 +1,6 @@
 // Idea Notes 笔记卡片组件。
 // 作用：
-// 1. 渲染单条笔记的标题、状态、截止时间、正文预览、清单进度和标签。
+// 1. 渲染单条笔记的标题、状态、截止时间、截止状态、正文预览、清单进度和标签。
 // 2. 将卡片动作通过回调交给 App 统一处理，组件本身不接触持久化 API。
 import type { ReactElement } from "react";
 import {
@@ -32,6 +32,15 @@ interface NoteCardProps {
   onDelete: (note: IdeaNote) => void;
 }
 
+type DeadlineStatus = "overdue" | "pending";
+
+function getDeadlineStatus(dueAt?: string): DeadlineStatus | null {
+  if (!dueAt) return null;
+  const dueTime = Date.parse(dueAt);
+  if (Number.isNaN(dueTime)) return null;
+  return dueTime < Date.now() ? "overdue" : "pending";
+}
+
 export function NoteCard({
   note,
   copy,
@@ -45,7 +54,9 @@ export function NoteCard({
   onDelete,
 }: NoteCardProps): ReactElement {
   const completion = getCompletion(note);
-  const cardClassName = `note-card priority-${note.priority} ${note.status === "completed" ? "completed" : ""} ${
+  const deadlineStatus = getDeadlineStatus(note.dueAt);
+  const deadlineClassName = deadlineStatus ? `deadline-${deadlineStatus}` : "";
+  const cardClassName = `note-card priority-${note.priority} ${deadlineClassName} ${note.status === "completed" ? "completed" : ""} ${
     note.status === "trash" ? "in-trash" : ""
   }`;
   const isCompleted = note.status === "completed";
@@ -174,6 +185,13 @@ export function NoteCard({
           {copy.dueAt}：
           {formatDate(note.dueAt || note.updatedAt, language, copy)}
         </span>
+        {deadlineStatus ? (
+          <span className={`deadline-status ${deadlineStatus}`}>
+            {deadlineStatus === "overdue"
+              ? copy.deadlineOverdue
+              : copy.deadlinePending}
+          </span>
+        ) : null}
         <span className={`priority-label ${note.priority}`}>
           {copy.priority}：{copy.priorityLabels[note.priority]}
         </span>
@@ -208,10 +226,13 @@ export function NoteCard({
               className="progress-bar-container"
               aria-label={`${copy.completionLabel} ${completion.completed}/${completion.total}`}
             >
-              <span
-                className="progress-bar-fill"
-                style={{ width: `${completion.ratio * 100}%` }}
-              />
+              {note.checklist.map((item) => (
+                <span
+                  aria-hidden="true"
+                  className={`progress-bar-segment ${item.checked ? "completed" : "pending"}`}
+                  key={item.id}
+                />
+              ))}
             </div>
           </>
         ) : (

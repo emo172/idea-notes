@@ -14,6 +14,7 @@ export function formatDate(
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return copy.noDueDate;
   return new Intl.DateTimeFormat(language, {
+    year: "numeric",
     month: "long",
     day: "numeric",
     hour: "2-digit",
