@@ -25,6 +25,12 @@
   box-shadow: var(--button-hover-shadow);
 }
 
+.app-window.dark .app-button:hover,
+.app-window.dark .app-button.active {
+  --button-bg: #19243b;
+  --button-border: #3b4d6d;
+}
+
 .app-button.active {
   color: var(--accent);
   --button-bg: rgba(255, 87, 1, 0.1);
@@ -64,6 +70,19 @@
 .app-button-variant-primary:hover {
   --button-bg: color-mix(in oklab, var(--accent), #ffffff 10%);
   color: #06111f;
+}
+
+.app-window.dark .app-button-variant-primary {
+  --button-bg: #ff7a1a;
+  --button-border: #ff9a4d;
+  --button-shadow: 0 10px 24px rgba(255, 122, 26, 0.18);
+  --button-hover-shadow: 0 14px 28px rgba(255, 122, 26, 0.24);
+  color: #111827;
+}
+
+.app-window.dark .app-button-variant-primary:hover {
+  --button-bg: #ff8f3d;
+  color: #111827;
 }
 
 .app-button-variant-icon {

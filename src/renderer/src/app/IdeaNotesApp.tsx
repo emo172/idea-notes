@@ -264,6 +264,12 @@ export default function App(): ReactElement {
 
   const appClassName =
     data?.settings.themeMode === "dark" ? "app-window dark" : "app-window";
+  const backgroundColor = data?.settings.backgroundColor;
+  const appStyle =
+    data?.settings.themeMode === "dark" &&
+    backgroundColor === defaultSettings.backgroundColor
+      ? undefined
+      : { backgroundColor };
   const appBodyClassName = isSidebarCollapsed
     ? "app-body sidebar-collapsed"
     : "app-body";
@@ -272,10 +278,7 @@ export default function App(): ReactElement {
     : copy.alwaysOnTop;
 
   return (
-    <div
-      className={appClassName}
-      style={{ backgroundColor: data?.settings.backgroundColor }}
-    >
+    <div className={appClassName} style={appStyle}>
       <header className="titlebar">
         <div className="titlebar-left">
           <span className="app-logo">I</span>
