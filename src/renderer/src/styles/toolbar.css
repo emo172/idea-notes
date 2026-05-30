@@ -1,0 +1,69 @@
+/*
+ * 列表工具栏样式模块。
+ * 管理搜索框、优先级选择、排序选择和基础表单控件外观。
+ * 编辑器字段和设置行有各自模块补充布局，避免工具栏模块承担页面职责。
+ */
+.toolbar {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  margin-bottom: 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.search-field,
+.toolbar-select-group {
+  display: flex;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.search-field {
+  flex-direction: column;
+}
+
+.search-field {
+  flex: 1;
+}
+
+.toolbar-select-group {
+  flex-direction: column;
+  min-width: 132px;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--fg);
+  background: var(--surface);
+  outline: none;
+}
+
+input,
+select {
+  min-height: 34px;
+  padding: 0 10px;
+}
+
+textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: none;
+  padding: 12px;
+  line-height: 1.55;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 87, 1, 0.22);
+}

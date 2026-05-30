@@ -1,0 +1,222 @@
+/*
+ * 笔记列表与卡片样式模块。
+ * 管理列表滚动区、卡片状态、优先级色条、更多操作菜单、清单预览、标签和卡片底部动作。
+ * 完成态、回收站态和清单进度都通过类名表达，组件测试会依赖这些职责边界。
+ */
+.notes-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.note-card {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--muted);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: 0 1px 1px rgba(15, 23, 42, 0.04);
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    border-color 150ms ease;
+}
+
+.note-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow);
+}
+
+.priority-high {
+  border-left-color: var(--danger);
+}
+
+.priority-medium {
+  border-left-color: var(--warn);
+}
+
+.priority-low {
+  border-left-color: var(--muted);
+}
+
+.note-card.completed {
+  opacity: 0.78;
+}
+
+.note-title {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  color: var(--fg);
+  background: transparent;
+  font-size: 17px;
+  font-weight: 800;
+  text-align: left;
+}
+
+.note-card.completed .note-title {
+  text-decoration: line-through;
+}
+
+.note-card.in-trash {
+  opacity: 0.62;
+}
+
+.note-header-actions,
+.note-menu-anchor {
+  display: flex;
+  align-items: center;
+}
+
+.note-header-actions {
+  gap: 4px;
+  margin: -4px;
+}
+
+.note-menu-anchor {
+  position: relative;
+}
+
+.note-icon-btn {
+  color: var(--muted);
+}
+
+.context-menu {
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  z-index: 130;
+}
+
+.note-context-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+}
+
+.context-menu button {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--fg-2);
+  background: transparent;
+  text-align: left;
+}
+
+.context-menu button:hover {
+  color: var(--fg);
+  background: var(--surface-warm);
+}
+
+.context-menu button.danger {
+  color: var(--danger);
+}
+
+.note-header,
+.note-meta,
+.note-footer,
+.card-actions,
+.tags {
+  display: flex;
+  align-items: center;
+}
+
+.note-header,
+.note-footer {
+  justify-content: space-between;
+}
+
+.priority-label {
+  padding: 6px 9px;
+  color: var(--muted);
+  background: var(--surface-warm);
+}
+
+.priority-label.high {
+  color: var(--danger);
+}
+
+.priority-label.medium {
+  color: var(--warn);
+}
+
+.note-meta {
+  gap: 10px;
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.note-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.note-meta-item svg {
+  width: 13px;
+  height: 13px;
+}
+
+.note-body-preview {
+  margin: 12px 0;
+  color: var(--fg-2);
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.checklist-preview {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-2);
+  font-size: 13px;
+}
+
+.check-item.checked span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.progress-bar-container {
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--border);
+}
+
+.progress-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success);
+}
+
+.tags {
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  padding: 5px 8px;
+  color: var(--muted);
+  background: var(--surface-warm);
+}
+
+.card-actions {
+  gap: 6px;
+}

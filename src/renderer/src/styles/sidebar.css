@@ -1,0 +1,106 @@
+/*
+ * 侧边栏样式模块。
+ * 只维护左侧导航、标签筛选和标签设置入口；笔记列表、编辑器标签选择和标签管理列表分别在自己的模块中维护。
+ * 侧栏收起依赖 `.app-body.sidebar-collapsed`，不要改成局部状态类名。
+ */
+.sidebar {
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 18px 14px;
+  border-right: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface), transparent 12%);
+  overflow: hidden;
+  transition: width 250ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+.app-body.sidebar-collapsed .sidebar {
+  width: 0;
+  padding-inline: 0;
+  border-right: 0;
+}
+
+.sidebar-header .app-button-variant-primary {
+  width: 100%;
+}
+
+.nav-menu,
+.tag-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nav-link {
+  width: 100%;
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 12px;
+  border-radius: 12px;
+  color: var(--fg-2);
+  background: transparent;
+  text-align: left;
+}
+
+.nav-link.active {
+  color: var(--accent);
+  background: var(--border-soft);
+}
+
+.nav-badge {
+  margin-left: auto;
+  min-width: 26px;
+  padding: 2px 7px;
+  border-radius: 999px;
+  color: var(--muted);
+  background: var(--border);
+  font-size: 12px;
+  text-align: center;
+}
+
+.section-title {
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.tag-option,
+.tag,
+.priority-label {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.tag-option {
+  min-height: 30px;
+  padding: 0 10px;
+  color: var(--fg-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+}
+
+.tag-option.selected {
+  color: var(--accent);
+  border-color: rgba(255, 87, 1, 0.35);
+  background: rgba(255, 87, 1, 0.08);
+}
+
+.tag-settings-link {
+  width: 100%;
+  margin-top: 12px;
+  color: var(--accent);
+  background: transparent;
+  text-align: left;
+}
+
+.tag-settings-link.active {
+  font-weight: 700;
+}
