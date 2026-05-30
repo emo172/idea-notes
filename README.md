@@ -15,6 +15,10 @@ npm run dev
 - `npm run preview`：预览构建结果
 - `npm test`：运行 Vitest 测试
 - `npm run package`：先构建，再生成 `release/` 目录
+- `npm run package:mac`：先构建，再生成 macOS `dmg` 安装包
+- `npm run package:win`：先构建，再生成 Windows `nsis` 安装包
+- `npm run package:linux`：先构建，再生成 Linux `AppImage` 安装包
+- `npm run package:all`：先构建，再按当前构建环境支持情况生成 macOS、Windows 和 Linux 安装包
 
 ## 目录结构
 
@@ -24,7 +28,7 @@ npm run dev
 - `src/shared/`：主进程、preload、渲染层和测试共用的类型与纯业务逻辑
 - `tests/`：共享逻辑、主进程和渲染层测试
 - `out/`：构建产物
-- `release/`：`npm run package` 生成的目录包
+- `release/`：`npm run package` 生成的目录包，以及各平台安装包脚本生成的安装包
 
 ## 开发约定
 
