@@ -9,6 +9,14 @@ import { join } from "node:path";
 import { readData, saveData } from "./store";
 import type { DesktopWindowState, IdeaNotesData } from "@shared/types";
 
+// Linux 开发环境可能无法启动 GPU 进程，必须在 app ready 前禁用 sandbox/GPU 相关启动路径。
+if (process.platform === "linux" && !app.isPackaged) {
+  app.disableHardwareAcceleration();
+  app.commandLine.appendSwitch("no-sandbox");
+  app.commandLine.appendSwitch("disable-gpu");
+  app.commandLine.appendSwitch("disable-software-rasterizer");
+}
+
 // 主窗口引用只保存在主进程内，用于校验 IPC 请求来源和管理窗口生命周期。
 let mainWindow: BrowserWindow | null = null;
 
