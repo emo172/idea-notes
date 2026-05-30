@@ -14,11 +14,14 @@
 }
 
 .note-card {
+  --note-card-bg: var(--surface);
+  --note-card-border: var(--border);
+  --note-priority-color: var(--muted);
   padding: 16px;
-  border: 1px solid var(--border);
-  border-left: 4px solid var(--muted);
+  border: 1px solid var(--note-card-border);
+  border-left: 4px solid var(--note-priority-color);
   border-radius: 16px;
-  background: var(--surface);
+  background: var(--note-card-bg);
   box-shadow: 0 1px 1px rgba(15, 23, 42, 0.04);
   transition:
     transform 150ms ease,
@@ -32,15 +35,15 @@
 }
 
 .priority-high {
-  border-left-color: var(--danger);
+  --note-priority-color: var(--priority-high);
 }
 
 .priority-medium {
-  border-left-color: var(--warn);
+  --note-priority-color: var(--priority-medium);
 }
 
 .priority-low {
-  border-left-color: var(--muted);
+  --note-priority-color: var(--priority-low);
 }
 
 .note-card.completed {
@@ -65,6 +68,26 @@
 
 .note-card.in-trash {
   opacity: 0.62;
+}
+
+.note-card.deadline-overdue {
+  --note-card-bg: var(--deadline-overdue-card-bg);
+  --note-card-border: color-mix(
+    in oklab,
+    var(--deadline-overdue-text),
+    var(--border) 60%
+  );
+  --deadline-status-color: var(--deadline-overdue-text);
+}
+
+.note-card.deadline-pending {
+  --note-card-bg: var(--deadline-pending-card-bg);
+  --note-card-border: color-mix(
+    in oklab,
+    var(--deadline-pending-text),
+    var(--border) 64%
+  );
+  --deadline-status-color: var(--deadline-pending-text);
 }
 
 .note-header-actions {
@@ -112,15 +135,21 @@
 }
 
 .priority-label.high {
-  color: var(--danger);
-  border-color: color-mix(in oklab, var(--danger), transparent 68%);
-  background: color-mix(in oklab, var(--danger), transparent 90%);
+  color: var(--priority-high);
+  border-color: color-mix(in oklab, var(--priority-high), transparent 68%);
+  background: color-mix(in oklab, var(--priority-high), transparent 90%);
 }
 
 .priority-label.medium {
-  color: var(--warn);
-  border-color: color-mix(in oklab, var(--warn), transparent 68%);
-  background: color-mix(in oklab, var(--warn), transparent 90%);
+  color: var(--priority-medium);
+  border-color: color-mix(in oklab, var(--priority-medium), transparent 68%);
+  background: color-mix(in oklab, var(--priority-medium), transparent 90%);
+}
+
+.priority-label.low {
+  color: var(--priority-low);
+  border-color: color-mix(in oklab, var(--priority-low), transparent 68%);
+  background: color-mix(in oklab, var(--priority-low), transparent 90%);
 }
 
 .note-meta {
@@ -140,6 +169,23 @@
 .note-meta-item svg {
   width: 13px;
   height: 13px;
+}
+
+.deadline-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--surface);
+  font-weight: 700;
+}
+
+.deadline-status.overdue {
+  color: var(--deadline-status-color);
+}
+
+.deadline-status.pending {
+  color: var(--deadline-status-color);
 }
 
 .note-body-preview {
@@ -183,13 +229,14 @@
 }
 
 .progress-bar-container {
+  display: flex;
+  gap: 2px;
   height: 4px;
   overflow: hidden;
   border-radius: 999px;
-  background: var(--border);
+  background: var(--surface);
 }
 
-/* 完成度文字单独占一行，避免和紧凑清单项抢占同一行宽度。 */
 .completion-summary {
   display: flex;
   justify-content: space-between;
@@ -198,11 +245,19 @@
   font-size: 12px;
 }
 
-.progress-bar-fill {
+.progress-bar-segment {
+  flex: 1;
   display: block;
   height: 100%;
   border-radius: inherit;
+}
+
+.progress-bar-segment.completed {
   background: var(--success);
+}
+
+.progress-bar-segment.pending {
+  background: var(--border);
 }
 
 .tags {

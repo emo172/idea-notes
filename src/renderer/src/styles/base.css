@@ -16,6 +16,21 @@
   --success: #16a34a;
   --warn: #d97706;
   --danger: #dc2626;
+  --priority-high: #dc2626;
+  --priority-medium: #d97706;
+  --priority-low: #2563eb;
+  --deadline-overdue-card-bg: color-mix(
+    in oklab,
+    var(--danger),
+    var(--surface) 92%
+  );
+  --deadline-pending-card-bg: color-mix(
+    in oklab,
+    var(--success),
+    var(--surface) 94%
+  );
+  --deadline-overdue-text: var(--danger);
+  --deadline-pending-text: var(--success);
   --shadow: 0 18px 48px rgba(15, 23, 42, 0.12);
   --button-bg: color-mix(in oklab, var(--surface), transparent 6%);
   --button-border: color-mix(in oklab, var(--border), var(--surface) 20%);
@@ -81,6 +96,13 @@ button {
   --muted: #8ea0b8;
   --border: #263653;
   --border-soft: #17233a;
+  --priority-high: #f87171;
+  --priority-medium: #fbbf24;
+  --priority-low: #60a5fa;
+  --deadline-overdue-card-bg: #2b1118;
+  --deadline-pending-card-bg: #10251a;
+  --deadline-overdue-text: #fecaca;
+  --deadline-pending-text: #bbf7d0;
   --shadow: 0 18px 48px rgba(0, 0, 0, 0.32);
   --button-bg: #121c31;
   --button-border: #2a3a57;

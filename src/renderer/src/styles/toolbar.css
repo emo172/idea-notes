@@ -67,3 +67,22 @@ textarea:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px rgba(255, 87, 1, 0.22);
 }
+
+.priority-select option {
+  font-weight: 700;
+}
+
+.priority-select option.priority-option-high {
+  color: var(--priority-high);
+  background: color-mix(in oklab, var(--priority-high), transparent 92%);
+}
+
+.priority-select option.priority-option-medium {
+  color: var(--priority-medium);
+  background: color-mix(in oklab, var(--priority-medium), transparent 92%);
+}
+
+.priority-select option.priority-option-low {
+  color: var(--priority-low);
+  background: color-mix(in oklab, var(--priority-low), transparent 92%);
+}
