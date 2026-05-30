@@ -27,6 +27,12 @@ export function EditorDialog({
   onCancel,
   onSave,
 }: EditorDialogProps): ReactElement {
+  // 行号至少保留三行，空白新笔记也能呈现接近真实编辑器的输入基线。
+  const lineNumbers = Array.from(
+    { length: Math.max(3, draft.body.split("\n").length) },
+    (_, index) => index + 1,
+  );
+
   return (
     <div
       className="editor-overlay"
@@ -71,20 +77,28 @@ export function EditorDialog({
                 placeholder={copy.titlePlaceholder}
               />
             </label>
-            <label className="form-field grow">
+            <div className="form-field grow">
               <span>{copy.body}</span>
-              <textarea
-                aria-label={copy.body}
-                value={draft.body}
-                onChange={(event) =>
-                  setDraft((currentDraft) => ({
-                    ...currentDraft,
-                    body: event.target.value,
-                  }))
-                }
-                placeholder={copy.bodyPlaceholder}
-              />
-            </label>
+              <div className="editor-textarea-container">
+                <div className="line-numbers" aria-hidden="true">
+                  {lineNumbers.map((lineNumber) => (
+                    <span key={lineNumber}>{lineNumber}</span>
+                  ))}
+                </div>
+                <textarea
+                  aria-label={copy.body}
+                  className="editor-textarea"
+                  value={draft.body}
+                  onChange={(event) =>
+                    setDraft((currentDraft) => ({
+                      ...currentDraft,
+                      body: event.target.value,
+                    }))
+                  }
+                  placeholder={copy.bodyPlaceholder}
+                />
+              </div>
+            </div>
           </div>
           <aside className="editor-side">
             <label className="form-field">

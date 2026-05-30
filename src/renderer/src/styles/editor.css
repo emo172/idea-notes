@@ -72,6 +72,63 @@
   flex: 1;
 }
 
+/* 行号列和正文输入框共享字号/行高变量，避免多行正文滚动时视觉错位。 */
+.editor-textarea-container {
+  --editor-body-font-size: 14px;
+  --editor-body-line-height: 1.55;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+
+.line-numbers {
+  min-width: 52px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  padding: 12px 16px 12px 0;
+  margin-right: 16px;
+  border-right: 1px solid var(--border-soft);
+  color: color-mix(in oklab, var(--muted), var(--fg) 30%);
+  letter-spacing: 0.04em;
+  user-select: none;
+  background: linear-gradient(
+    180deg,
+    color-mix(in oklab, var(--surface), var(--bg) 30%),
+    var(--surface)
+  );
+}
+
+.line-numbers,
+.editor-textarea {
+  font-family: inherit;
+  font-size: var(--editor-body-font-size);
+  font-weight: 400;
+  line-height: var(--editor-body-line-height);
+}
+
+.editor-textarea {
+  flex: 1;
+  min-height: 260px;
+  padding: 12px 12px 12px 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.editor-textarea:focus {
+  box-shadow: none;
+}
+
+.editor-textarea-container:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(255, 87, 1, 0.22);
+}
+
 .editor-side {
   padding-left: 18px;
   border-left: 1px solid var(--border);

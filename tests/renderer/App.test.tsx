@@ -114,6 +114,53 @@ describe("App", () => {
     expect(saved.at(-1)?.notes[0]?.checklist).toHaveLength(2);
   });
 
+  it("新增笔记正文输入框默认显示三行编号并随换行扩展", async () => {
+    const { api, saved } = installApi(
+      getDefaultData(Date.parse("2026-05-29T08:00:00.000Z")),
+    );
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+    const bodyLines = ["第一行", "第二行", "第三行", "第四行"];
+    const bodyText = bodyLines.join("\n");
+
+    await user.click(await screen.findByRole("button", { name: "新建" }));
+    // 行号是纯视觉辅助，用 DOM 查询锁定数量即可，避免把它暴露成可访问文本。
+    const getLineNumbers = () =>
+      Array.from(
+        container.querySelectorAll(".line-numbers span"),
+        (element) => element.textContent ?? "",
+      );
+
+    expect(getLineNumbers()).toEqual(["1", "2", "3"]);
+    await user.type(screen.getByLabelText("正文"), bodyText);
+    expect(getLineNumbers()).toEqual(["1", "2", "3", "4"]);
+
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(saved.at(-1)?.notes[0]?.body).toBe(bodyText);
+    expect(saved.at(-1)?.notes[0]?.checklist.map((item) => item.text)).toEqual(
+      bodyLines,
+    );
+  });
+
+  it("正文输入框编号和正文文字使用统一字号与行高", () => {
+    // 样式变量直接决定行号和正文对齐，读源码比 jsdom 计算样式更稳定。
+    const editorStyles = readFileSync(
+      resolve("src/renderer/src/styles/editor.css"),
+      "utf8",
+    );
+
+    expect(editorStyles).toContain("--editor-body-font-size: 14px;");
+    expect(editorStyles).toContain("--editor-body-line-height: 1.55;");
+    expect(editorStyles).toContain("font-size: var(--editor-body-font-size);");
+    expect(editorStyles).toContain(
+      "line-height: var(--editor-body-line-height);",
+    );
+    expect(editorStyles).toContain(".line-numbers,");
+    expect(editorStyles).toContain(".editor-textarea {");
+  });
+
   it("按原型支持侧栏收起和展开", async () => {
     installApi(getDefaultData(Date.parse("2026-05-29T08:00:00.000Z")));
     const user = userEvent.setup();
