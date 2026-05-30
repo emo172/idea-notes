@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <!-- 渲染层 HTML 入口。作用：声明中文页面、基础视口和 React 挂载容器。 -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>灵感笔记</title>
+  </head>
+  <body>
+    <!-- React 挂载点，所有可见界面由 src/renderer/src/main.tsx 渲染。 -->
+    <div id="root"></div>
+    <!-- Vite 渲染层入口；Electron 生产构建时会把它打包到 out/renderer。 -->
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
