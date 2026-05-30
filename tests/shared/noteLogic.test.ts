@@ -12,6 +12,7 @@ import {
   filterAndSortNotes,
   getCompletion,
   moveNoteToTrash,
+  permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
   renameTag,
   restoreNoteFromTrash,
@@ -157,5 +158,18 @@ describe("noteLogic", () => {
 
     const remaining = permanentlyDeleteNote([trashed, other], "trash-target");
     expect(remaining.map((item) => item.id)).toEqual(["other"]);
+  });
+
+  it("清空回收站只删除全部回收站笔记", () => {
+    const active = note({ id: "active-note", status: "active" });
+    const completed = note({ id: "completed-note", status: "completed" });
+    const trashed = note({ id: "trash-note", status: "trash" });
+
+    const remaining = permanentlyDeleteAllTrash([active, trashed, completed]);
+
+    expect(remaining.map((item) => item.id)).toEqual([
+      "active-note",
+      "completed-note",
+    ]);
   });
 });

@@ -175,6 +175,11 @@ export function permanentlyDeleteNote(
   return notes.filter((note) => note.id !== noteId);
 }
 
+export function permanentlyDeleteAllTrash(notes: IdeaNote[]): IdeaNote[] {
+  // 清空回收站只移除回收站笔记，避免误删进行中和已完成内容。
+  return notes.filter((note) => note.status !== "trash");
+}
+
 export function renameTag(
   data: IdeaNotesData,
   from: string,
