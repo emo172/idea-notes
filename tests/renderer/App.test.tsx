@@ -396,6 +396,28 @@ describe("App", () => {
     expect(editorStyles).not.toContain(".settings-main");
   });
 
+  it("笔记卡片清单预览使用紧凑行距", () => {
+    // 卡片预览的视觉密度由职责样式文件锁定，避免组件测试依赖浏览器布局实现。
+    const noteStyles = readFileSync(
+      resolve("src/renderer/src/styles/notes.css"),
+      "utf8",
+    );
+    const checklistPreviewBlock =
+      noteStyles.match(/\.checklist-preview\s*\{[^}]*\}/)?.[0] ?? "";
+    const checkItemBlock =
+      noteStyles.match(/\.check-item\s*\{[^}]*\}/)?.[0] ?? "";
+    const checkItemCheckboxBlock =
+      noteStyles.match(
+        /\.check-item input\[type="checkbox"\]\s*\{[^}]*\}/,
+      )?.[0] ?? "";
+
+    expect(checklistPreviewBlock).toContain("gap: 4px;");
+    expect(checkItemBlock).toContain("line-height: 1.25;");
+    expect(checkItemCheckboxBlock).toContain("width: 16px;");
+    expect(checkItemCheckboxBlock).toContain("height: 16px;");
+    expect(checkItemCheckboxBlock).toContain("min-height: 0;");
+  });
+
   it("标签设置页支持内联新增和重命名标签", async () => {
     const { api, saved } = installApi(
       getDefaultData(Date.parse("2026-05-29T08:00:00.000Z")),
@@ -706,6 +728,36 @@ describe("App", () => {
       ".note-body-preview",
     );
     expect(bodyPreview?.textContent).toContain("Idea Notes");
+  });
+
+  it("笔记卡片按原型展示完成度、正文背景和优先级位置", async () => {
+    installApi(getDefaultData(Date.parse("2026-05-29T08:00:00.000Z")));
+
+    render(<App />);
+
+    const checklistTitle = await screen.findByText("重构 Desktop App 导航栏");
+    const checklistCard = checklistTitle.closest("article") as HTMLElement;
+    // 原型要求优先级进入 meta 区，卡片标题区只保留编辑和更多操作。
+    const checklistMeta = checklistCard.querySelector(".note-meta");
+    expect(checklistMeta).toBeTruthy();
+    expect(
+      within(checklistMeta as HTMLElement).getByText("优先级：重要"),
+    ).toBeTruthy();
+    expect(
+      checklistCard.querySelector(".note-header-actions .priority-label"),
+    ).toBeNull();
+    expect(
+      checklistCard.querySelector(".note-content-preview .checklist-preview"),
+    ).toBeTruthy();
+    expect(
+      checklistCard.querySelector(".completion-summary")?.textContent,
+    ).toBe("完成度：2/4");
+
+    const bodyTitle = screen.getByText("产品命名灵感");
+    const bodyCard = bodyTitle.closest("article") as HTMLElement;
+    expect(
+      bodyCard.querySelector(".note-content-preview .note-body-preview"),
+    ).toBeTruthy();
   });
 
   it("笔记卡片状态和截止时间标签显示图标", async () => {

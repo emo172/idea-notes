@@ -77,6 +77,7 @@ export function NoteCard({
   }, [isMenuOpen]);
 
   function runMenuAction(action: () => Promise<void> | void): void {
+    // 先关闭菜单再执行动作，避免异步保存或删除期间浮层停留在旧卡片位置。
     setIsMenuOpen(false);
     void action();
   }
@@ -96,9 +97,6 @@ export function NoteCard({
           <h3 className="note-title">{note.title}</h3>
         )}
         <div className="note-header-actions">
-          <span className={`priority-label ${note.priority}`}>
-            {copy.priorityLabels[note.priority]}
-          </span>
           {canEdit ? (
             <AppButton
               className="note-icon-btn"
@@ -213,39 +211,50 @@ export function NoteCard({
           {copy.dueAt}：
           {formatDate(note.dueAt || note.updatedAt, language, copy)}
         </span>
+        <span className={`priority-label ${note.priority}`}>
+          {copy.priority}：{copy.priorityLabels[note.priority]}
+        </span>
       </div>
-      {hasChecklist ? null : <p className="note-body-preview">{note.body}</p>}
-      {hasChecklist ? (
-        <div className="checklist-preview">
-          {/* 卡片只预览前 4 条清单，完整内容留给编辑器承载。 */}
-          {note.checklist.slice(0, 4).map((item) => (
-            <label
-              className={item.checked ? "check-item checked" : "check-item"}
-              key={item.id}
+      <div className="note-content-preview">
+        {hasChecklist ? (
+          <>
+            <div className="checklist-preview">
+              {/* 卡片只预览前 4 条清单，完整内容留给编辑器承载。 */}
+              {note.checklist.slice(0, 4).map((item) => (
+                <label
+                  className={item.checked ? "check-item checked" : "check-item"}
+                  key={item.id}
+                >
+                  <input
+                    type="checkbox"
+                    checked={item.checked}
+                    // 已完成和回收站笔记没有编辑入口，清单项也保持只读。
+                    disabled={!canEdit}
+                    onChange={(event) =>
+                      onToggleChecklist(item.id, event.target.checked)
+                    }
+                  />
+                  <span>{item.text}</span>
+                </label>
+              ))}
+            </div>
+            <div className="completion-summary">
+              {copy.completionLabel}：{completion.completed}/{completion.total}
+            </div>
+            <div
+              className="progress-bar-container"
+              aria-label={`${copy.completionLabel} ${completion.completed}/${completion.total}`}
             >
-              <input
-                type="checkbox"
-                checked={item.checked}
-                // 已完成和回收站笔记没有编辑入口，清单项也保持只读。
-                disabled={!canEdit}
-                onChange={(event) =>
-                  onToggleChecklist(item.id, event.target.checked)
-                }
+              <span
+                className="progress-bar-fill"
+                style={{ width: `${completion.ratio * 100}%` }}
               />
-              <span>{item.text}</span>
-            </label>
-          ))}
-          <div
-            className="progress-bar-container"
-            aria-label={`${copy.completionLabel} ${completion.completed}/${completion.total}`}
-          >
-            <span
-              className="progress-bar-fill"
-              style={{ width: `${completion.ratio * 100}%` }}
-            />
-          </div>
-        </div>
-      ) : null}
+            </div>
+          </>
+        ) : (
+          <p className="note-body-preview">{note.body}</p>
+        )}
+      </div>
       <footer className="note-footer">
         <div className="tags">
           {note.tags.map((tag) => (

@@ -135,20 +135,31 @@
 }
 
 .priority-label {
-  padding: 6px 9px;
-  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--fg-2);
   background: var(--surface-warm);
+  font-size: 10px;
+  font-weight: 700;
 }
 
 .priority-label.high {
   color: var(--danger);
+  border-color: color-mix(in oklab, var(--danger), transparent 68%);
+  background: color-mix(in oklab, var(--danger), transparent 90%);
 }
 
 .priority-label.medium {
   color: var(--warn);
+  border-color: color-mix(in oklab, var(--warn), transparent 68%);
+  background: color-mix(in oklab, var(--warn), transparent 90%);
 }
 
 .note-meta {
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 6px;
   color: var(--muted);
@@ -167,16 +178,23 @@
 }
 
 .note-body-preview {
-  margin: 12px 0;
+  margin: 0;
   color: var(--fg-2);
-  line-height: 1.55;
+  line-height: 1.25;
   white-space: pre-line;
+}
+
+/* 正文和清单预览共用浅色底面，让卡片主体内容从标题、状态和底部动作中分离出来。 */
+.note-content-preview {
+  margin: 12px 0;
+  padding: 8px;
+  border-radius: 8px;
+  background: var(--bg);
 }
 
 .checklist-preview {
   display: grid;
-  gap: 8px;
-  margin-bottom: 12px;
+  gap: 4px;
 }
 
 .check-item {
@@ -185,6 +203,13 @@
   gap: 8px;
   color: var(--fg-2);
   font-size: 13px;
+  line-height: 1.25;
+}
+
+.check-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
 }
 
 .check-item.checked span {
@@ -197,6 +222,15 @@
   overflow: hidden;
   border-radius: 999px;
   background: var(--border);
+}
+
+/* 完成度文字单独占一行，避免和紧凑清单项抢占同一行宽度。 */
+.completion-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
 }
 
 .progress-bar-fill {
