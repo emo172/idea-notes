@@ -67,8 +67,7 @@
   opacity: 0.62;
 }
 
-.note-header-actions,
-.note-menu-anchor {
+.note-header-actions {
   display: flex;
   align-items: center;
 }
@@ -78,46 +77,12 @@
   margin: -4px;
 }
 
-.note-menu-anchor {
-  position: relative;
-}
-
 .note-icon-btn {
   color: var(--muted);
 }
 
-.context-menu {
-  min-width: 160px;
-  padding: 4px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--surface);
-  box-shadow: var(--shadow);
-  z-index: 130;
-}
-
 .note-context-menu {
-  position: absolute;
-  top: calc(100% + 6px);
   right: 0;
-}
-
-.context-menu button {
-  width: 100%;
-  padding: 8px 12px;
-  border-radius: 8px;
-  color: var(--fg-2);
-  background: transparent;
-  text-align: left;
-}
-
-.context-menu button:hover {
-  color: var(--fg);
-  background: var(--surface-warm);
-}
-
-.context-menu button.danger {
-  color: var(--danger);
 }
 
 .note-header,
@@ -253,4 +218,30 @@
 
 .card-actions {
   gap: 6px;
+}
+
+.note-complete-action {
+  --button-bg: color-mix(in oklab, var(--success), transparent 90%);
+  --button-border: color-mix(in oklab, var(--success), var(--surface) 70%);
+  color: var(--success);
+}
+
+.note-complete-action:hover {
+  --button-bg: var(--success);
+  --button-border: var(--success);
+  --button-hover-shadow: 0 10px 22px rgba(22, 163, 74, 0.2);
+  color: #ffffff;
+}
+
+.note-delete-action {
+  --button-bg: color-mix(in oklab, var(--danger), transparent 92%);
+  --button-border: color-mix(in oklab, var(--danger), var(--surface) 72%);
+  color: var(--danger);
+}
+
+.note-delete-action:hover {
+  --button-bg: var(--danger);
+  --button-border: var(--danger);
+  --button-hover-shadow: 0 10px 22px rgba(220, 38, 38, 0.22);
+  color: #ffffff;
 }

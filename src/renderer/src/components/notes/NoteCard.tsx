@@ -2,7 +2,6 @@
 // 作用：
 // 1. 渲染单条笔记的标题、状态、截止时间、正文预览、清单进度和标签。
 // 2. 将卡片动作通过回调交给 App 统一处理，组件本身不接触持久化 API。
-import { useEffect, useRef, useState } from "react";
 import type { ReactElement } from "react";
 import {
   ArrowCounterClockwiseIcon,
@@ -15,6 +14,8 @@ import {
 import { getCompletion } from "@shared/noteLogic";
 import type { AppLanguage, IdeaNote } from "@shared/types";
 import { AppButton } from "../ui/AppButton";
+import { DropdownButton } from "../ui/dropdown/DropdownButton";
+import { DropdownMenu } from "../ui/dropdown/DropdownMenu";
 import type { AppCopy } from "../../i18n";
 import { formatDate } from "../../utils/dateFormatting";
 
@@ -43,8 +44,6 @@ export function NoteCard({
   onDuplicate,
   onDelete,
 }: NoteCardProps): ReactElement {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
   const completion = getCompletion(note);
   const cardClassName = `note-card priority-${note.priority} ${note.status === "completed" ? "completed" : ""} ${
     note.status === "trash" ? "in-trash" : ""
@@ -53,34 +52,6 @@ export function NoteCard({
   const isInTrash = note.status === "trash";
   const canEdit = !isCompleted && !isInTrash;
   const hasChecklist = note.checklist.length > 0;
-
-  useEffect(() => {
-    if (!isMenuOpen) return undefined;
-
-    // 菜单打开后同时支持点击外部和 Escape 关闭，避免悬浮菜单残留在卡片外。
-    function handlePointerDown(event: PointerEvent): void {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    }
-
-    function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") setIsMenuOpen(false);
-    }
-
-    document.addEventListener("pointerdown", handlePointerDown);
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", handlePointerDown);
-      document.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isMenuOpen]);
-
-  function runMenuAction(action: () => Promise<void> | void): void {
-    // 先关闭菜单再执行动作，避免异步保存或删除期间浮层停留在旧卡片位置。
-    setIsMenuOpen(false);
-    void action();
-  }
 
   return (
     <article className={cardClassName}>
@@ -107,94 +78,86 @@ export function NoteCard({
               onClick={() => onOpen(note)}
             />
           ) : null}
-          <div className="note-menu-anchor" ref={menuRef}>
-            <AppButton
-              className="note-icon-btn"
-              variant="icon"
-              aria-label={copy.moreActions}
-              title={copy.moreActions}
-              icon={<DotsThreeIcon weight="bold" />}
-              onClick={() => setIsMenuOpen((open) => !open)}
-            />
-            {isMenuOpen ? (
-              <div
-                className="context-menu note-context-menu"
-                role="menu"
-                aria-label={copy.moreActions}
-              >
-                {/* 菜单动作按状态分段，完成和回收站笔记不能继续编辑或复制。 */}
-                {!isCompleted && !isInTrash ? (
-                  <>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(() => onOpen(note))}
-                    >
-                      {copy.menuEdit}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(onToggleCompleted)}
-                    >
-                      {copy.menuComplete}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(() => onDuplicate(note))}
-                    >
-                      {copy.menuDuplicate}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(() => onTrash(note))}
-                    >
-                      {copy.menuMoveTrash}
-                    </button>
-                  </>
-                ) : null}
-                {isCompleted && !isInTrash ? (
-                  <>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(onToggleCompleted)}
-                    >
-                      {copy.menuRestoreProgress}
-                    </button>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(() => onTrash(note))}
-                    >
-                      {copy.menuMoveTrash}
-                    </button>
-                  </>
-                ) : null}
-                {isInTrash ? (
-                  <>
-                    <button
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(() => onRestore(note))}
-                    >
-                      {copy.menuRestoreTrash}
-                    </button>
-                    <button
-                      className="danger"
-                      type="button"
-                      role="menuitem"
-                      onClick={() => runMenuAction(() => onDelete(note))}
-                    >
-                      {copy.permanentDelete}
-                    </button>
-                  </>
-                ) : null}
-              </div>
-            ) : null}
-          </div>
+          <DropdownButton
+            buttonClassName="note-icon-btn"
+            icon={<DotsThreeIcon weight="bold" />}
+            label={copy.moreActions}
+          >
+            <DropdownMenu
+              className="note-context-menu"
+              label={copy.moreActions}
+            >
+              {canEdit ? (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => onOpen(note)}
+                  >
+                    {copy.menuEdit}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={onToggleCompleted}
+                  >
+                    {copy.menuComplete}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => onDuplicate(note)}
+                  >
+                    {copy.menuDuplicate}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => onTrash(note)}
+                  >
+                    {copy.menuMoveTrash}
+                  </button>
+                </>
+              ) : null}
+              {isCompleted ? (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={onToggleCompleted}
+                  >
+                    {copy.menuRestoreProgress}
+                  </button>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => onTrash(note)}
+                  >
+                    {copy.menuMoveTrash}
+                  </button>
+                </>
+              ) : null}
+              {isInTrash ? (
+                <>
+                  <button
+                    type="button"
+                    role="menuitem"
+                    onClick={() => onRestore(note)}
+                  >
+                    {copy.menuRestoreTrash}
+                  </button>
+                  <button
+                    className="danger"
+                    type="button"
+                    role="menuitem"
+                    onClick={() => onDelete(note)}
+                  >
+                    {copy.permanentDelete}
+                  </button>
+                </>
+              ) : null}
+            </DropdownMenu>
+          </DropdownButton>
         </div>
       </div>
       <div className="note-meta">
@@ -283,12 +246,14 @@ export function NoteCard({
           ) : (
             <>
               <AppButton
+                className="note-complete-action"
                 icon={<CheckCircleIcon weight="bold" />}
                 onClick={onToggleCompleted}
               >
                 {note.status === "completed" ? copy.resume : copy.markComplete}
               </AppButton>
               <AppButton
+                className="note-delete-action"
                 icon={<TrashIcon weight="bold" />}
                 onClick={() => onTrash(note)}
               >
