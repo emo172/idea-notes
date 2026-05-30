@@ -13,13 +13,21 @@ import {
   XIcon,
 } from "@phosphor-icons/react";
 
-export function PinIcon(): ReactElement {
+interface PinIconProps {
+  pinned: boolean;
+}
+
+export function PinIcon({ pinned }: PinIconProps): ReactElement {
+  const pinClassName = pinned
+    ? "titlebar-icon titlebar-pin-icon-pinned"
+    : "titlebar-icon titlebar-pin-icon-unpinned";
+
   return (
     <PushPinIcon
-      className="titlebar-icon"
+      className={pinClassName}
       aria-hidden="true"
       focusable="false"
-      weight="bold"
+      weight={pinned ? "fill" : "regular"}
     />
   );
 }

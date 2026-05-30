@@ -51,6 +51,18 @@
   height: var(--titlebar-icon-size);
 }
 
+.titlebar-pin-icon-unpinned {
+  color: var(--muted);
+  transform: rotate(-18deg);
+  transform-origin: center;
+}
+
+.titlebar-pin-icon-pinned {
+  color: var(--accent);
+  transform: rotate(0deg);
+  transform-origin: center;
+}
+
 .window-controls {
   gap: 2px;
   padding-left: 8px;

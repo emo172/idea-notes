@@ -267,6 +267,9 @@ export default function App(): ReactElement {
   const appBodyClassName = isSidebarCollapsed
     ? "app-body sidebar-collapsed"
     : "app-body";
+  const pinButtonLabel = windowState.isAlwaysOnTop
+    ? copy.cancelAlwaysOnTop
+    : copy.alwaysOnTop;
 
   return (
     <div
@@ -285,9 +288,9 @@ export default function App(): ReactElement {
             }
             active={windowState.isAlwaysOnTop}
             variant="icon"
-            aria-label={copy.alwaysOnTop}
-            title={copy.alwaysOnTop}
-            icon={<PinIcon />}
+            aria-label={pinButtonLabel}
+            title={pinButtonLabel}
+            icon={<PinIcon pinned={windowState.isAlwaysOnTop} />}
             onClick={async () =>
               setWindowState(await window.ideaNotes.toggleAlwaysOnTop())
             }
