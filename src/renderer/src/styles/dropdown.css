@@ -1,0 +1,39 @@
+/*
+ * 通用下拉菜单样式模块。
+ * 只管理下拉锚点、菜单浮层和菜单项视觉，业务模块仅补充对齐方向等上下文定位。
+ */
+.dropdown-anchor {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+  z-index: 130;
+}
+
+.dropdown-menu button {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  color: var(--fg-2);
+  background: transparent;
+  text-align: left;
+}
+
+.dropdown-menu button:hover {
+  color: var(--fg);
+  background: var(--surface-warm);
+}
+
+.dropdown-menu button.danger {
+  color: var(--danger);
+}
