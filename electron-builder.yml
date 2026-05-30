@@ -9,17 +9,24 @@ productName: 灵感笔记
 directories:
   # 打包产物统一输出到 release/，避免和 electron-vite 的 out/ 混在一起。
   output: release
+  # 桌面应用图标等打包资源集中放在 build/ 下，遵循 electron-builder 默认资源目录。
+  buildResources: build
 files:
   # 只打包构建产物和 package.json，不把源码、测试和文档放入应用包。
   - out/**/*
   - package.json
 # 使用 asar 将应用资源归档，减少发布产物中的散乱文件。
 asar: true
+# 打包应用统一使用 build/icons 下的桌面图标，避免落回 Electron 默认图标。
+icon: build/icons/icon.png
 linux:
   target:
-    # AppImage 适合 Linux 桌面分发，unpacked 验证由 package --dir 生成。
+    # AppImage 适合 Linux 桌面安装包分发，且不要求维护者邮箱等发布元数据。
     - AppImage
   category: Office
+  desktop:
+    entry:
+      StartupWMClass: idea-notes
 win:
   # Windows 使用 NSIS 安装器，便于用户选择安装目录。
   target: nsis

@@ -1,15 +1,20 @@
 {
   "name": "idea-notes",
   "version": "0.1.0",
+  "desktopName": "idea-notes.desktop",
   "description": "灵感笔记 Electron 桌面软件",
   "main": "./out/main/index.js",
   "type": "module",
   "scripts": {
-    "dev": "NO_SANDBOX=1 electron-vite dev",
+    "dev": "NO_SANDBOX=1 electron-vite dev -- --class=idea-notes",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "test": "vitest run",
-    "package": "electron-vite build && electron-builder --config electron-builder.yml --dir"
+    "package": "electron-vite build && electron-builder --config electron-builder.yml --dir",
+    "package:mac": "electron-vite build && electron-builder --config electron-builder.yml --mac",
+    "package:win": "electron-vite build && electron-builder --config electron-builder.yml --win",
+    "package:linux": "electron-vite build && electron-builder --config electron-builder.yml --linux",
+    "package:all": "electron-vite build && electron-builder --config electron-builder.yml --mac --win --linux"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
