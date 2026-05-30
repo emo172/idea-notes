@@ -1,0 +1,97 @@
+/*
+ * 通用按钮样式模块。
+ * 与 `components/ui/AppButton.tsx` 的 `app-button-*` 类名一一对应，所有按钮 hover、边框、阴影和图标尺寸在这里统一维护。
+ * 页面模块只能追加布局间距，不要重新定义按钮视觉状态。
+ */
+.app-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  color: var(--fg-2);
+  border: 1px solid var(--button-border);
+  background: var(--button-bg);
+  box-shadow: var(--button-shadow);
+}
+
+.app-button:hover,
+.app-button.active {
+  --button-bg: var(--surface-warm);
+  --button-border: color-mix(in oklab, var(--border), var(--accent) 24%);
+  background: var(--button-bg);
+  box-shadow: var(--button-hover-shadow);
+}
+
+.app-button.active {
+  color: var(--accent);
+  --button-bg: rgba(255, 87, 1, 0.1);
+  --button-border: rgba(255, 87, 1, 0.28);
+  background: var(--button-bg);
+}
+
+.app-button-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  line-height: 0;
+}
+
+.app-button-icon svg {
+  width: var(--button-icon-size);
+  height: var(--button-icon-size);
+}
+
+.app-button-size-md {
+  width: 100px;
+  height: 40px;
+}
+
+.app-button-variant-primary {
+  --button-bg: var(--accent);
+  --button-border: color-mix(in oklab, var(--accent), #06111f 12%);
+  --button-shadow: 0 10px 24px rgba(255, 87, 1, 0.22);
+  --button-hover-shadow: 0 14px 28px rgba(255, 87, 1, 0.28);
+  min-height: 38px;
+  padding: 0 16px;
+  color: #06111f;
+  font-weight: 700;
+}
+
+.app-button-variant-primary:hover {
+  --button-bg: color-mix(in oklab, var(--accent), #ffffff 10%);
+  color: #06111f;
+}
+
+.app-button-variant-icon {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+}
+
+.app-button-variant-tab {
+  width: 100%;
+  min-height: 38px;
+  border-radius: 12px;
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.app-button.danger {
+  --button-bg: color-mix(in oklab, var(--danger), transparent 92%);
+  --button-border: color-mix(in oklab, var(--danger), var(--surface) 72%);
+  color: var(--danger);
+}
+
+.window-controls .close:hover,
+.app-button.danger:hover {
+  --button-bg: var(--danger);
+  --button-border: var(--danger);
+  --button-hover-shadow: 0 10px 22px rgba(220, 38, 38, 0.22);
+  color: #ffffff;
+}

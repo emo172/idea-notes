@@ -1,0 +1,83 @@
+/*
+ * 应用骨架样式模块。
+ * 管理自定义标题栏、窗口控制区、主内容外壳和通用空状态。
+ * 标题栏使用 `-webkit-app-region` 划分拖拽区，按钮所在区域必须保持 no-drag。
+ */
+.titlebar {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px 0 16px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface), transparent 4%);
+  -webkit-app-region: drag;
+}
+
+.titlebar-left,
+.titlebar-actions,
+.window-controls {
+  display: flex;
+  align-items: center;
+}
+
+.titlebar-left {
+  gap: 10px;
+}
+
+.app-logo {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  color: #06111f;
+  background: var(--accent);
+  font-weight: 800;
+}
+
+.app-title {
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.titlebar-actions {
+  gap: 8px;
+  -webkit-app-region: no-drag;
+}
+
+.titlebar-icon {
+  width: var(--titlebar-icon-size);
+  height: var(--titlebar-icon-size);
+}
+
+.window-controls {
+  gap: 2px;
+  padding-left: 8px;
+  border-left: 1px solid var(--border);
+}
+
+.app-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+.main-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 18px;
+  position: relative;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted);
+  background: color-mix(in oklab, var(--surface), transparent 35%);
+}
