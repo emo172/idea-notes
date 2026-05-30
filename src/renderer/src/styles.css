@@ -1,0 +1,14 @@
+/*
+ * 渲染层全局样式入口。
+ * 只负责按依赖顺序加载职责模块：基础 token 先于组件，页面样式后于通用按钮。
+ * 新增页面样式时优先放入 `styles/` 下对应模块，不要把规则直接写回本文件。
+ */
+@import "./styles/base.css";
+@import "./styles/buttons.css";
+@import "./styles/layout.css";
+@import "./styles/sidebar.css";
+@import "./styles/toolbar.css";
+@import "./styles/notes.css";
+@import "./styles/dialogs.css";
+@import "./styles/editor.css";
+@import "./styles/settings.css";
