@@ -37,7 +37,8 @@ export const zhTWSettings: SettingsCopy = {
 
 export const zhTW: AppCopy = {
   appTitle: "靈感筆記",
-  alwaysOnTop: "始終置頂",
+  alwaysOnTop: "置頂",
+  cancelAlwaysOnTop: "取消置頂",
   settings: "設定",
   minimize: "最小化",
   maximize: "最大化",
@@ -46,7 +47,7 @@ export const zhTW: AppCopy = {
   newNote: "新增",
   notesNav: "筆記檢視",
   tagFilter: "標籤篩選",
-  tagSettingsNav: "標籤與設定",
+  tagSettingsNav: "標籤設定",
   tagSettings: "標籤設定",
   toolbar: "筆記篩選工具列",
   sidebarToggle: "收合/展開側欄",
@@ -69,7 +70,7 @@ export const zhTW: AppCopy = {
   restore: "恢復",
   permanentDelete: "永久刪除",
   resume: "重新進行",
-  markComplete: "標為完成",
+  markComplete: "完成",
   duplicate: "複製",
   delete: "刪除",
   deleteConfirmTitle: "確認永久刪除？",

@@ -37,7 +37,8 @@ export const zhCNSettings: SettingsCopy = {
 
 export const zhCN: AppCopy = {
   appTitle: "灵感笔记",
-  alwaysOnTop: "始终置顶",
+  alwaysOnTop: "置顶",
+  cancelAlwaysOnTop: "取消置顶",
   settings: "设置",
   minimize: "最小化",
   maximize: "最大化",
@@ -46,7 +47,7 @@ export const zhCN: AppCopy = {
   newNote: "新建",
   notesNav: "笔记视图",
   tagFilter: "标签筛选",
-  tagSettingsNav: "标签与设置",
+  tagSettingsNav: "标签设置",
   tagSettings: "标签设置",
   toolbar: "笔记筛选工具栏",
   sidebarToggle: "收起/展开侧栏",
@@ -69,7 +70,7 @@ export const zhCN: AppCopy = {
   restore: "恢复",
   permanentDelete: "彻底删除",
   resume: "重新进行",
-  markComplete: "标为完成",
+  markComplete: "完成",
   duplicate: "复制",
   delete: "删除",
   deleteConfirmTitle: "确认彻底删除？",

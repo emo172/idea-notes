@@ -38,7 +38,8 @@ export const enSettings: SettingsCopy = {
 
 export const en: AppCopy = {
   appTitle: "Idea Notes",
-  alwaysOnTop: "Always on top",
+  alwaysOnTop: "Pin",
+  cancelAlwaysOnTop: "Unpin",
   settings: "Settings",
   minimize: "Minimize",
   maximize: "Maximize",
@@ -70,7 +71,7 @@ export const en: AppCopy = {
   restore: "Restore",
   permanentDelete: "Delete permanently",
   resume: "Resume",
-  markComplete: "Mark complete",
+  markComplete: "Complete",
   duplicate: "Duplicate",
   delete: "Delete",
   deleteConfirmTitle: "Delete permanently?",

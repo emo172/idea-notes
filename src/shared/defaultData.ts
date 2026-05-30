@@ -23,7 +23,7 @@ export function getDefaultData(now = Date.now()): IdeaNotesData {
       {
         id: "seed-navigation",
         title: "重构 Desktop App 导航栏",
-        body: "实现可拖拽的 Titlebar\n添加窗口控制\n增加始终置顶按钮\n修复深色模式图标对比度",
+        body: "实现可拖拽的 Titlebar\n添加窗口控制\n增加置顶按钮\n修复深色模式图标对比度",
         priority: "high",
         tags: ["工作", "待办"],
         status: "active",
@@ -36,7 +36,7 @@ export function getDefaultData(now = Date.now()): IdeaNotesData {
           { id: "seed-navigation-item-2", text: "添加窗口控制", checked: true },
           {
             id: "seed-navigation-item-3",
-            text: "增加始终置顶按钮",
+            text: "增加置顶按钮",
             checked: false,
           },
           {

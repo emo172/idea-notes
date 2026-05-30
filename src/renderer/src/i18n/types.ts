@@ -38,6 +38,7 @@ export interface SettingsCopy {
 export interface AppCopy {
   appTitle: string;
   alwaysOnTop: string;
+  cancelAlwaysOnTop: string;
   settings: string;
   minimize: string;
   maximize: string;
