@@ -1,0 +1,33 @@
+# electron-builder 桌面应用打包配置。
+# 作用：
+# 1. 定义应用标识、产品名、输出目录和打包文件范围。
+# 2. 指定 Linux、Windows、macOS 的基础打包目标。
+# 3. 确保打包时只包含 out/ 构建产物和 package.json，不把源码/测试/docs 打进应用包。
+# 4. 为后续正式发布保留跨平台安装包配置入口。
+appId: com.idea.notes.desktop
+productName: 灵感笔记
+directories:
+  # 打包产物统一输出到 release/，避免和 electron-vite 的 out/ 混在一起。
+  output: release
+files:
+  # 只打包构建产物和 package.json，不把源码、测试和文档放入应用包。
+  - out/**/*
+  - package.json
+# 使用 asar 将应用资源归档，减少发布产物中的散乱文件。
+asar: true
+linux:
+  target:
+    # AppImage 适合 Linux 桌面分发，unpacked 验证由 package --dir 生成。
+    - AppImage
+  category: Office
+win:
+  # Windows 使用 NSIS 安装器，便于用户选择安装目录。
+  target: nsis
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+mac:
+  target:
+    # macOS 使用 dmg，正式发布前仍需签名和公证。
+    - dmg
+  category: public.app-category.productivity
