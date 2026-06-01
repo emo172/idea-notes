@@ -4,6 +4,7 @@
 // 2. 通过回调把取消和确认动作交给 App 处理。
 import type { ReactElement } from "react";
 import { TrashIcon, XIcon } from "@phosphor-icons/react";
+import { DialogShell } from "./DialogShell";
 import { AppButton } from "../ui/AppButton";
 import type { AppCopy } from "../../i18n";
 
@@ -14,6 +15,8 @@ interface ConfirmDialogProps {
   copy: AppCopy;
   onCancel: () => void;
   onConfirm: () => Promise<void>;
+  panelClassName?: string;
+  confirmLabel?: string;
 }
 
 export function ConfirmDialog({
@@ -23,37 +26,46 @@ export function ConfirmDialog({
   copy,
   onCancel,
   onConfirm,
+  panelClassName,
+  confirmLabel,
 }: ConfirmDialogProps): ReactElement {
   const confirmTitle = title ?? copy.deleteConfirmTitle;
   const confirmBody =
-    body ??
-    (noteTitle
-      ? `${copy.deleteConfirmBody}：${noteTitle}`
-      : copy.deleteConfirmBody);
+    body ?? (noteTitle ? `${copy.deleteConfirmBody}：${noteTitle}` : undefined);
+  const panelClassNames = panelClassName
+    ? `confirm-panel ${panelClassName}`
+    : "confirm-panel";
+  const actions = (
+    <>
+      <AppButton
+        className="confirm-cancel-button"
+        icon={<XIcon weight="bold" />}
+        onClick={onCancel}
+      >
+        {copy.cancel}
+      </AppButton>
+      <AppButton
+        className="danger"
+        icon={<TrashIcon weight="bold" />}
+        onClick={onConfirm}
+      >
+        {confirmLabel ?? copy.confirmDelete}
+      </AppButton>
+    </>
+  );
 
   return (
-    <div className="confirm-overlay">
-      <section
-        className="confirm-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="delete-confirm-title"
-      >
-        <h2 id="delete-confirm-title">{confirmTitle}</h2>
-        <p>{confirmBody}</p>
-        <div className="confirm-actions">
-          <AppButton icon={<XIcon weight="bold" />} onClick={onCancel}>
-            {copy.cancel}
-          </AppButton>
-          <AppButton
-            className="danger"
-            icon={<TrashIcon weight="bold" />}
-            onClick={onConfirm}
-          >
-            {copy.confirmDelete}
-          </AppButton>
-        </div>
-      </section>
-    </div>
+    <DialogShell
+      title={confirmTitle}
+      titleId="confirm-dialog-title"
+      describedBy={confirmBody ? "confirm-dialog-body" : undefined}
+      overlayClassName="confirm-overlay"
+      panelClassName={panelClassNames}
+      bodyClassName="confirm-body"
+      actionsClassName="confirm-actions"
+      actions={actions}
+    >
+      {confirmBody ? <p id="confirm-dialog-body">{confirmBody}</p> : null}
+    </DialogShell>
   );
 }

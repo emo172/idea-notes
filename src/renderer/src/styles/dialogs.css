@@ -1,11 +1,14 @@
 /*
  * 对话框样式模块。
- * 当前只服务彻底删除确认弹窗，覆盖层必须从标题栏下方开始，避免遮挡窗口控制按钮。
- * 如果新增全屏面板，不要复用这里的 confirm 选择器。
+ * 服务通用弹窗外壳、确认弹窗和编辑器弹窗。
+ * 覆盖层必须从标题栏下方开始，避免遮挡窗口控制按钮。
  */
-.confirm-overlay {
+.dialog-overlay {
   position: absolute;
   inset: 48px 0 0;
+}
+
+.confirm-overlay {
   display: grid;
   place-items: center;
   padding: 24px;
@@ -13,31 +16,38 @@
   z-index: 70;
 }
 
+.dialog-panel {
+  background: var(--surface);
+}
+
 .confirm-panel {
   width: min(420px, calc(100vw - 48px));
   padding: 20px;
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: var(--surface);
   box-shadow: var(--shadow);
 }
 
-.confirm-panel h2 {
+.dialog-head h2 {
   margin: 0;
 }
 
-.confirm-panel p {
+.dialog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.confirm-body p {
   margin: 10px 0 18px;
   color: var(--fg-2);
 }
 
 .confirm-actions {
-  display: flex;
   justify-content: flex-end;
-  gap: 8px;
 }
 
-.confirm-actions .app-button {
+.dialog-actions .app-button {
   min-height: 34px;
   padding: 0 14px;
 }
