@@ -15,8 +15,6 @@ export const zhCNSettings: SettingsCopy = {
   systemSettings: "系统设置",
   themeMode: "主题模式",
   themeDescription: "设置界面的默认明暗显示方式",
-  backgroundColor: "背景颜色",
-  backgroundDescription: "统一调整笔记页、设置页和面板背景",
   startupBehavior: "启动行为",
   startupDescription: "系统登录后自动启动 Idea Notes",
   trashRetention: "回收站保留",

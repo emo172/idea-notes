@@ -15,8 +15,6 @@ export interface SettingsCopy {
   systemSettings: string;
   themeMode: string;
   themeDescription: string;
-  backgroundColor: string;
-  backgroundDescription: string;
   startupBehavior: string;
   startupDescription: string;
   trashRetention: string;

@@ -121,19 +121,6 @@ export function SettingsPanel({
                   <option value="system">{copy.themeSystem}</option>
                 </select>
               </label>
-              <label className="setting-row">
-                <span className="setting-copy">
-                  <span>{copy.backgroundColor}</span>
-                  <small>{copy.backgroundDescription}</small>
-                </span>
-                <input
-                  type="color"
-                  value={settings.backgroundColor}
-                  onChange={(event) =>
-                    onSettingsChange({ backgroundColor: event.target.value })
-                  }
-                />
-              </label>
             </section>
           ) : (
             <section className="settings-card">

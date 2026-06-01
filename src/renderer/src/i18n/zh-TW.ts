@@ -15,8 +15,6 @@ export const zhTWSettings: SettingsCopy = {
   systemSettings: "系統設定",
   themeMode: "主題模式",
   themeDescription: "設定介面的預設明暗顯示方式",
-  backgroundColor: "背景顏色",
-  backgroundDescription: "統一調整筆記頁、設定頁和面板背景",
   startupBehavior: "啟動行為",
   startupDescription: "系統登入後自動啟動 Idea Notes",
   trashRetention: "回收站保留",

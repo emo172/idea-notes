@@ -23,18 +23,8 @@ describe("App settings and i18n", () => {
     vi.restoreAllMocks();
   });
 
-  it("设置中心使用外观和系统页签并支持重置设置", async () => {
-    const data = getDefaultData(BASE_TIME);
-    data.settings = {
-      themeMode: "dark",
-      backgroundColor: "#111827",
-      startup: true,
-      trashAutoDelete: "30",
-      language: "zh-CN",
-    };
-    const { api, saved } = installApi(data);
-    api.setStartup = vi.fn(async () => true);
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+  it("设置中心使用外观和系统页签且不显示背景颜色设置", async () => {
+    installApi(getDefaultData(BASE_TIME));
     const user = userEvent.setup();
 
     render(<App />);
@@ -42,28 +32,16 @@ describe("App settings and i18n", () => {
     await user.click(await screen.findByRole("button", { name: "设置" }));
     expect(screen.getByRole("heading", { name: "外观设置" })).toBeTruthy();
     expect(screen.getByText("设置界面的默认明暗显示方式")).toBeTruthy();
-    expect(screen.getByText("统一调整笔记页、设置页和面板背景")).toBeTruthy();
+    expect(screen.queryByText("背景颜色")).toBeNull();
+    expect(screen.queryByText("统一调整笔记页、设置页和面板背景")).toBeNull();
+    expect(
+      document.querySelector('.settings-card input[type="color"]'),
+    ).toBeNull();
 
     await user.click(screen.getByRole("button", { name: "系统设置" }));
     expect(screen.getByRole("heading", { name: "系统设置" })).toBeTruthy();
     expect(screen.getByText("系统登录后自动启动 Idea Notes")).toBeTruthy();
     expect(screen.getByText("到期后自动清理回收站中的笔记")).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "外观设置" }));
-    const settingsHead = screen
-      .getByRole("heading", { name: "设置中心" })
-      .closest(".settings-head") as HTMLElement;
-    await user.click(
-      within(settingsHead).getByRole("button", { name: "重置" }),
-    );
-
-    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
-    expect(confirmSpy).toHaveBeenCalledWith("确认重置所有设置？");
-    expect(api.setStartup).toHaveBeenCalledWith(defaultSettings.startup);
-    expect(saved.at(-1)?.settings).toEqual({
-      ...defaultSettings,
-      startup: true,
-    });
   });
 
   it("语言设置会立即切换设置页文案并持久化", async () => {

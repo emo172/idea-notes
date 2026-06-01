@@ -15,9 +15,6 @@ export const enSettings: SettingsCopy = {
   systemSettings: "System Settings",
   themeMode: "Theme Mode",
   themeDescription: "Set the default light or dark appearance",
-  backgroundColor: "Background Color",
-  backgroundDescription:
-    "Apply one background across notes, settings, and panels",
   startupBehavior: "Startup Behavior",
   startupDescription: "Start Idea Notes after system login",
   trashRetention: "Trash Retention",
