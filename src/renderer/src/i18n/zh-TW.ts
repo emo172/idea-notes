@@ -77,6 +77,7 @@ export const zhTW: AppCopy = {
   deleteConfirmTitle: "確認永久刪除？",
   deleteConfirmBody: "刪除後無法恢復",
   cancel: "取消",
+  confirm: "確認",
   confirmDelete: "確認",
   editNote: "編輯筆記",
   moreActions: "更多操作",

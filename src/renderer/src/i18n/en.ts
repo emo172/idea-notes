@@ -77,6 +77,7 @@ export const en: AppCopy = {
   deleteConfirmTitle: "Delete permanently?",
   deleteConfirmBody: "This cannot be undone",
   cancel: "Cancel",
+  confirm: "Confirm",
   confirmDelete: "Confirm delete",
   editNote: "Edit Note",
   moreActions: "More actions",

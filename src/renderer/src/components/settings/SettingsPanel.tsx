@@ -34,7 +34,7 @@ interface SettingsPanelProps {
     settings: Partial<IdeaNotesData["settings"]>,
   ) => Promise<void>;
   onStartupChange: (enabled: boolean) => Promise<void>;
-  onResetSettings: () => Promise<void>;
+  onResetSettings: () => void;
   onBack: () => void;
 }
 

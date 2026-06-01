@@ -77,6 +77,7 @@ export const zhCN: AppCopy = {
   deleteConfirmTitle: "确认彻底删除？",
   deleteConfirmBody: "删除后无法恢复",
   cancel: "取消",
+  confirm: "确认",
   confirmDelete: "确认",
   editNote: "编辑笔记",
   moreActions: "更多操作",

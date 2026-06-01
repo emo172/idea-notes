@@ -77,6 +77,7 @@ export interface AppCopy {
   deleteConfirmTitle: string;
   deleteConfirmBody: string;
   cancel: string;
+  confirm: string;
   confirmDelete: string;
   editNote: string;
   moreActions: string;

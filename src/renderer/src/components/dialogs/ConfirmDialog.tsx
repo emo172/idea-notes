@@ -37,11 +37,7 @@ export function ConfirmDialog({
     : "confirm-panel";
   const actions = (
     <>
-      <AppButton
-        className="confirm-cancel-button"
-        icon={<XIcon weight="bold" />}
-        onClick={onCancel}
-      >
+      <AppButton icon={<XIcon weight="bold" />} onClick={onCancel}>
         {copy.cancel}
       </AppButton>
       <AppButton

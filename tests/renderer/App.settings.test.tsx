@@ -14,6 +14,29 @@ import App from "../../src/renderer/src/app/IdeaNotesApp";
 import { settingsCopy } from "../../src/renderer/src/i18n";
 import { BASE_TIME, RENDERER_SRC, installApi } from "./testUtils";
 
+function getConfirmDialogButtonSignature(dialog: HTMLElement): {
+  actionsClassName: string;
+  buttonLabels: string[];
+} {
+  const actions = dialog.querySelector(".confirm-actions") as HTMLElement;
+  const actionButtons = within(actions).getAllByRole("button");
+
+  return {
+    actionsClassName: actions.className,
+    buttonLabels: actionButtons.map(
+      (button) => button.textContent?.trim() ?? "",
+    ),
+  };
+}
+
+function getSettingsResetButton(): HTMLElement {
+  const settingsHead = screen
+    .getByRole("heading", { name: "设置中心" })
+    .closest(".settings-head") as HTMLElement;
+
+  return within(settingsHead).getByRole("button", { name: "重置" });
+}
+
 describe("App settings and i18n", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -42,6 +65,94 @@ describe("App settings and i18n", () => {
     expect(screen.getByRole("heading", { name: "系统设置" })).toBeTruthy();
     expect(screen.getByText("系统登录后自动启动 Idea Notes")).toBeTruthy();
     expect(screen.getByText("到期后自动清理回收站中的笔记")).toBeTruthy();
+  });
+
+  it("设置重置使用应用内确认弹窗并按通用确认弹窗样式展示按钮", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings = {
+      ...defaultSettings,
+      themeMode: "dark",
+      backgroundColor: "#111827",
+      startup: true,
+      trashAutoDelete: "30",
+    };
+    const { api, saved } = installApi(data);
+    api.setStartup = vi.fn(async () => true);
+    const confirmSpy = vi.spyOn(window, "confirm");
+    const resetDialogName = "确认重置所有设置？";
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+
+    await user.click(getSettingsResetButton());
+
+    const dialog = await screen.findByRole("dialog", {
+      name: resetDialogName,
+    });
+    expect(confirmSpy).not.toHaveBeenCalled();
+    expect(dialog.classList.contains("settings-reset-confirm-panel")).toBe(
+      true,
+    );
+    const signature = getConfirmDialogButtonSignature(dialog);
+    expect(signature.actionsClassName).toBe("dialog-actions confirm-actions");
+    expect(signature.buttonLabels).toEqual(["取消", "确认"]);
+
+    await user.click(within(dialog).getByRole("button", { name: "取消" }));
+    expect(screen.queryByRole("dialog", { name: resetDialogName })).toBeNull();
+    expect(api.saveData).not.toHaveBeenCalled();
+
+    await user.click(getSettingsResetButton());
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: resetDialogName,
+    });
+    await user.click(
+      within(confirmDialog).getByRole("button", { name: "确认" }),
+    );
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(api.setStartup).toHaveBeenCalledWith(defaultSettings.startup);
+    expect(saved.at(-1)?.settings).toEqual({
+      ...defaultSettings,
+      startup: true,
+    });
+  });
+
+  it("设置重置和清空回收站确认弹窗共用按钮布局和样式", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "settings-style-trash-note",
+        status: "trash",
+        trashedAt: BASE_TIME,
+      },
+      data.notes[1],
+    ];
+    installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(getSettingsResetButton());
+    const resetDialog = await screen.findByRole("dialog", {
+      name: "确认重置所有设置？",
+    });
+    const resetSignature = getConfirmDialogButtonSignature(resetDialog);
+
+    await user.click(within(resetDialog).getByRole("button", { name: "取消" }));
+    await user.click(screen.getByRole("button", { name: "返回" }));
+    await user.click(screen.getByRole("button", { name: /回收站/ }));
+    await user.click(screen.getByRole("button", { name: "清空回收站" }));
+    const clearTrashDialog = await screen.findByRole("dialog", {
+      name: "确认清空回收站？",
+    });
+
+    expect(resetSignature).toEqual(
+      getConfirmDialogButtonSignature(clearTrashDialog),
+    );
   });
 
   it("语言设置会立即切换设置页文案并持久化", async () => {
@@ -80,7 +191,6 @@ describe("App settings and i18n", () => {
 
   it("语言切换后重置确认使用当前语言", async () => {
     const { api } = installApi(getDefaultData(BASE_TIME));
-    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
     const user = userEvent.setup();
 
     render(<App />);
@@ -100,7 +210,11 @@ describe("App settings and i18n", () => {
       within(settingsHead).getByRole("button", { name: "Reset" }),
     );
 
-    expect(confirmSpy).toHaveBeenCalledWith("Reset all settings?");
+    const dialog = screen.getByRole("dialog", { name: "Reset all settings?" });
+    expect(within(dialog).getByRole("button", { name: "Cancel" })).toBeTruthy();
+    expect(
+      within(dialog).getByRole("button", { name: "Confirm" }),
+    ).toBeTruthy();
   });
 
   it("设置加载态文案集中在多语言配置中", () => {

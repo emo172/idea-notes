@@ -79,6 +79,8 @@ export default function App(): ReactElement {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<IdeaNote | null>(null);
   const [isClearTrashConfirmOpen, setIsClearTrashConfirmOpen] = useState(false);
+  const [isResetSettingsConfirmOpen, setIsResetSettingsConfirmOpen] =
+    useState(false);
   const [tagName, setTagName] = useState("");
   const [windowState, setWindowState] = useState<DesktopWindowState>({
     isAlwaysOnTop: false,
@@ -239,11 +241,11 @@ export default function App(): ReactElement {
     await persist(nextData);
   }
 
-  async function handleResetSettings(): Promise<void> {
+  async function handleConfirmResetSettings(): Promise<void> {
     if (!data) return;
-    if (!window.confirm(settingsCopy[currentLanguage].resetConfirm)) return;
     const startup = await window.ideaNotes.setStartup(defaultSettings.startup);
     await persist(updateSettings(data, { ...defaultSettings, startup }));
+    setIsResetSettingsConfirmOpen(false);
   }
 
   async function handleStartupChange(enabled: boolean): Promise<void> {
@@ -535,10 +537,21 @@ export default function App(): ReactElement {
           language={currentLanguage}
           onSettingsChange={handleSettingsChange}
           onStartupChange={handleStartupChange}
-          onResetSettings={handleResetSettings}
+          onResetSettings={() => setIsResetSettingsConfirmOpen(true)}
           onBack={() => setViewMode("active")}
         />
       ) : null}
+
+      {isResetSettingsConfirmOpen && (
+        <ConfirmDialog
+          title={settingsCopy[currentLanguage].resetConfirm}
+          copy={copy}
+          onCancel={() => setIsResetSettingsConfirmOpen(false)}
+          onConfirm={handleConfirmResetSettings}
+          panelClassName="settings-reset-confirm-panel"
+          confirmLabel={copy.confirm}
+        />
+      )}
 
       {isEditorOpen ? (
         <EditorDialog

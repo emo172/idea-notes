@@ -1,6 +1,6 @@
 /*
  * 对话框样式模块。
- * 服务通用弹窗外壳、确认弹窗和编辑器弹窗。
+ * 服务通用弹窗外壳、确认弹窗和设置重置确认弹窗。
  * 覆盖层必须从标题栏下方开始，避免遮挡窗口控制按钮。
  */
 .dialog-overlay {
@@ -50,4 +50,13 @@
 .dialog-actions .app-button {
   min-height: 34px;
   padding: 0 14px;
+}
+
+.settings-reset-confirm-panel {
+  width: min(480px, calc(100vw - 48px));
+  padding: 24px;
+}
+
+.settings-reset-confirm-panel h2 {
+  line-height: 1.35;
 }
