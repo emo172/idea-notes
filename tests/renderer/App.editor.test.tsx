@@ -128,17 +128,26 @@ describe("App editor", () => {
     expect(editorStyles).toContain(".editor-textarea {");
   });
 
-  it("使用全表面编辑器并通过返回按钮关闭", async () => {
+  it("使用全表面编辑器并通过取消按钮关闭", async () => {
     installApi(getDefaultData(BASE_TIME));
     const user = userEvent.setup();
 
-    render(<App />);
+    const { container } = render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "新建" }));
     expect(screen.getByPlaceholderText("输入标题...")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "返回" })).toBeTruthy();
+    const cancelButton = screen.getByRole("button", { name: "取消" });
+    const saveButton = screen.getByRole("button", { name: "保存" });
+    const actionButtons = container.querySelectorAll(".editor-actions button");
 
-    await user.click(screen.getByRole("button", { name: "返回" }));
+    expect(Array.from(actionButtons)).toEqual([cancelButton, saveButton]);
+    expect(cancelButton.classList.contains("editor-cancel-action")).toBe(true);
+    expect(cancelButton.querySelector(".editor-cancel-icon")).toBeTruthy();
+    expect(cancelButton.querySelector(".editor-back-icon")).toBeNull();
+    expect(saveButton.classList.contains("editor-save-action")).toBe(true);
+    expect(screen.queryByRole("button", { name: "返回" })).toBeNull();
+
+    await user.click(cancelButton);
     expect(screen.queryByPlaceholderText("输入标题...")).toBeNull();
   });
 });

@@ -35,7 +35,23 @@
 .editor-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+  padding: 14px 18px 16px;
+  border-top: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface), var(--bg) 18%);
+}
+
+.editor-action-button {
+  min-width: 112px;
+}
+
+.editor-cancel-action {
+  color: var(--fg-2);
+}
+
+.editor-save-action {
+  min-width: 124px;
 }
 
 .editor-body {

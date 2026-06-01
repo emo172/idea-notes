@@ -155,11 +155,11 @@ describe("App shell navigation and buttons", () => {
     }
 
     await user.click(newButton);
-    for (const label of ["返回", "保存"]) {
+    for (const label of ["取消", "保存"]) {
       const button = screen.getByRole("button", { name: label });
       expect(button.classList.contains("app-button")).toBe(true);
       expect(button.classList.contains("app-button-size-md")).toBe(true);
-      expect(button.classList.contains("editor-action-button")).toBe(false);
+      expect(button.classList.contains("editor-action-button")).toBe(true);
       expect(button.querySelector(".app-button-icon svg")).toBeTruthy();
     }
   });
@@ -274,7 +274,9 @@ describe("App shell navigation and buttons", () => {
     expect(styles).toContain(".app-button-size-md");
     expect(styles).toContain("width: 100px;");
     expect(styles).toContain("height: 40px;");
-    expect(styles).not.toContain(".editor-action-button");
+    expect(styles).toContain(".editor-action-button");
+    expect(styles).toContain(".editor-cancel-action");
+    expect(styles).toContain(".editor-save-action");
     expect(styles).not.toContain("width: 104px;");
     expect(styles).toContain("justify-content: flex-start;");
     expect(styles).toContain("margin-left: auto;");

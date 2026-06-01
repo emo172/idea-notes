@@ -284,7 +284,7 @@ describe("App settings and i18n", () => {
     expect(screen.getByRole("heading", { name: "New Note" })).toBeTruthy();
     expect(screen.getByLabelText("Title")).toBeTruthy();
     expect(screen.getByPlaceholderText("Enter title...")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "Back" }));
+    await user.click(screen.getByRole("button", { name: "Cancel" }));
 
     await user.click(screen.getByRole("button", { name: "Tag Settings" }));
     expect(screen.getByRole("heading", { name: "Tag Settings" })).toBeTruthy();

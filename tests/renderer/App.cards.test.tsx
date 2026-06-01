@@ -276,7 +276,7 @@ describe("App note cards", () => {
     await user.click(screen.getAllByRole("button", { name: "编辑笔记" })[0]);
     expect(screen.getByRole("heading", { name: "编辑笔记" })).toBeTruthy();
     expect(screen.getByDisplayValue("重构 Desktop App 导航栏")).toBeTruthy();
-    await user.click(screen.getByRole("button", { name: "返回" }));
+    await user.click(screen.getByRole("button", { name: "取消" }));
 
     await user.click(screen.getAllByRole("button", { name: "更多操作" })[0]);
     const menu = screen.getByRole("menu", { name: "更多操作" });
