@@ -303,4 +303,30 @@ describe("App shell navigation and buttons", () => {
     expect(styles).not.toContain(".confirm-actions button");
     expect(styles).not.toContain(".btn-primary {");
   });
+
+  it("确认弹窗和编辑器弹窗共用 DialogShell 外壳", () => {
+    const dialogShellPath = resolve(
+      RENDERER_SRC,
+      "components/dialogs/DialogShell.tsx",
+    );
+    const confirmDialogSource = readFileSync(
+      resolve(RENDERER_SRC, "components/dialogs/ConfirmDialog.tsx"),
+      "utf8",
+    );
+    const editorDialogSource = readFileSync(
+      resolve(RENDERER_SRC, "components/editor/EditorDialog.tsx"),
+      "utf8",
+    );
+    const styles = readRendererStyles();
+
+    expect(existsSync(dialogShellPath)).toBe(true);
+    expect(confirmDialogSource).toContain("DialogShell");
+    expect(editorDialogSource).toContain("DialogShell");
+    expect(styles).toContain(".dialog-overlay");
+    expect(styles).toContain(".dialog-panel");
+    expect(styles).toContain(".dialog-head");
+    expect(styles).toContain(".dialog-actions");
+    expect(confirmDialogSource).not.toContain('className="confirm-overlay"');
+    expect(editorDialogSource).not.toContain('className="editor-overlay"');
+  });
 });
