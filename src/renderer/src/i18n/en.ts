@@ -49,6 +49,8 @@ export const en: AppCopy = {
   tagSettings: "Tag Settings",
   toolbar: "Note Filter Toolbar",
   sidebarToggle: "Collapse or expand sidebar",
+  expand: "Expand",
+  collapse: "Collapse",
   search: "Search",
   searchPlaceholder: "Search title or body",
   priority: "Priority",

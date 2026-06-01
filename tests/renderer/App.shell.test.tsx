@@ -37,12 +37,18 @@ describe("App shell navigation and buttons", () => {
 
     await screen.findByText("重构 Desktop App 导航栏");
     expect(container.querySelector(".app-body.sidebar-collapsed")).toBeNull();
+    const sidebarToggle = screen.getByRole("button", {
+      name: "收起/展开侧栏",
+    });
+    expect(sidebarToggle.getAttribute("title")).toBe("收起");
 
-    await user.click(screen.getByRole("button", { name: "收起/展开侧栏" }));
+    await user.click(sidebarToggle);
     expect(container.querySelector(".app-body.sidebar-collapsed")).toBeTruthy();
+    expect(sidebarToggle.getAttribute("title")).toBe("展开");
 
-    await user.click(screen.getByRole("button", { name: "收起/展开侧栏" }));
+    await user.click(sidebarToggle);
     expect(container.querySelector(".app-body.sidebar-collapsed")).toBeNull();
+    expect(sidebarToggle.getAttribute("title")).toBe("收起");
   });
 
   it("设置中心支持返回笔记列表", async () => {

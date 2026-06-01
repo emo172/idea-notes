@@ -294,6 +294,7 @@ export default function App(): ReactElement {
   const pinButtonLabel = windowState.isAlwaysOnTop
     ? copy.cancelAlwaysOnTop
     : copy.alwaysOnTop;
+  const sidebarToggleTitle = isSidebarCollapsed ? copy.expand : copy.collapse;
 
   return (
     <div className={appClassName} style={appStyle}>
@@ -428,6 +429,7 @@ export default function App(): ReactElement {
                   className="icon-btn sidebar-toggle"
                   variant="icon"
                   aria-label={copy.sidebarToggle}
+                  title={sidebarToggleTitle}
                   icon={<SidebarToggleIcon />}
                   onClick={() =>
                     setIsSidebarCollapsed((collapsed) => !collapsed)

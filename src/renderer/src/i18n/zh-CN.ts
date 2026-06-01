@@ -49,6 +49,8 @@ export const zhCN: AppCopy = {
   tagSettings: "标签设置",
   toolbar: "笔记筛选工具栏",
   sidebarToggle: "收起/展开侧栏",
+  expand: "展开",
+  collapse: "收起",
   search: "搜索",
   searchPlaceholder: "搜索标题或正文",
   priority: "优先级",

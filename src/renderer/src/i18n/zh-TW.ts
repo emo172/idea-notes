@@ -49,6 +49,8 @@ export const zhTW: AppCopy = {
   tagSettings: "標籤設定",
   toolbar: "筆記篩選工具列",
   sidebarToggle: "收合/展開側欄",
+  expand: "展開",
+  collapse: "折疊",
   search: "搜尋",
   searchPlaceholder: "搜尋標題或正文",
   priority: "優先級",

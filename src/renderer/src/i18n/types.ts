@@ -49,6 +49,8 @@ export interface AppCopy {
   tagSettings: string;
   toolbar: string;
   sidebarToggle: string;
+  expand: string;
+  collapse: string;
   search: string;
   searchPlaceholder: string;
   priority: string;
