@@ -79,4 +79,45 @@ describe("主进程本地存储", () => {
       readFile(join(userDataDir, dataFileName), "utf8"),
     ).resolves.toBe(brokenJson);
   });
+
+  it("读取旧标签对象数据时迁移为字符串标签并补齐设置", async () => {
+    const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    const legacyData = {
+      ...defaultData,
+      tags: [
+        { name: "工作", color: "#2563eb", group: "默认" },
+        { name: "灵感", color: "#7c3aed", group: "默认" },
+      ],
+      notes: defaultData.notes.map((note) =>
+        note.id === "seed-navigation"
+          ? {
+              ...note,
+              tags: [{ name: "工作", color: "#2563eb", group: "默认" }, "待办"],
+            }
+          : note,
+      ),
+      settings: {
+        themeMode: "light",
+        startup: false,
+        trashAutoDelete: "never",
+        language: "zh-CN",
+      },
+    };
+    await writeFile(
+      join(userDataDir, dataFileName),
+      JSON.stringify(legacyData, null, 2),
+      "utf8",
+    );
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const persisted = JSON.parse(
+      await readFile(join(userDataDir, dataFileName), "utf8"),
+    );
+
+    expect(data.tags).toEqual(["工作", "灵感"]);
+    expect(data.notes[0].tags).toEqual(["工作", "待办"]);
+    expect(data.settings.backgroundColor).toBe("#f8fafc");
+    expect(persisted).toEqual(data);
+  });
 });
