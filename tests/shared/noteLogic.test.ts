@@ -7,6 +7,7 @@
 import { describe, expect, it } from "vitest";
 import { defaultSettings } from "@shared/defaultData";
 import {
+  buildChecklistItems,
   createNote,
   deleteTag,
   filterAndSortNotes,
@@ -170,6 +171,19 @@ describe("noteLogic", () => {
     expect(remaining.map((item) => item.id)).toEqual([
       "active-note",
       "completed-note",
+    ]);
+  });
+  it("从正文构建清单时复用拆行和勾选继承规则", () => {
+    const checklist = buildChecklistItems(
+      " 第一行 \n\n第二行\n第三行 ",
+      "note-checklist",
+      (text, index) => index === 1 && text === "第二行",
+    );
+
+    expect(checklist).toEqual([
+      { id: "note-checklist-item-1", text: "第一行", checked: false },
+      { id: "note-checklist-item-2", text: "第二行", checked: true },
+      { id: "note-checklist-item-3", text: "第三行", checked: false },
     ]);
   });
 });

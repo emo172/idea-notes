@@ -2,6 +2,7 @@
 // 作用：
 // 1. 提供编辑器草稿默认值和笔记到草稿的转换逻辑。
 // 2. 保存编辑结果时重建清单，并尽量保留相同位置同文本清单项的勾选状态。
+import { buildChecklistItems } from "@shared/noteLogic";
 import type { IdeaNote, NoteDraft } from "@shared/types";
 
 export const initialDraft: NoteDraft = {
@@ -27,18 +28,14 @@ export function draftToUpdatedNote(
   draft: NoteDraft,
   fallbackTitle: string,
 ): IdeaNote {
-  const checklist = draft.body
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((text, index) => ({
-      id: `${note.id}-item-${index + 1}`,
-      text,
-      checked:
-        note.checklist[index]?.text === text
-          ? note.checklist[index].checked
-          : false,
-    }));
+  const checklist = buildChecklistItems(
+    draft.body,
+    note.id,
+    (text, index) =>
+      note.checklist[index]?.text === text
+        ? note.checklist[index].checked
+        : false,
+  );
 
   return {
     ...note,
