@@ -278,7 +278,7 @@ describe("App settings and i18n", () => {
     expect(screen.getByPlaceholderText("Search title or body")).toBeTruthy();
     expect(screen.getByText("Priority")).toBeTruthy();
     expect(screen.getByText("Sort")).toBeTruthy();
-    expect(screen.getByRole("button", { name: "Reset" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Reset filters" })).toBeTruthy();
 
     await user.click(screen.getByRole("button", { name: "New" }));
     expect(screen.getByRole("heading", { name: "New Note" })).toBeTruthy();

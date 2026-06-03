@@ -15,7 +15,14 @@ import type {
 export const BASE_TIME = Date.parse("2026-05-29T08:00:00.000Z");
 export const RENDERER_SRC = resolve("src/renderer/src");
 
-export function installApi(data: IdeaNotesData): {
+interface InstallApiOptions {
+  getData?: IdeaNotesApi["getData"];
+}
+
+export function installApi(
+  data: IdeaNotesData,
+  options: InstallApiOptions = {},
+): {
   api: IdeaNotesApi;
   saved: IdeaNotesData[];
 } {
@@ -26,7 +33,7 @@ export function installApi(data: IdeaNotesData): {
     isMaximized: false,
   };
   const api: IdeaNotesApi = {
-    getData: vi.fn(async () => data),
+    getData: vi.fn(options.getData ?? (async () => data)),
     saveData: vi.fn(async (nextData) => {
       saved.push(nextData);
       return nextData;

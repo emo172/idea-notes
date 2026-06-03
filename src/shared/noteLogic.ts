@@ -19,14 +19,24 @@ interface MutationOptions {
   id?: string;
 }
 
+interface DuplicateNoteOptions extends MutationOptions {
+  titleSuffix?: string;
+}
+
 const priorityRank = {
   high: 0,
   medium: 1,
   low: 2,
 } as const;
 
+const dayInMs = 86_400_000;
+
 // 正文中的每个非空行都会转为清单项，这是编辑器“按行生成任务”的核心规则。
-function buildChecklist(body: string, noteId: string): IdeaNote["checklist"] {
+export function buildChecklistItems(
+  body: string,
+  noteId: string,
+  getChecked: (text: string, index: number) => boolean = () => false,
+): IdeaNote["checklist"] {
   return body
     .split("\n")
     .map((line) => line.trim())
@@ -34,7 +44,7 @@ function buildChecklist(body: string, noteId: string): IdeaNote["checklist"] {
     .map((text, index) => ({
       id: `${noteId}-item-${index + 1}`,
       text,
-      checked: false,
+      checked: getChecked(text, index),
     }));
 }
 
@@ -59,7 +69,7 @@ export function createNote(
     priority: input.priority,
     tags: input.tags,
     status: "active",
-    checklist: buildChecklist(input.body, id),
+    checklist: buildChecklistItems(input.body, id),
     dueAt: input.dueAt,
     createdAt: now,
     updatedAt: now,
@@ -77,17 +87,37 @@ export function saveNote(
 
 export function duplicateNote(
   note: IdeaNote,
-  options: MutationOptions = {},
+  options: DuplicateNoteOptions = {},
 ): IdeaNote {
   // 复制笔记保留原内容和状态，只更新身份、标题后缀与时间戳。
   const now = options.now ?? Date.now();
   return {
     ...note,
     id: options.id ?? `note-${now}`,
-    title: `${note.title} 副本`,
+    title: `${note.title}${options.titleSuffix ?? ""}`,
     createdAt: now,
     updatedAt: now,
   };
+}
+
+export function purgeExpiredTrash(
+  data: IdeaNotesData,
+  now = Date.now(),
+): IdeaNotesData {
+  // 回收站自动清理只消费明确的天数设置；never 和缺失 trashedAt 都保留原数据。
+  if (data.settings.trashAutoDelete === "never") return data;
+
+  const retentionDays = Number(data.settings.trashAutoDelete);
+  if (!Number.isFinite(retentionDays) || retentionDays <= 0) return data;
+  const retentionMs = retentionDays * dayInMs;
+  const notes = data.notes.filter(
+    (note) =>
+      note.status !== "trash" ||
+      note.trashedAt === undefined ||
+      note.trashedAt > now - retentionMs,
+  );
+
+  return notes.length === data.notes.length ? data : { ...data, notes };
 }
 
 export function getCompletion(_note: IdeaNote): CompletionSummary {

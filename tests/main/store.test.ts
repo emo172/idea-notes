@@ -3,11 +3,12 @@
 // 1. 用临时 userData 目录验证首次读取会创建默认数据文件。
 // 2. 验证保存数据会写入稳定 JSON，并清理临时写入文件。
 // 3. 验证损坏 JSON 不会被默认数据静默覆盖，避免吞掉用户数据问题。
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultData } from "@shared/defaultData";
+import type { IdeaNotesData } from "@shared/types";
 
 const electronMock = vi.hoisted(() => ({
   getPath: vi.fn<() => string>(),
@@ -21,6 +22,32 @@ vi.mock("electron", () => ({
 
 const dataFileName = "idea-notes-data.json";
 let userDataDir = "";
+const baseTime = Date.parse("2026-05-29T08:00:00.000Z");
+
+function dataWithTrashRetention(now: number): IdeaNotesData {
+  const data = getDefaultData(now);
+  return {
+    ...data,
+    settings: { ...data.settings, trashAutoDelete: "7" },
+    notes: [
+      ...data.notes,
+      {
+        ...data.notes[0],
+        id: "fresh-trash",
+        title: "未过期回收站笔记",
+        status: "trash",
+        trashedAt: now - 6 * 86_400_000,
+      },
+      {
+        ...data.notes[0],
+        id: "expired-trash",
+        title: "过期回收站笔记",
+        status: "trash",
+        trashedAt: now - 7 * 86_400_000,
+      },
+    ],
+  };
+}
 
 async function importStore(): Promise<typeof import("../../src/main/store")> {
   vi.resetModules();
@@ -67,6 +94,63 @@ describe("主进程本地存储", () => {
     await expect(
       readFile(join(userDataDir, `${dataFileName}.tmp`), "utf8"),
     ).rejects.toMatchObject({ code: "ENOENT" });
+  });
+
+  it("读取数据时清理过期回收站笔记并写回磁盘", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(baseTime);
+    const storedData = dataWithTrashRetention(baseTime);
+    await writeFile(
+      join(userDataDir, dataFileName),
+      JSON.stringify(storedData, null, 2),
+      "utf8",
+    );
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const persisted = JSON.parse(
+      await readFile(join(userDataDir, dataFileName), "utf8"),
+    ) as IdeaNotesData;
+
+    expect(data.notes.map((note) => note.id)).toContain("fresh-trash");
+    expect(data.notes.map((note) => note.id)).not.toContain("expired-trash");
+    expect(persisted).toEqual(data);
+  });
+
+  it("读取有效数据时不因清理写回失败阻断加载", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(baseTime);
+    const storedData = dataWithTrashRetention(baseTime);
+    await writeFile(
+      join(userDataDir, dataFileName),
+      JSON.stringify(storedData, null, 2),
+      "utf8",
+    );
+    await mkdir(join(userDataDir, `${dataFileName}.tmp`));
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const persisted = JSON.parse(
+      await readFile(join(userDataDir, dataFileName), "utf8"),
+    ) as IdeaNotesData;
+
+    expect(data.notes.map((note) => note.id)).toContain("fresh-trash");
+    expect(data.notes.map((note) => note.id)).not.toContain("expired-trash");
+    expect(persisted).toEqual(storedData);
+  });
+
+  it("保存数据时清理过期回收站笔记并返回清理后的数据", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(baseTime);
+    const { saveData } = await importStore();
+    const data = dataWithTrashRetention(baseTime);
+
+    const result = await saveData(data);
+    const persisted = JSON.parse(
+      await readFile(join(userDataDir, dataFileName), "utf8"),
+    ) as IdeaNotesData;
+
+    expect(result).not.toBe(data);
+    expect(result.notes.map((note) => note.id)).toContain("fresh-trash");
+    expect(result.notes.map((note) => note.id)).not.toContain("expired-trash");
+    expect(persisted).toEqual(result);
   });
 
   it("读取损坏 JSON 时抛出错误且不覆盖原文件", async () => {

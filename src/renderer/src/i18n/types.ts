@@ -65,6 +65,9 @@ export interface AppCopy {
   clearTrashConfirmBody: string;
   emptyNotes: string;
   loadingNotes: string;
+  loadErrorTitle: string;
+  loadErrorBody: string;
+  retryLoad: string;
   loadingTags: string;
   noDueDate: string;
   unnamedNote: string;
@@ -75,6 +78,7 @@ export interface AppCopy {
   resume: string;
   markComplete: string;
   duplicate: string;
+  duplicateTitleSuffix: string;
   delete: string;
   deleteConfirmTitle: string;
   deleteConfirmBody: string;

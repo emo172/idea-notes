@@ -6,7 +6,7 @@
 // 3. 按功能域拆分测试，避免单个文件过大。
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultData } from "@shared/defaultData";
@@ -18,6 +18,58 @@ import {
   readCssRuleBlock,
   readRendererStyles,
 } from "./testUtils";
+
+type MatchMediaChangeHandler = (event: MediaQueryListEvent) => void;
+
+function installMatchMedia(matches: boolean): {
+  addEventListener: ReturnType<typeof vi.fn>;
+  removeEventListener: ReturnType<typeof vi.fn>;
+  dispatchChange: (matches: boolean) => void;
+} {
+  let currentMatches = matches;
+  const listeners = new Set<MatchMediaChangeHandler>();
+  const addEventListener = vi.fn(
+    (eventName: string, listener: MatchMediaChangeHandler) => {
+      if (eventName === "change") listeners.add(listener);
+    },
+  );
+  const removeEventListener = vi.fn(
+    (eventName: string, listener: MatchMediaChangeHandler) => {
+      if (eventName === "change") listeners.delete(listener);
+    },
+  );
+  const mediaQueryList = {
+    media: "(prefers-color-scheme: dark)",
+    get matches() {
+      return currentMatches;
+    },
+    onchange: null,
+    addEventListener,
+    removeEventListener,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  } as unknown as MediaQueryList;
+
+  Object.defineProperty(window, "matchMedia", {
+    configurable: true,
+    value: vi.fn(() => mediaQueryList),
+  });
+
+  return {
+    addEventListener,
+    removeEventListener,
+    dispatchChange: (nextMatches) => {
+      currentMatches = nextMatches;
+      for (const listener of listeners) {
+        listener({
+          matches: nextMatches,
+          media: mediaQueryList.media,
+        } as MediaQueryListEvent);
+      }
+    },
+  };
+}
 
 describe("App theme and style contracts", () => {
   beforeEach(() => {
@@ -79,6 +131,47 @@ describe("App theme and style contracts", () => {
     ) as HTMLElement;
     expect(appWindow).toBeTruthy();
     expect(appWindow.style.backgroundColor).toBe("");
+  });
+
+  it("system 主题按系统暗色偏好渲染暗色根容器", async () => {
+    installMatchMedia(true);
+    const systemData = getDefaultData(BASE_TIME);
+    systemData.settings = {
+      ...systemData.settings,
+      themeMode: "system",
+    };
+    installApi(systemData);
+
+    const { container } = render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    expect(container.querySelector(".app-window")?.classList.contains("dark"))
+      .toBe(true);
+  });
+
+  it("system 主题跟随系统偏好变化并在卸载时注销监听", async () => {
+    const matchMedia = installMatchMedia(true);
+    const systemData = getDefaultData(BASE_TIME);
+    systemData.settings = {
+      ...systemData.settings,
+      themeMode: "system",
+    };
+    installApi(systemData);
+
+    const { container, unmount } = render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    const appWindow = container.querySelector(".app-window") as HTMLElement;
+    expect(appWindow.classList.contains("dark")).toBe(true);
+
+    act(() => matchMedia.dispatchChange(false));
+
+    await waitFor(() => expect(appWindow.classList.contains("dark")).toBe(false));
+    unmount();
+    expect(matchMedia.removeEventListener).toHaveBeenCalledWith(
+      "change",
+      matchMedia.addEventListener.mock.calls[0]?.[1],
+    );
   });
 
   it("暗色模式的笔记状态页面忽略自定义浅色背景", async () => {

@@ -60,6 +60,7 @@ import {
 } from "../utils/noteDraft";
 
 type ViewMode = NoteStatus | "settings" | "tag-settings";
+const darkModeQuery = "(prefers-color-scheme: dark)";
 
 const statusIcons: Record<NoteStatus, ReactElement> = {
   active: <CheckCircleIcon weight="bold" />,
@@ -67,8 +68,20 @@ const statusIcons: Record<NoteStatus, ReactElement> = {
   trash: <TrashIcon weight="bold" />,
 };
 
+function getSystemPrefersDark(): boolean {
+  return (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(darkModeQuery).matches
+  );
+}
+
 export default function App(): ReactElement {
   const [data, setData] = useState<IdeaNotesData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadError, setHasLoadError] = useState(false);
+  const [systemPrefersDark, setSystemPrefersDark] = useState(
+    getSystemPrefersDark,
+  );
   const [viewMode, setViewMode] = useState<ViewMode>("active");
   const [searchQuery, setSearchQuery] = useState("");
   const [priority, setPriority] = useState<NotePriority | "all">("all");
@@ -93,14 +106,39 @@ export default function App(): ReactElement {
     document.documentElement.lang = currentLanguage;
   }, [currentLanguage]);
 
+  async function loadData(shouldCommit = () => true): Promise<void> {
+    setIsLoading(true);
+    setHasLoadError(false);
+    try {
+      const loadedData = await window.ideaNotes.getData();
+      if (!shouldCommit()) return;
+      setData(loadedData);
+    } catch {
+      if (!shouldCommit()) return;
+      setData(null);
+      setHasLoadError(true);
+    } finally {
+      if (shouldCommit()) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
-    window.ideaNotes.getData().then((loadedData) => {
-      if (mounted) setData(loadedData);
-    });
+    void loadData(() => mounted);
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mediaQuery = window.matchMedia(darkModeQuery);
+    const handleChange = (event: MediaQueryListEvent): void => {
+      setSystemPrefersDark(event.matches);
+    };
+    setSystemPrefersDark(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   // 设置页和标签设置页会覆盖主内容区，但底层笔记列表仍保持进行中筛选状态。
@@ -186,9 +224,11 @@ export default function App(): ReactElement {
 
   async function handleDuplicateNote(note: IdeaNote): Promise<void> {
     if (!data) return;
-    const copy = duplicateNote(note);
-    await persist({ ...data, notes: [copy, ...data.notes] });
-    setViewMode(copy.status);
+    const copiedNote = duplicateNote(note, {
+      titleSuffix: copy.duplicateTitleSuffix,
+    });
+    await persist({ ...data, notes: [copiedNote, ...data.notes] });
+    setViewMode(copiedNote.status);
   }
 
   async function handlePermanentDelete(noteId: string): Promise<void> {
@@ -283,11 +323,12 @@ export default function App(): ReactElement {
     trash: notes.filter((note) => note.status === "trash").length,
   };
 
-  const appClassName =
-    data?.settings.themeMode === "dark" ? "app-window dark" : "app-window";
+  const isDarkTheme =
+    data?.settings.themeMode === "dark" ||
+    (data?.settings.themeMode === "system" && systemPrefersDark);
+  const appClassName = isDarkTheme ? "app-window dark" : "app-window";
   const backgroundColor = data?.settings.backgroundColor;
-  const appStyle =
-    data?.settings.themeMode === "dark" ? undefined : { backgroundColor };
+  const appStyle = isDarkTheme ? undefined : { backgroundColor };
   const appBodyClassName = isSidebarCollapsed
     ? "app-body sidebar-collapsed"
     : "app-body";
@@ -500,7 +541,19 @@ export default function App(): ReactElement {
                 className="notes-list"
                 aria-label={copy.statusLabels[noteViewMode]}
               >
-                {data ? (
+                {hasLoadError ? (
+                  <div className="empty-state">
+                    <strong>{copy.loadErrorTitle}</strong>
+                    <p>{copy.loadErrorBody}</p>
+                    <AppButton
+                      className="btn-subtle"
+                      icon={<ArrowCounterClockwiseIcon weight="bold" />}
+                      onClick={() => loadData()}
+                    >
+                      {copy.retryLoad}
+                    </AppButton>
+                  </div>
+                ) : data ? (
                   visibleNotes.length > 0 ? (
                     visibleNotes.map((note) => (
                       <NoteCard
@@ -524,8 +577,10 @@ export default function App(): ReactElement {
                   ) : (
                     <div className="empty-state">{copy.emptyNotes}</div>
                   )
-                ) : (
+                ) : isLoading ? (
                   <div className="empty-state">{copy.loadingNotes}</div>
+                ) : (
+                  <div className="empty-state">{copy.emptyNotes}</div>
                 )}
               </section>
             </>

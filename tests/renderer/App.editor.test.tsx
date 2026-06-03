@@ -83,6 +83,57 @@ describe("App editor", () => {
     expect(savedNote?.updatedAt).toBe(saveTime);
   });
 
+  it("编辑正文重建清单时保留相同位置同文本的勾选状态", async () => {
+    const initialData = getDefaultData(BASE_TIME);
+    const sourceNote = {
+      ...initialData.notes[0],
+      body: "保留任务\n改写前任务",
+      checklist: [
+        {
+          id: "seed-navigation-item-1",
+          text: "保留任务",
+          checked: true,
+        },
+        {
+          id: "seed-navigation-item-2",
+          text: "改写前任务",
+          checked: true,
+        },
+      ],
+    };
+    const { api, saved } = installApi({
+      ...initialData,
+      notes: [sourceNote, ...initialData.notes.slice(1)],
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(
+      await screen.findByRole("button", { name: sourceNote.title }),
+    );
+    await user.clear(screen.getByLabelText("正文"));
+    await user.type(screen.getByLabelText("正文"), "保留任务\n改写后任务");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    const savedNote = saved
+      .at(-1)
+      ?.notes.find((item) => item.id === sourceNote.id);
+    expect(savedNote?.checklist).toEqual([
+      {
+        id: "seed-navigation-item-1",
+        text: "保留任务",
+        checked: true,
+      },
+      {
+        id: "seed-navigation-item-2",
+        text: "改写后任务",
+        checked: false,
+      },
+    ]);
+  });
+
   it("新增笔记正文输入框默认显示三行编号并随换行扩展", async () => {
     const { api, saved } = installApi(getDefaultData(BASE_TIME));
     const user = userEvent.setup();

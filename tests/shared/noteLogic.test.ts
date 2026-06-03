@@ -7,13 +7,16 @@
 import { describe, expect, it } from "vitest";
 import { defaultSettings } from "@shared/defaultData";
 import {
+  buildChecklistItems,
   createNote,
   deleteTag,
+  duplicateNote,
   filterAndSortNotes,
   getCompletion,
   moveNoteToTrash,
   permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
+  purgeExpiredTrash,
   renameTag,
   restoreNoteFromTrash,
 } from "@shared/noteLogic";
@@ -170,6 +173,80 @@ describe("noteLogic", () => {
     expect(remaining.map((item) => item.id)).toEqual([
       "active-note",
       "completed-note",
+    ]);
+  });
+
+  it("按回收站保留天数删除过期回收站笔记", () => {
+    const now = baseTime + 10 * 86_400_000;
+    const active = note({ id: "active-note", status: "active" });
+    const missingTrashedAt = note({ id: "missing-trash-time", status: "trash" });
+    const freshTrash = note({
+      id: "fresh-trash",
+      status: "trash",
+      trashedAt: now - 6 * 86_400_000,
+    });
+    const expiredTrash = note({
+      id: "expired-trash",
+      status: "trash",
+      trashedAt: now - 7 * 86_400_000,
+    });
+    const data: IdeaNotesData = {
+      tags: [],
+      settings: { ...defaultSettings, trashAutoDelete: "7" },
+      notes: [active, missingTrashedAt, freshTrash, expiredTrash],
+    };
+
+    const cleaned = purgeExpiredTrash(data, now);
+
+    expect(cleaned.notes.map((item) => item.id)).toEqual([
+      "active-note",
+      "missing-trash-time",
+      "fresh-trash",
+    ]);
+    const neverData = { ...data, settings: defaultSettings };
+    expect(purgeExpiredTrash(neverData, now)).toBe(neverData);
+    const invalidRetentionData = {
+      ...data,
+      settings: { ...defaultSettings, trashAutoDelete: "invalid" },
+    };
+    expect(purgeExpiredTrash(invalidRetentionData, now)).toBe(
+      invalidRetentionData,
+    );
+  });
+
+  it("复制笔记支持调用方传入语言化标题后缀", () => {
+    const source = note({ id: "copy-source", title: "Desktop App navigation" });
+
+    const copied = duplicateNote(source, {
+      now: baseTime + 1,
+      id: "copy-target",
+      titleSuffix: " Copy",
+    });
+    const defaultCopied = duplicateNote(source, {
+      now: baseTime + 2,
+      id: "copy-default",
+    });
+
+    expect(copied).toMatchObject({
+      id: "copy-target",
+      title: "Desktop App navigation Copy",
+      createdAt: baseTime + 1,
+      updatedAt: baseTime + 1,
+    });
+    expect(defaultCopied.title).toBe("Desktop App navigation");
+  });
+
+  it("从正文构建清单时复用拆行和勾选继承规则", () => {
+    const checklist = buildChecklistItems(
+      " 第一行 \n\n第二行\n第三行 ",
+      "note-checklist",
+      (text, index) => index === 1 && text === "第二行",
+    );
+
+    expect(checklist).toEqual([
+      { id: "note-checklist-item-1", text: "第一行", checked: false },
+      { id: "note-checklist-item-2", text: "第二行", checked: true },
+      { id: "note-checklist-item-3", text: "第三行", checked: false },
     ]);
   });
 });

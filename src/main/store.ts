@@ -8,6 +8,7 @@ import { app } from "electron";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { defaultSettings, getDefaultData } from "@shared/defaultData";
+import { purgeExpiredTrash } from "@shared/noteLogic";
 import type { IdeaNotesData } from "@shared/types";
 
 // 数据文件放在 Electron userData 目录，避免写入安装目录或源码目录。
@@ -71,10 +72,15 @@ export async function readData(): Promise<IdeaNotesData> {
       await readFile(path, "utf8"),
     ) as IdeaNotesData;
     const normalizedData = normalizeData(storedData);
-    if (JSON.stringify(normalizedData) !== JSON.stringify(storedData)) {
-      await writeJsonFile(path, normalizedData);
+    const cleanedData = purgeExpiredTrash(normalizedData);
+    if (JSON.stringify(cleanedData) !== JSON.stringify(storedData)) {
+      try {
+        await writeJsonFile(path, cleanedData);
+      } catch {
+        // 读取路径不因迁移或清理写回失败阻断有效数据；下次启动可再次尝试写回。
+      }
     }
-    return normalizedData;
+    return cleanedData;
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;
     // 只有文件不存在时才创建默认数据；其它读写或解析错误交给上层暴露，避免静默吞数据。
@@ -87,6 +93,7 @@ export async function readData(): Promise<IdeaNotesData> {
 
 export async function saveData(data: IdeaNotesData): Promise<IdeaNotesData> {
   // 返回写入后的数据，方便 IPC handler 直接回传给 renderer 更新本地状态。
-  await writeJsonFile(dataPath(), data);
-  return data;
+  const cleanedData = purgeExpiredTrash(data);
+  await writeJsonFile(dataPath(), cleanedData);
+  return cleanedData;
 }
