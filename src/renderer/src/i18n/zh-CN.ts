@@ -59,7 +59,7 @@ export const zhCN: AppCopy = {
   sortImportant: "重要优先",
   sortNewest: "最近更新",
   sortProgress: "完成度",
-  resetFilters: "重置",
+  resetFilters: "重置筛选",
   clearTrash: "清空回收站",
   clearTrashConfirmTitle: "确认清空回收站？",
   clearTrashConfirmBody: "这会永久删除回收站中的全部笔记。",

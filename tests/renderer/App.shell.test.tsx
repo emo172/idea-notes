@@ -237,7 +237,7 @@ describe("App shell navigation and buttons", () => {
       expect(sortSelect.value).toBe("newest");
       expect(workTagButton.classList.contains("selected")).toBe(true);
 
-      await user.click(screen.getByRole("button", { name: "重置" }));
+      await user.click(screen.getByRole("button", { name: "重置筛选" }));
 
       expect(searchInput.value).toBe("");
       expect(prioritySelect.value).toBe("all");

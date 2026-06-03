@@ -59,7 +59,7 @@ export const en: AppCopy = {
   sortImportant: "Important first",
   sortNewest: "Recently updated",
   sortProgress: "Progress",
-  resetFilters: "Reset",
+  resetFilters: "Reset filters",
   clearTrash: "Empty Trash",
   clearTrashConfirmTitle: "Empty Trash?",
   clearTrashConfirmBody: "This will permanently delete every note in Trash.",
