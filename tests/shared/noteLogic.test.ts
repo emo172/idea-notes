@@ -15,6 +15,7 @@ import {
   moveNoteToTrash,
   permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
+  purgeExpiredTrash,
   renameTag,
   restoreNoteFromTrash,
 } from "@shared/noteLogic";
@@ -173,6 +174,38 @@ describe("noteLogic", () => {
       "completed-note",
     ]);
   });
+
+  it("按回收站保留天数删除过期回收站笔记", () => {
+    const now = baseTime + 10 * 86_400_000;
+    const active = note({ id: "active-note", status: "active" });
+    const missingTrashedAt = note({ id: "missing-trash-time", status: "trash" });
+    const freshTrash = note({
+      id: "fresh-trash",
+      status: "trash",
+      trashedAt: now - 6 * 86_400_000,
+    });
+    const expiredTrash = note({
+      id: "expired-trash",
+      status: "trash",
+      trashedAt: now - 7 * 86_400_000,
+    });
+    const data: IdeaNotesData = {
+      tags: [],
+      settings: { ...defaultSettings, trashAutoDelete: "7" },
+      notes: [active, missingTrashedAt, freshTrash, expiredTrash],
+    };
+
+    const cleaned = purgeExpiredTrash(data, now);
+
+    expect(cleaned.notes.map((item) => item.id)).toEqual([
+      "active-note",
+      "missing-trash-time",
+      "fresh-trash",
+    ]);
+    const neverData = { ...data, settings: defaultSettings };
+    expect(purgeExpiredTrash(neverData, now)).toBe(neverData);
+  });
+
   it("从正文构建清单时复用拆行和勾选继承规则", () => {
     const checklist = buildChecklistItems(
       " 第一行 \n\n第二行\n第三行 ",

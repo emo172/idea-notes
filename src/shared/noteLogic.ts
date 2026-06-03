@@ -25,6 +25,8 @@ const priorityRank = {
   low: 2,
 } as const;
 
+const dayInMs = 86_400_000;
+
 // 正文中的每个非空行都会转为清单项，这是编辑器“按行生成任务”的核心规则。
 export function buildChecklistItems(
   body: string,
@@ -92,6 +94,24 @@ export function duplicateNote(
     createdAt: now,
     updatedAt: now,
   };
+}
+
+export function purgeExpiredTrash(
+  data: IdeaNotesData,
+  now = Date.now(),
+): IdeaNotesData {
+  // 回收站自动清理只消费明确的天数设置；never 和缺失 trashedAt 都保留原数据。
+  if (data.settings.trashAutoDelete === "never") return data;
+
+  const retentionMs = Number(data.settings.trashAutoDelete) * dayInMs;
+  const notes = data.notes.filter(
+    (note) =>
+      note.status !== "trash" ||
+      note.trashedAt === undefined ||
+      note.trashedAt > now - retentionMs,
+  );
+
+  return notes.length === data.notes.length ? data : { ...data, notes };
 }
 
 export function getCompletion(_note: IdeaNote): CompletionSummary {
