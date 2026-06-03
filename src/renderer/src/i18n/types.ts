@@ -65,6 +65,9 @@ export interface AppCopy {
   clearTrashConfirmBody: string;
   emptyNotes: string;
   loadingNotes: string;
+  loadErrorTitle: string;
+  loadErrorBody: string;
+  retryLoad: string;
   loadingTags: string;
   noDueDate: string;
   unnamedNote: string;

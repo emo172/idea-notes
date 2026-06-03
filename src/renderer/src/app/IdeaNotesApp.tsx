@@ -69,6 +69,8 @@ const statusIcons: Record<NoteStatus, ReactElement> = {
 
 export default function App(): ReactElement {
   const [data, setData] = useState<IdeaNotesData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasLoadError, setHasLoadError] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>("active");
   const [searchQuery, setSearchQuery] = useState("");
   const [priority, setPriority] = useState<NotePriority | "all">("all");
@@ -93,11 +95,25 @@ export default function App(): ReactElement {
     document.documentElement.lang = currentLanguage;
   }, [currentLanguage]);
 
+  async function loadData(shouldCommit = () => true): Promise<void> {
+    setIsLoading(true);
+    setHasLoadError(false);
+    try {
+      const loadedData = await window.ideaNotes.getData();
+      if (!shouldCommit()) return;
+      setData(loadedData);
+    } catch {
+      if (!shouldCommit()) return;
+      setData(null);
+      setHasLoadError(true);
+    } finally {
+      if (shouldCommit()) setIsLoading(false);
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
-    window.ideaNotes.getData().then((loadedData) => {
-      if (mounted) setData(loadedData);
-    });
+    void loadData(() => mounted);
     return () => {
       mounted = false;
     };
@@ -500,7 +516,19 @@ export default function App(): ReactElement {
                 className="notes-list"
                 aria-label={copy.statusLabels[noteViewMode]}
               >
-                {data ? (
+                {hasLoadError ? (
+                  <div className="empty-state">
+                    <strong>{copy.loadErrorTitle}</strong>
+                    <p>{copy.loadErrorBody}</p>
+                    <AppButton
+                      className="btn-subtle"
+                      icon={<ArrowCounterClockwiseIcon weight="bold" />}
+                      onClick={() => loadData()}
+                    >
+                      {copy.retryLoad}
+                    </AppButton>
+                  </div>
+                ) : data ? (
                   visibleNotes.length > 0 ? (
                     visibleNotes.map((note) => (
                       <NoteCard
@@ -524,8 +552,10 @@ export default function App(): ReactElement {
                   ) : (
                     <div className="empty-state">{copy.emptyNotes}</div>
                   )
-                ) : (
+                ) : isLoading ? (
                   <div className="empty-state">{copy.loadingNotes}</div>
+                ) : (
+                  <div className="empty-state">{copy.emptyNotes}</div>
                 )}
               </section>
             </>
