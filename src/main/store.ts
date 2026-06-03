@@ -7,7 +7,7 @@
 import { app } from "electron";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { getDefaultData } from "@shared/defaultData";
+import { defaultSettings, getDefaultData } from "@shared/defaultData";
 import { purgeExpiredTrash } from "@shared/noteLogic";
 import type { IdeaNotesData } from "@shared/types";
 
@@ -26,12 +26,60 @@ async function writeJsonFile(path: string, data: IdeaNotesData): Promise<void> {
   await rename(tempPath, path);
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function normalizeTag(tag: unknown): string | null {
+  if (typeof tag === "string") {
+    const name = tag.trim();
+    return name || null;
+  }
+  if (isRecord(tag) && typeof tag.name === "string") {
+    const name = tag.name.trim();
+    return name || null;
+  }
+  return null;
+}
+
+function normalizeTags(tags: unknown): string[] {
+  if (!Array.isArray(tags)) return [];
+  const normalized = tags
+    .map(normalizeTag)
+    .filter((tag): tag is string => tag !== null);
+  return [...new Set(normalized)];
+}
+
+function normalizeData(data: IdeaNotesData): IdeaNotesData {
+  return {
+    ...data,
+    tags: normalizeTags(data.tags),
+    notes: data.notes.map((note) => ({
+      ...note,
+      tags: normalizeTags(note.tags),
+    })),
+    settings: {
+      ...defaultSettings,
+      ...data.settings,
+    },
+  };
+}
+
 export async function readData(): Promise<IdeaNotesData> {
   const path = dataPath();
   try {
-    const data = JSON.parse(await readFile(path, "utf8")) as IdeaNotesData;
-    const cleanedData = purgeExpiredTrash(data);
-    if (cleanedData !== data) await writeJsonFile(path, cleanedData);
+    const storedData = JSON.parse(
+      await readFile(path, "utf8"),
+    ) as IdeaNotesData;
+    const normalizedData = normalizeData(storedData);
+    const cleanedData = purgeExpiredTrash(normalizedData);
+    if (JSON.stringify(cleanedData) !== JSON.stringify(storedData)) {
+      try {
+        await writeJsonFile(path, cleanedData);
+      } catch {
+        // 读取路径不因迁移或清理写回失败阻断有效数据；下次启动可再次尝试写回。
+      }
+    }
     return cleanedData;
   } catch (error) {
     const code = (error as NodeJS.ErrnoException).code;

@@ -17,7 +17,6 @@ if (process.platform === "linux") {
     app.disableHardwareAcceleration();
     app.commandLine.appendSwitch("no-sandbox");
     app.commandLine.appendSwitch("disable-gpu-sandbox");
-    app.commandLine.appendSwitch("in-process-gpu");
   }
 }
 

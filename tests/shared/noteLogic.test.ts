@@ -205,6 +205,13 @@ describe("noteLogic", () => {
     ]);
     const neverData = { ...data, settings: defaultSettings };
     expect(purgeExpiredTrash(neverData, now)).toBe(neverData);
+    const invalidRetentionData = {
+      ...data,
+      settings: { ...defaultSettings, trashAutoDelete: "invalid" },
+    };
+    expect(purgeExpiredTrash(invalidRetentionData, now)).toBe(
+      invalidRetentionData,
+    );
   });
 
   it("复制笔记支持调用方传入语言化标题后缀", () => {

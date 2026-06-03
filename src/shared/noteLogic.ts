@@ -107,7 +107,9 @@ export function purgeExpiredTrash(
   // 回收站自动清理只消费明确的天数设置；never 和缺失 trashedAt 都保留原数据。
   if (data.settings.trashAutoDelete === "never") return data;
 
-  const retentionMs = Number(data.settings.trashAutoDelete) * dayInMs;
+  const retentionDays = Number(data.settings.trashAutoDelete);
+  if (!Number.isFinite(retentionDays) || retentionDays <= 0) return data;
+  const retentionMs = retentionDays * dayInMs;
   const notes = data.notes.filter(
     (note) =>
       note.status !== "trash" ||

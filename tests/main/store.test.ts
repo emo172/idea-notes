@@ -3,7 +3,7 @@
 // 1. 用临时 userData 目录验证首次读取会创建默认数据文件。
 // 2. 验证保存数据会写入稳定 JSON，并清理临时写入文件。
 // 3. 验证损坏 JSON 不会被默认数据静默覆盖，避免吞掉用户数据问题。
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -116,6 +116,27 @@ describe("主进程本地存储", () => {
     expect(persisted).toEqual(data);
   });
 
+  it("读取有效数据时不因清理写回失败阻断加载", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(baseTime);
+    const storedData = dataWithTrashRetention(baseTime);
+    await writeFile(
+      join(userDataDir, dataFileName),
+      JSON.stringify(storedData, null, 2),
+      "utf8",
+    );
+    await mkdir(join(userDataDir, `${dataFileName}.tmp`));
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const persisted = JSON.parse(
+      await readFile(join(userDataDir, dataFileName), "utf8"),
+    ) as IdeaNotesData;
+
+    expect(data.notes.map((note) => note.id)).toContain("fresh-trash");
+    expect(data.notes.map((note) => note.id)).not.toContain("expired-trash");
+    expect(persisted).toEqual(storedData);
+  });
+
   it("保存数据时清理过期回收站笔记并返回清理后的数据", async () => {
     vi.spyOn(Date, "now").mockReturnValue(baseTime);
     const { saveData } = await importStore();
@@ -141,5 +162,46 @@ describe("主进程本地存储", () => {
     await expect(
       readFile(join(userDataDir, dataFileName), "utf8"),
     ).resolves.toBe(brokenJson);
+  });
+
+  it("读取旧标签对象数据时迁移为字符串标签并补齐设置", async () => {
+    const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    const legacyData = {
+      ...defaultData,
+      tags: [
+        { name: "工作", color: "#2563eb", group: "默认" },
+        { name: "灵感", color: "#7c3aed", group: "默认" },
+      ],
+      notes: defaultData.notes.map((note) =>
+        note.id === "seed-navigation"
+          ? {
+              ...note,
+              tags: [{ name: "工作", color: "#2563eb", group: "默认" }, "待办"],
+            }
+          : note,
+      ),
+      settings: {
+        themeMode: "light",
+        startup: false,
+        trashAutoDelete: "never",
+        language: "zh-CN",
+      },
+    };
+    await writeFile(
+      join(userDataDir, dataFileName),
+      JSON.stringify(legacyData, null, 2),
+      "utf8",
+    );
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const persisted = JSON.parse(
+      await readFile(join(userDataDir, dataFileName), "utf8"),
+    );
+
+    expect(data.tags).toEqual(["工作", "灵感"]);
+    expect(data.notes[0].tags).toEqual(["工作", "待办"]);
+    expect(data.settings.backgroundColor).toBe("#f8fafc");
+    expect(persisted).toEqual(data);
   });
 });
