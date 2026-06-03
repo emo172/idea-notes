@@ -60,6 +60,7 @@ import {
 } from "../utils/noteDraft";
 
 type ViewMode = NoteStatus | "settings" | "tag-settings";
+const darkModeQuery = "(prefers-color-scheme: dark)";
 
 const statusIcons: Record<NoteStatus, ReactElement> = {
   active: <CheckCircleIcon weight="bold" />,
@@ -67,10 +68,20 @@ const statusIcons: Record<NoteStatus, ReactElement> = {
   trash: <TrashIcon weight="bold" />,
 };
 
+function getSystemPrefersDark(): boolean {
+  return (
+    typeof window.matchMedia === "function" &&
+    window.matchMedia(darkModeQuery).matches
+  );
+}
+
 export default function App(): ReactElement {
   const [data, setData] = useState<IdeaNotesData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [hasLoadError, setHasLoadError] = useState(false);
+  const [systemPrefersDark, setSystemPrefersDark] = useState(
+    getSystemPrefersDark,
+  );
   const [viewMode, setViewMode] = useState<ViewMode>("active");
   const [searchQuery, setSearchQuery] = useState("");
   const [priority, setPriority] = useState<NotePriority | "all">("all");
@@ -117,6 +128,17 @@ export default function App(): ReactElement {
     return () => {
       mounted = false;
     };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const mediaQuery = window.matchMedia(darkModeQuery);
+    const handleChange = (event: MediaQueryListEvent): void => {
+      setSystemPrefersDark(event.matches);
+    };
+    setSystemPrefersDark(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   // 设置页和标签设置页会覆盖主内容区，但底层笔记列表仍保持进行中筛选状态。
@@ -299,11 +321,12 @@ export default function App(): ReactElement {
     trash: notes.filter((note) => note.status === "trash").length,
   };
 
-  const appClassName =
-    data?.settings.themeMode === "dark" ? "app-window dark" : "app-window";
+  const isDarkTheme =
+    data?.settings.themeMode === "dark" ||
+    (data?.settings.themeMode === "system" && systemPrefersDark);
+  const appClassName = isDarkTheme ? "app-window dark" : "app-window";
   const backgroundColor = data?.settings.backgroundColor;
-  const appStyle =
-    data?.settings.themeMode === "dark" ? undefined : { backgroundColor };
+  const appStyle = isDarkTheme ? undefined : { backgroundColor };
   const appBodyClassName = isSidebarCollapsed
     ? "app-body sidebar-collapsed"
     : "app-body";
