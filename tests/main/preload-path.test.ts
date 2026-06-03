@@ -54,7 +54,7 @@ describe("主进程 preload 路径", () => {
     expect(beforeAppReady).not.toContain("app.setDesktopName");
   });
 
-  it("在应用 ready 前禁用 Linux 开发环境 GPU 后备以避开本地 GPU 进程崩溃", () => {
+  it("在应用 ready 前禁用 Linux 开发环境 GPU sandbox 且不使用矛盾 GPU 开关", () => {
     const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
     const appReadyIndex = mainSource.indexOf("app.whenReady()");
     // Electron 的 GPU/sandbox 开关必须早于 app ready，否则本地启动仍可能先崩溃。
@@ -67,10 +67,10 @@ describe("主进程 preload 路径", () => {
       "app.disableHardwareAcceleration();",
       'app.commandLine.appendSwitch("no-sandbox");',
       'app.commandLine.appendSwitch("disable-gpu-sandbox");',
-      'app.commandLine.appendSwitch("in-process-gpu");',
     ]) {
       expect(beforeAppReady).toContain(gpuFallback);
     }
+    expect(beforeAppReady).not.toContain('appendSwitch("in-process-gpu")');
     expect(beforeAppReady).not.toContain('appendSwitch("disable-gpu")');
     expect(beforeAppReady).not.toContain("disable-software-rasterizer");
   });
