@@ -19,6 +19,10 @@ interface MutationOptions {
   id?: string;
 }
 
+interface DuplicateNoteOptions extends MutationOptions {
+  titleSuffix?: string;
+}
+
 const priorityRank = {
   high: 0,
   medium: 1,
@@ -83,14 +87,14 @@ export function saveNote(
 
 export function duplicateNote(
   note: IdeaNote,
-  options: MutationOptions = {},
+  options: DuplicateNoteOptions = {},
 ): IdeaNote {
   // 复制笔记保留原内容和状态，只更新身份、标题后缀与时间戳。
   const now = options.now ?? Date.now();
   return {
     ...note,
     id: options.id ?? `note-${now}`,
-    title: `${note.title} 副本`,
+    title: `${note.title}${options.titleSuffix ?? ""}`,
     createdAt: now,
     updatedAt: now,
   };

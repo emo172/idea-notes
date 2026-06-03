@@ -78,6 +78,7 @@ export interface AppCopy {
   resume: string;
   markComplete: string;
   duplicate: string;
+  duplicateTitleSuffix: string;
   delete: string;
   deleteConfirmTitle: string;
   deleteConfirmBody: string;

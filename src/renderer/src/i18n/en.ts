@@ -78,6 +78,7 @@ export const en: AppCopy = {
   resume: "Resume",
   markComplete: "Complete",
   duplicate: "Duplicate",
+  duplicateTitleSuffix: " Copy",
   delete: "Delete",
   deleteConfirmTitle: "Delete permanently?",
   deleteConfirmBody: "This cannot be undone",

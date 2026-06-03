@@ -78,6 +78,7 @@ export const zhCN: AppCopy = {
   resume: "恢复",
   markComplete: "完成",
   duplicate: "复制",
+  duplicateTitleSuffix: " 副本",
   delete: "删除",
   deleteConfirmTitle: "确认彻底删除？",
   deleteConfirmBody: "删除后无法恢复",

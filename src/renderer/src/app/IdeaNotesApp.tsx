@@ -224,9 +224,11 @@ export default function App(): ReactElement {
 
   async function handleDuplicateNote(note: IdeaNote): Promise<void> {
     if (!data) return;
-    const copy = duplicateNote(note);
-    await persist({ ...data, notes: [copy, ...data.notes] });
-    setViewMode(copy.status);
+    const copiedNote = duplicateNote(note, {
+      titleSuffix: copy.duplicateTitleSuffix,
+    });
+    await persist({ ...data, notes: [copiedNote, ...data.notes] });
+    setViewMode(copiedNote.status);
   }
 
   async function handlePermanentDelete(noteId: string): Promise<void> {

@@ -20,7 +20,7 @@ describe("App note cards", () => {
     vi.restoreAllMocks();
   });
 
-  it("复制笔记并把副本插入列表顶部", async () => {
+  it("复制笔记并把本地化副本插入列表顶部", async () => {
     const { api, saved } = installApi(getDefaultData(BASE_TIME));
     const user = userEvent.setup();
 
@@ -34,6 +34,47 @@ describe("App note cards", () => {
     expect(saved.at(-1)?.notes[0]?.title).toBe("重构 Desktop App 导航栏 副本");
     expect(saved.at(-1)?.notes[1]?.title).toBe("重构 Desktop App 导航栏");
   });
+
+  it.each([
+    {
+      language: "en" as const,
+      title: "Desktop App navigation",
+      moreActions: "More actions",
+      duplicate: "Copy",
+      expectedTitle: "Desktop App navigation Copy",
+    },
+    {
+      language: "zh-TW" as const,
+      title: "測試筆記",
+      moreActions: "更多操作",
+      duplicate: "複製",
+      expectedTitle: "測試筆記 複本",
+    },
+  ])(
+    "$language 复制笔记使用当前语言标题后缀",
+    async ({ language, title, moreActions, duplicate, expectedTitle }) => {
+      const data = getDefaultData(BASE_TIME);
+      data.settings.language = language;
+      data.notes = [
+        {
+          ...data.notes[0],
+          id: `${language}-copy-source`,
+          title,
+        },
+      ];
+      const { api, saved } = installApi(data);
+      const user = userEvent.setup();
+
+      render(<App />);
+
+      await screen.findByText(title);
+      await user.click(screen.getByRole("button", { name: moreActions }));
+      await user.click(screen.getByRole("menuitem", { name: duplicate }));
+
+      await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+      expect(saved.at(-1)?.notes[0]?.title).toBe(expectedTitle);
+    },
+  );
 
   it.each([
     {

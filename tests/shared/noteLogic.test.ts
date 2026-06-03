@@ -10,6 +10,7 @@ import {
   buildChecklistItems,
   createNote,
   deleteTag,
+  duplicateNote,
   filterAndSortNotes,
   getCompletion,
   moveNoteToTrash,
@@ -204,6 +205,28 @@ describe("noteLogic", () => {
     ]);
     const neverData = { ...data, settings: defaultSettings };
     expect(purgeExpiredTrash(neverData, now)).toBe(neverData);
+  });
+
+  it("复制笔记支持调用方传入语言化标题后缀", () => {
+    const source = note({ id: "copy-source", title: "Desktop App navigation" });
+
+    const copied = duplicateNote(source, {
+      now: baseTime + 1,
+      id: "copy-target",
+      titleSuffix: " Copy",
+    });
+    const defaultCopied = duplicateNote(source, {
+      now: baseTime + 2,
+      id: "copy-default",
+    });
+
+    expect(copied).toMatchObject({
+      id: "copy-target",
+      title: "Desktop App navigation Copy",
+      createdAt: baseTime + 1,
+      updatedAt: baseTime + 1,
+    });
+    expect(defaultCopied.title).toBe("Desktop App navigation");
   });
 
   it("从正文构建清单时复用拆行和勾选继承规则", () => {
