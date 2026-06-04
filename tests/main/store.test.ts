@@ -201,7 +201,33 @@ describe("主进程本地存储", () => {
 
     expect(data.tags).toEqual(["工作", "灵感"]);
     expect(data.notes[0].tags).toEqual(["工作", "待办"]);
-    expect(data.settings.backgroundColor).toBe("#f8fafc");
+    expect(data.settings).not.toHaveProperty("backgroundColor");
+    expect(persisted).toEqual(data);
+  });
+
+  it("读取旧背景颜色设置时清理该字段并写回磁盘", async () => {
+    const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    const legacyData = {
+      ...defaultData,
+      settings: {
+        ...defaultData.settings,
+        backgroundColor: "#102030",
+      },
+    };
+    await writeFile(
+      join(userDataDir, dataFileName),
+      JSON.stringify(legacyData, null, 2),
+      "utf8",
+    );
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const persisted = JSON.parse(
+      await readFile(join(userDataDir, dataFileName), "utf8"),
+    );
+
+    expect(data.settings).not.toHaveProperty("backgroundColor");
+    expect(persisted.settings).not.toHaveProperty("backgroundColor");
     expect(persisted).toEqual(data);
   });
 });

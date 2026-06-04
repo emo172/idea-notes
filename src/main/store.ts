@@ -8,6 +8,7 @@ import { app } from "electron";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { defaultSettings, getDefaultData } from "@shared/defaultData";
+import { sanitizeIdeaNotesData } from "@shared/ideaNotesDataValidation";
 import { purgeExpiredTrash } from "@shared/noteLogic";
 import type { IdeaNotesData } from "@shared/types";
 
@@ -51,7 +52,7 @@ function normalizeTags(tags: unknown): string[] {
 }
 
 function normalizeData(data: IdeaNotesData): IdeaNotesData {
-  return {
+  return sanitizeIdeaNotesData({
     ...data,
     tags: normalizeTags(data.tags),
     notes: data.notes.map((note) => ({
@@ -62,7 +63,7 @@ function normalizeData(data: IdeaNotesData): IdeaNotesData {
       ...defaultSettings,
       ...data.settings,
     },
-  };
+  });
 }
 
 export async function readData(): Promise<IdeaNotesData> {
