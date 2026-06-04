@@ -22,15 +22,20 @@ export function DropdownButton({
   const [isOpen, setIsOpen] = useState(false);
   const anchorRef = useRef<HTMLDivElement>(null);
 
+  function closeMenu(): void {
+    setIsOpen(false);
+    anchorRef.current?.querySelector("button")?.focus();
+  }
+
   useEffect(() => {
     if (!isOpen) return undefined;
 
     function handlePointerDown(event: PointerEvent): void {
-      if (!anchorRef.current?.contains(event.target as Node)) setIsOpen(false);
+      if (!anchorRef.current?.contains(event.target as Node)) closeMenu();
     }
 
     function handleKeyDown(event: KeyboardEvent): void {
-      if (event.key === "Escape") setIsOpen(false);
+      if (event.key === "Escape") closeMenu();
     }
 
     document.addEventListener("pointerdown", handlePointerDown);
@@ -41,9 +46,7 @@ export function DropdownButton({
     };
   }, [isOpen]);
 
-  const menu = isOpen
-    ? cloneElement(children, { onClose: () => setIsOpen(false) })
-    : null;
+  const menu = isOpen ? cloneElement(children, { onClose: closeMenu }) : null;
 
   return (
     <div className="dropdown-anchor" ref={anchorRef}>
