@@ -5,9 +5,6 @@
 .note-header-actions {
   display: flex;
   align-items: center;
-}
-
-.note-header-actions {
   gap: 4px;
   margin: -4px;
 }
