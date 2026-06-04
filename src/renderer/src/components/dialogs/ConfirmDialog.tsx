@@ -17,6 +17,7 @@ interface ConfirmDialogProps {
   onConfirm: () => Promise<void>;
   panelClassName?: string;
   confirmLabel?: string;
+  isBusy?: boolean;
 }
 
 export function ConfirmDialog({
@@ -28,6 +29,7 @@ export function ConfirmDialog({
   onConfirm,
   panelClassName,
   confirmLabel,
+  isBusy = false,
 }: ConfirmDialogProps): ReactElement {
   const confirmTitle = title ?? copy.deleteConfirmTitle;
   const confirmBody =
@@ -37,11 +39,16 @@ export function ConfirmDialog({
     : "confirm-panel";
   const actions = (
     <>
-      <AppButton icon={<XIcon weight="bold" />} onClick={onCancel}>
+      <AppButton
+        disabled={isBusy}
+        icon={<XIcon weight="bold" />}
+        onClick={onCancel}
+      >
         {copy.cancel}
       </AppButton>
       <AppButton
         className="danger"
+        disabled={isBusy}
         icon={<TrashIcon weight="bold" />}
         onClick={onConfirm}
       >
@@ -60,6 +67,7 @@ export function ConfirmDialog({
       bodyClassName="confirm-body"
       actionsClassName="confirm-actions"
       actions={actions}
+      onEscape={isBusy ? undefined : onCancel}
     >
       {confirmBody ? <p id="confirm-dialog-body">{confirmBody}</p> : null}
     </DialogShell>

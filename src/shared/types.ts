@@ -37,7 +37,6 @@ export interface IdeaNote {
 // 用户偏好设置随主数据一起写入本地 JSON 文件。
 export interface IdeaSettings {
   themeMode: ThemeMode;
-  backgroundColor: string;
   startup: boolean;
   trashAutoDelete: TrashRetention;
   language: AppLanguage;
@@ -86,6 +85,7 @@ export interface DesktopWindowState {
 export interface IdeaNotesApi {
   getData: () => Promise<IdeaNotesData>;
   saveData: (data: IdeaNotesData) => Promise<IdeaNotesData>;
+  getWindowState: () => Promise<DesktopWindowState>;
   minimizeWindow: () => Promise<DesktopWindowState>;
   toggleMaximizeWindow: () => Promise<DesktopWindowState>;
   closeWindow: () => Promise<void>;

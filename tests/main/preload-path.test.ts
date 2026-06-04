@@ -87,4 +87,58 @@ describe("主进程 preload 路径", () => {
     expect(mainSource).toContain("icon: desktopWindowIconPath");
     expect(mainSource).toContain("mainWindow.setIcon(desktopWindowIconPath)");
   });
+
+  it("主窗口最小宽度与渲染层 720 窄屏契约一致", () => {
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+    const windowOptions = mainSource.match(
+      /new BrowserWindow\(\{[\s\S]*?\n  \}\);/,
+    )?.[0];
+
+    expect(windowOptions).toBeTruthy();
+    expect(windowOptions).toContain("minWidth: 720");
+    expect(windowOptions).not.toContain("minWidth: 960");
+  });
+
+  it("注册初始窗口状态 IPC 并校验消息来源", () => {
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+    const getStateHandler = mainSource.match(
+      /ipcMain\.handle\("window:get-state"[\s\S]*?\n  \}\);/,
+    )?.[0];
+
+    expect(getStateHandler).toBeTruthy();
+    expect(getStateHandler).toContain("assertMainWindow");
+    expect(getStateHandler).toContain("BrowserWindow.fromWebContents");
+    expect(getStateHandler).toContain("return getWindowState(window)");
+  });
+
+  it("保存笔记数据前先做运行时结构校验", () => {
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+    const saveHandler = mainSource.match(
+      /ipcMain\.handle\("notes:save-data"[\s\S]*?\n  \}\);/,
+    )?.[0];
+
+    expect(mainSource).toContain(
+      'from "@shared/ideaNotesDataValidation"',
+    );
+    expect(saveHandler).toBeTruthy();
+    expect(saveHandler).toContain("assertIdeaNotesData(data)");
+    expect(saveHandler).toContain("sanitizeIdeaNotesData(validatedData)");
+    expect(saveHandler).toContain("saveData(sanitizedData)");
+  });
+
+  it("开机自启动 IPC 保存前校验布尔 payload", () => {
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+    const startupHandler = mainSource.match(
+      /ipcMain\.handle\("app:set-startup"[\s\S]*?\n  \}\);/,
+    )?.[0];
+
+    expect(startupHandler).toBeTruthy();
+    expect(startupHandler).toContain('typeof enabled !== "boolean"');
+    expect(startupHandler).toContain(
+      'throw new Error("Invalid startup payload")',
+    );
+    expect(startupHandler?.indexOf('typeof enabled !== "boolean"')).toBeLessThan(
+      startupHandler?.indexOf("app.setLoginItemSettings") ?? -1,
+    );
+  });
 });

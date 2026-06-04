@@ -6,18 +6,10 @@
 // 4. 将渲染层状态编排与拆分后的组件、工具函数、多语言文案连接起来。
 import { useEffect, useState } from "react";
 import type { ReactElement } from "react";
-import {
-  ArrowCounterClockwiseIcon,
-  CheckCircleIcon,
-  PlusIcon,
-  TagIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
 import { defaultSettings } from "@shared/defaultData";
 import {
   deleteTag,
   duplicateNote,
-  filterAndSortNotes,
   moveNoteToTrash,
   permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
@@ -33,25 +25,18 @@ import type {
   IdeaNote,
   IdeaNotesData,
   NoteDraft,
-  NotePriority,
   NoteStatus,
-  SortMode,
 } from "@shared/types";
 import { ConfirmDialog } from "../components/dialogs/ConfirmDialog";
 import { EditorDialog } from "../components/editor/EditorDialog";
-import { NoteCard } from "../components/notes/NoteCard";
+import { NotesList } from "../components/notes/NotesList";
+import { AppShell } from "../components/shell/AppShell";
 import { SettingsPanel } from "../components/settings/SettingsPanel";
 import { TagSettingsPanel } from "../components/settings/TagSettingsPanel";
-import {
-  CloseIcon,
-  MaximizeIcon,
-  MinimizeIcon,
-  PinIcon,
-  RestoreIcon,
-  SettingsIcon,
-  SidebarToggleIcon,
-} from "../components/titlebar/TitlebarIcons";
-import { AppButton } from "../components/ui/AppButton";
+import { NotesToolbar } from "../components/toolbar/NotesToolbar";
+import { useIdeaNotesData } from "../hooks/useIdeaNotesData";
+import { useNoteFilters } from "../hooks/useNoteFilters";
+import { useSystemTheme } from "../hooks/useSystemTheme";
 import { appCopy, settingsCopy } from "../i18n";
 import {
   buildDraftFromNote,
@@ -60,33 +45,27 @@ import {
 } from "../utils/noteDraft";
 
 type ViewMode = NoteStatus | "settings" | "tag-settings";
-const darkModeQuery = "(prefers-color-scheme: dark)";
-
-const statusIcons: Record<NoteStatus, ReactElement> = {
-  active: <CheckCircleIcon weight="bold" />,
-  completed: <CheckCircleIcon weight="bold" />,
-  trash: <TrashIcon weight="bold" />,
-};
-
-function getSystemPrefersDark(): boolean {
-  return (
-    typeof window.matchMedia === "function" &&
-    window.matchMedia(darkModeQuery).matches
-  );
-}
+type TagInputError = "required" | "duplicate";
 
 export default function App(): ReactElement {
-  const [data, setData] = useState<IdeaNotesData | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasLoadError, setHasLoadError] = useState(false);
-  const [systemPrefersDark, setSystemPrefersDark] = useState(
-    getSystemPrefersDark,
+  const {
+    data,
+    setData,
+    isLoading,
+    hasLoadError,
+    isSaving,
+    saveFeedback,
+    setSaveFeedback,
+    loadData,
+    persist,
+    runSavingTask,
+    blockIfSaving,
+  } = useIdeaNotesData();
+  const [tagInputError, setTagInputError] = useState<TagInputError | null>(
+    null,
   );
+  const systemPrefersDark = useSystemTheme();
   const [viewMode, setViewMode] = useState<ViewMode>("active");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [priority, setPriority] = useState<NotePriority | "all">("all");
-  const [sortMode, setSortMode] = useState<SortMode>("important");
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [draft, setDraft] = useState<NoteDraft>(initialDraft);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -106,39 +85,17 @@ export default function App(): ReactElement {
     document.documentElement.lang = currentLanguage;
   }, [currentLanguage]);
 
-  async function loadData(shouldCommit = () => true): Promise<void> {
-    setIsLoading(true);
-    setHasLoadError(false);
-    try {
-      const loadedData = await window.ideaNotes.getData();
-      if (!shouldCommit()) return;
-      setData(loadedData);
-    } catch {
-      if (!shouldCommit()) return;
-      setData(null);
-      setHasLoadError(true);
-    } finally {
-      if (shouldCommit()) setIsLoading(false);
-    }
-  }
-
   useEffect(() => {
     let mounted = true;
-    void loadData(() => mounted);
+    void window.ideaNotes
+      .getWindowState()
+      .then((state) => {
+        if (mounted) setWindowState(state);
+      })
+      .catch(() => undefined);
     return () => {
       mounted = false;
     };
-  }, []);
-
-  useEffect(() => {
-    if (typeof window.matchMedia !== "function") return;
-    const mediaQuery = window.matchMedia(darkModeQuery);
-    const handleChange = (event: MediaQueryListEvent): void => {
-      setSystemPrefersDark(event.matches);
-    };
-    setSystemPrefersDark(mediaQuery.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
   }, []);
 
   // 设置页和标签设置页会覆盖主内容区，但底层笔记列表仍保持进行中筛选状态。
@@ -146,39 +103,47 @@ export default function App(): ReactElement {
     viewMode === "settings" || viewMode === "tag-settings"
       ? "active"
       : viewMode;
-
-  const visibleNotes = data
-    ? filterAndSortNotes(data.notes, {
-        status: noteViewMode,
-        searchQuery,
-        priority,
-        selectedTags,
-        sortMode,
-      })
-    : [];
-
-  async function persist(nextData: IdeaNotesData): Promise<void> {
-    // 持久化以主进程返回值为准，确保 renderer 状态与磁盘写入后的数据一致。
-    const saved = await window.ideaNotes.saveData(nextData);
-    setData(saved);
-  }
+  const notes = data?.notes ?? [];
+  const {
+    visibleNotes,
+    searchQuery,
+    setSearchQuery,
+    priority,
+    setPriority,
+    sortMode,
+    setSortMode,
+    selectedTags,
+    setSelectedTags,
+    toggleSelectedTag,
+    resetFilters,
+  } = useNoteFilters({ notes, status: noteViewMode });
 
   function openNewNote(): void {
+    if (blockIfSaving(isEditorOpen ? "editor" : "main")) return;
+    setSaveFeedback(null);
     setDraft(initialDraft);
     setIsEditorOpen(true);
   }
 
   function openExistingNote(note: IdeaNote): void {
+    if (blockIfSaving(isEditorOpen ? "editor" : "main")) return;
+    setSaveFeedback(null);
     setDraft(buildDraftFromNote(note));
     setIsEditorOpen(true);
   }
 
   function openSettings(): void {
+    if (blockIfSaving(isEditorOpen ? "editor" : "main")) return;
+    setSaveFeedback(null);
+    setTagInputError(null);
     setIsEditorOpen(false);
     setViewMode("settings");
   }
 
   function openTagSettings(): void {
+    if (blockIfSaving(isEditorOpen ? "editor" : "main")) return;
+    setSaveFeedback(null);
+    setTagInputError(null);
     setIsEditorOpen(false);
     setViewMode("tag-settings");
   }
@@ -200,15 +165,16 @@ export default function App(): ReactElement {
           ),
         }
       : saveNote(data, normalizedDraft);
-    await persist(nextData);
+    const didSave = await persist(nextData, "editor");
+    if (!didSave) return;
     setIsEditorOpen(false);
     setDraft(initialDraft);
     setViewMode("active");
   }
 
-  async function updateNote(note: IdeaNote): Promise<void> {
-    if (!data) return;
-    await persist({
+  async function updateNote(note: IdeaNote): Promise<boolean> {
+    if (!data) return false;
+    return persist({
       ...data,
       notes: data.notes.map((item) => (item.id === note.id ? note : item)),
     });
@@ -227,49 +193,85 @@ export default function App(): ReactElement {
     const copiedNote = duplicateNote(note, {
       titleSuffix: copy.duplicateTitleSuffix,
     });
-    await persist({ ...data, notes: [copiedNote, ...data.notes] });
+    const didSave = await persist({
+      ...data,
+      notes: [copiedNote, ...data.notes],
+    });
+    if (!didSave) return;
     setViewMode(copiedNote.status);
   }
 
   async function handlePermanentDelete(noteId: string): Promise<void> {
     if (!data) return;
-    await persist({
+    const didSave = await persist({
       ...data,
       notes: permanentlyDeleteNote(data.notes, noteId),
     });
+    if (!didSave) return;
     setDeleteTarget(null);
   }
 
   async function handleClearTrash(): Promise<void> {
     if (!data) return;
-    await persist({
+    const didSave = await persist({
       ...data,
       notes: permanentlyDeleteAllTrash(data.notes),
     });
+    if (!didSave) return;
     setIsClearTrashConfirmOpen(false);
   }
 
-  async function handleAddTag(): Promise<void> {
-    if (!data) return;
+  async function handleAddTag(): Promise<boolean> {
+    if (!data) return false;
     const nextTag = tagName.trim();
-    if (!nextTag || data.tags.includes(nextTag)) return;
-    await persist({ ...data, tags: [...data.tags, nextTag] });
+    setSaveFeedback(null);
+    if (!nextTag) {
+      setTagInputError("required");
+      return false;
+    }
+    if (data.tags.includes(nextTag)) {
+      setTagInputError("duplicate");
+      return false;
+    }
+    setTagInputError(null);
+    const didSave = await persist({ ...data, tags: [...data.tags, nextTag] });
+    if (!didSave) return false;
     setTagName("");
+    return true;
   }
 
-  async function handleRenameTag(from: string, to: string): Promise<void> {
-    if (!data) return;
+  async function handleRenameTag(from: string, to: string): Promise<boolean> {
+    if (!data) return false;
     const nextTag = to.trim();
-    if (!nextTag || nextTag === from || data.tags.includes(nextTag)) return;
-    await persist(renameTag(data, from, nextTag));
+    setSaveFeedback(null);
+    if (!nextTag) {
+      setTagInputError("required");
+      return false;
+    }
+    if (nextTag === from) {
+      setTagInputError(null);
+      return true;
+    }
+    if (data.tags.includes(nextTag)) {
+      setTagInputError("duplicate");
+      return false;
+    }
+    setTagInputError(null);
+    const didSave = await persist(renameTag(data, from, nextTag));
+    if (!didSave) return false;
     setSelectedTags((tags) =>
       tags.map((item) => (item === from ? nextTag : item)),
     );
+    setTagInputError(null);
+    return true;
   }
 
   async function handleDeleteTag(tag: string): Promise<void> {
     if (!data) return;
-    await persist(deleteTag(data, tag));
+    setSaveFeedback(null);
+    setTagInputError(null);
+    const didSave = await persist(deleteTag(data, tag));
+    if (!didSave) return;
     setSelectedTags((tags) => tags.filter((item) => item !== tag));
   }
 
@@ -283,27 +285,39 @@ export default function App(): ReactElement {
 
   async function handleConfirmResetSettings(): Promise<void> {
     if (!data) return;
-    const startup = await window.ideaNotes.setStartup(defaultSettings.startup);
-    await persist(updateSettings(data, { ...defaultSettings, startup }));
-    setIsResetSettingsConfirmOpen(false);
+    const previousStartup = data.settings.startup;
+    const didSave = await runSavingTask("main", async () => {
+      const startup = await window.ideaNotes.setStartup(defaultSettings.startup);
+      const resetData = updateSettings(data, {
+        ...defaultSettings,
+        startup,
+      });
+      try {
+        const savedResetData = await window.ideaNotes.saveData(resetData);
+        setData(savedResetData);
+      } catch (error) {
+        await window.ideaNotes.setStartup(previousStartup);
+        throw error;
+      }
+    });
+    if (didSave) setIsResetSettingsConfirmOpen(false);
   }
 
   async function handleStartupChange(enabled: boolean): Promise<void> {
-    const startup = await window.ideaNotes.setStartup(enabled);
-    await handleSettingsChange({ startup });
-  }
-
-  function toggleSelectedTag(tag: string): void {
-    setSelectedTags((tags) =>
-      tags.includes(tag) ? tags.filter((item) => item !== tag) : [...tags, tag],
-    );
-  }
-
-  function resetFilters(): void {
-    setSearchQuery("");
-    setPriority("all");
-    setSortMode("important");
-    setSelectedTags([]);
+    if (!data) return;
+    const previousStartup = data.settings.startup;
+    await runSavingTask("main", async () => {
+      const startup = await window.ideaNotes.setStartup(enabled);
+      try {
+        const saved = await window.ideaNotes.saveData(
+          updateSettings(data, { startup }),
+        );
+        setData(saved);
+      } catch (error) {
+        await window.ideaNotes.setStartup(previousStartup);
+        throw error;
+      }
+    });
   }
 
   function toggleDraftTag(tag: string): void {
@@ -315,7 +329,6 @@ export default function App(): ReactElement {
     }));
   }
 
-  const notes = data?.notes ?? [];
   const editingNote = notes.find((note) => note.id === draft.id);
   const counts = {
     active: notes.filter((note) => note.status === "active").length,
@@ -327,8 +340,6 @@ export default function App(): ReactElement {
     data?.settings.themeMode === "dark" ||
     (data?.settings.themeMode === "system" && systemPrefersDark);
   const appClassName = isDarkTheme ? "app-window dark" : "app-window";
-  const backgroundColor = data?.settings.backgroundColor;
-  const appStyle = isDarkTheme ? undefined : { backgroundColor };
   const appBodyClassName = isSidebarCollapsed
     ? "app-body sidebar-collapsed"
     : "app-body";
@@ -336,267 +347,143 @@ export default function App(): ReactElement {
     ? copy.cancelAlwaysOnTop
     : copy.alwaysOnTop;
   const sidebarToggleTitle = isSidebarCollapsed ? copy.expand : copy.collapse;
+  const saveFeedbackMessage =
+    saveFeedback?.kind === "failed"
+      ? copy.saveFailed
+      : saveFeedback?.kind === "busy"
+        ? copy.saveBusy
+        : null;
+  const mainSaveFeedback =
+    saveFeedback?.target === "main" ? saveFeedbackMessage : null;
+  const editorSaveFeedback =
+    saveFeedback?.target === "editor" ? saveFeedbackMessage : null;
+  const tagInputErrorMessage =
+    tagInputError === "required"
+      ? copy.tagNameRequired
+      : tagInputError === "duplicate"
+        ? copy.tagAlreadyExists
+        : null;
+  const hasConfirmDialog =
+    Boolean(deleteTarget) ||
+    isClearTrashConfirmOpen ||
+    isResetSettingsConfirmOpen;
+  const shouldShowMainSaveError =
+    mainSaveFeedback && viewMode !== "settings" && !hasConfirmDialog;
+
+  const mainContent =
+    viewMode === "tag-settings" ? (
+      <TagSettingsPanel
+        data={data}
+        copy={copy}
+        tagName={tagName}
+        tagInputError={tagInputErrorMessage}
+        tagSaveFeedback={mainSaveFeedback}
+        isSaving={isSaving}
+        setTagName={(value) => {
+          setTagName(value);
+          setTagInputError(null);
+        }}
+        onAddTag={handleAddTag}
+        onRenameTag={handleRenameTag}
+        onDeleteTag={handleDeleteTag}
+      />
+    ) : (
+      <>
+        {shouldShowMainSaveError ? (
+          <div className="app-error-alert" role="alert">
+            {mainSaveFeedback}
+          </div>
+        ) : null}
+        <NotesToolbar
+          copy={copy}
+          searchQuery={searchQuery}
+          onSearchQueryChange={setSearchQuery}
+          priority={priority}
+          onPriorityChange={setPriority}
+          sortMode={sortMode}
+          onSortModeChange={setSortMode}
+          noteViewMode={noteViewMode}
+          trashCount={counts.trash}
+          sidebarToggleTitle={sidebarToggleTitle}
+          onToggleSidebar={() =>
+            setIsSidebarCollapsed((collapsed) => !collapsed)
+          }
+          onResetFilters={resetFilters}
+          onClearTrash={() => setIsClearTrashConfirmOpen(true)}
+        />
+
+        <NotesList
+          copy={copy}
+          language={currentLanguage}
+          noteViewMode={noteViewMode}
+          visibleNotes={visibleNotes}
+          hasData={Boolean(data)}
+          isLoading={isLoading}
+          hasLoadError={hasLoadError}
+          onRetryLoad={() => loadData()}
+          onOpenNote={openExistingNote}
+          onToggleCompleted={async (note) => {
+            await updateNote(toggleNoteCompleted(note));
+          }}
+          onToggleChecklist={async (note, itemId, checked) => {
+            await updateNote(toggleChecklistItem(note, itemId, checked));
+          }}
+          onTrash={handleMoveToTrash}
+          onRestore={handleRestore}
+          onDuplicate={handleDuplicateNote}
+          onDelete={setDeleteTarget}
+        />
+      </>
+    );
 
   return (
-    <div className={appClassName} style={appStyle}>
-      <header className="titlebar">
-        <div className="titlebar-left">
-          <span className="app-logo">I</span>
-          <span className="app-title">{copy.appTitle}</span>
-        </div>
-        <div className="titlebar-actions">
-          <AppButton
-            className={
-              windowState.isAlwaysOnTop ? "icon-btn active" : "icon-btn"
-            }
-            active={windowState.isAlwaysOnTop}
-            variant="icon"
-            aria-label={pinButtonLabel}
-            title={pinButtonLabel}
-            icon={<PinIcon pinned={windowState.isAlwaysOnTop} />}
-            onClick={async () =>
-              setWindowState(await window.ideaNotes.toggleAlwaysOnTop())
-            }
-          />
-          <AppButton
-            className="icon-btn titlebar-icon-btn"
-            variant="icon"
-            aria-label={copy.settings}
-            title={copy.settings}
-            icon={<SettingsIcon />}
-            onClick={openSettings}
-          />
-          <div className="window-controls">
-            <AppButton
-              variant="icon"
-              aria-label={copy.minimize}
-              icon={<MinimizeIcon />}
-              onClick={() => window.ideaNotes.minimizeWindow()}
-            />
-            <AppButton
-              variant="icon"
-              aria-label={
-                windowState.isMaximized ? copy.restoreWindow : copy.maximize
-              }
-              icon={
-                windowState.isMaximized ? <RestoreIcon /> : <MaximizeIcon />
-              }
-              onClick={async () =>
-                setWindowState(await window.ideaNotes.toggleMaximizeWindow())
-              }
-            />
-            <AppButton
-              className="close"
-              variant="icon"
-              aria-label={copy.close}
-              icon={<CloseIcon />}
-              onClick={() => window.ideaNotes.closeWindow()}
-            />
-          </div>
-        </div>
-      </header>
-
-      <div className={appBodyClassName}>
-        <aside className="sidebar">
-          <div className="sidebar-header">
-            <AppButton
-              variant="primary"
-              icon={<PlusIcon weight="bold" />}
-              onClick={openNewNote}
-            >
-              {copy.newNote}
-            </AppButton>
-          </div>
-          <nav className="nav-menu" aria-label={copy.notesNav}>
-            {(["active", "completed", "trash"] as NoteStatus[]).map(
-              (status) => (
-                <AppButton
-                  className="nav-link"
-                  active={viewMode === status}
-                  icon={statusIcons[status]}
-                  key={status}
-                  onClick={() => setViewMode(status)}
-                >
-                  <span>{copy.statusLabels[status]}</span>
-                  <span className="nav-badge">{counts[status]}</span>
-                </AppButton>
-              ),
-            )}
-          </nav>
-          <section className="tags-section">
-            <div className="section-title">{copy.tagFilter}</div>
-            <div className="tag-stack">
-              {data?.tags.map((tag) => (
-                <button
-                  className={
-                    selectedTags.includes(tag)
-                      ? "tag-option selected"
-                      : "tag-option"
-                  }
-                  type="button"
-                  key={tag}
-                  onClick={() => toggleSelectedTag(tag)}
-                >
-                  #{tag}
-                </button>
-              ))}
-            </div>
-            <AppButton
-              className="tag-settings-link"
-              active={viewMode === "tag-settings"}
-              icon={<TagIcon weight="bold" />}
-              onClick={openTagSettings}
-            >
-              {copy.tagSettingsNav}
-            </AppButton>
-          </section>
-        </aside>
-
-        <main className="main-content">
-          {viewMode === "tag-settings" ? (
-            <TagSettingsPanel
-              data={data}
-              copy={copy}
-              tagName={tagName}
-              setTagName={setTagName}
-              onAddTag={handleAddTag}
-              onRenameTag={handleRenameTag}
-              onDeleteTag={handleDeleteTag}
-            />
-          ) : (
-            <>
-              <section className="toolbar" aria-label={copy.toolbar}>
-                <AppButton
-                  className="icon-btn sidebar-toggle"
-                  variant="icon"
-                  aria-label={copy.sidebarToggle}
-                  title={sidebarToggleTitle}
-                  icon={<SidebarToggleIcon />}
-                  onClick={() =>
-                    setIsSidebarCollapsed((collapsed) => !collapsed)
-                  }
-                />
-                <label className="search-field">
-                  <span>{copy.search}</span>
-                  <input
-                    type="search"
-                    value={searchQuery}
-                    onChange={(event) => setSearchQuery(event.target.value)}
-                    placeholder={copy.searchPlaceholder}
-                  />
-                </label>
-                <label className="toolbar-select-group">
-                  <span>{copy.priority}</span>
-                  <select
-                    className="priority-select"
-                    value={priority}
-                    onChange={(event) =>
-                      setPriority(event.target.value as NotePriority | "all")
-                    }
-                  >
-                    <option value="all">{copy.all}</option>
-                    <option className="priority-option-high" value="high">
-                      {copy.priorityLabels.high}
-                    </option>
-                    <option className="priority-option-medium" value="medium">
-                      {copy.priorityLabels.medium}
-                    </option>
-                    <option className="priority-option-low" value="low">
-                      {copy.priorityLabels.low}
-                    </option>
-                  </select>
-                </label>
-                <label className="toolbar-select-group">
-                  <span>{copy.sort}</span>
-                  <select
-                    value={sortMode}
-                    onChange={(event) =>
-                      setSortMode(event.target.value as SortMode)
-                    }
-                  >
-                    <option value="important">{copy.sortImportant}</option>
-                    <option value="newest">{copy.sortNewest}</option>
-                    <option value="progress">{copy.sortProgress}</option>
-                  </select>
-                </label>
-                <AppButton
-                  className="btn-subtle"
-                  icon={<ArrowCounterClockwiseIcon weight="bold" />}
-                  onClick={resetFilters}
-                >
-                  {copy.resetFilters}
-                </AppButton>
-                {noteViewMode === "trash" && counts.trash > 0 && (
-                  <AppButton
-                    className="danger"
-                    icon={<TrashIcon weight="bold" />}
-                    onClick={() => setIsClearTrashConfirmOpen(true)}
-                  >
-                    {copy.clearTrash}
-                  </AppButton>
-                )}
-              </section>
-
-              <section
-                className="notes-list"
-                aria-label={copy.statusLabels[noteViewMode]}
-              >
-                {hasLoadError ? (
-                  <div className="empty-state">
-                    <strong>{copy.loadErrorTitle}</strong>
-                    <p>{copy.loadErrorBody}</p>
-                    <AppButton
-                      className="btn-subtle"
-                      icon={<ArrowCounterClockwiseIcon weight="bold" />}
-                      onClick={() => loadData()}
-                    >
-                      {copy.retryLoad}
-                    </AppButton>
-                  </div>
-                ) : data ? (
-                  visibleNotes.length > 0 ? (
-                    visibleNotes.map((note) => (
-                      <NoteCard
-                        key={note.id}
-                        note={note}
-                        copy={copy}
-                        language={currentLanguage}
-                        onOpen={openExistingNote}
-                        onToggleCompleted={async () =>
-                          updateNote(toggleNoteCompleted(note))
-                        }
-                        onToggleChecklist={async (itemId, checked) =>
-                          updateNote(toggleChecklistItem(note, itemId, checked))
-                        }
-                        onTrash={handleMoveToTrash}
-                        onRestore={handleRestore}
-                        onDuplicate={handleDuplicateNote}
-                        onDelete={setDeleteTarget}
-                      />
-                    ))
-                  ) : (
-                    <div className="empty-state">{copy.emptyNotes}</div>
-                  )
-                ) : isLoading ? (
-                  <div className="empty-state">{copy.loadingNotes}</div>
-                ) : (
-                  <div className="empty-state">{copy.emptyNotes}</div>
-                )}
-              </section>
-            </>
-          )}
-        </main>
-      </div>
-
+    <AppShell
+      appClassName={appClassName}
+      appBodyClassName={appBodyClassName}
+      copy={copy}
+      windowState={windowState}
+      pinButtonLabel={pinButtonLabel}
+      viewMode={viewMode}
+      counts={counts}
+      tags={data?.tags ?? []}
+      selectedTags={selectedTags}
+      mainContent={mainContent}
+      onToggleAlwaysOnTop={async () =>
+        setWindowState(await window.ideaNotes.toggleAlwaysOnTop())
+      }
+      onOpenSettings={openSettings}
+      onMinimizeWindow={() => window.ideaNotes.minimizeWindow()}
+      onToggleMaximizeWindow={async () =>
+        setWindowState(await window.ideaNotes.toggleMaximizeWindow())
+      }
+      onCloseWindow={() => window.ideaNotes.closeWindow()}
+      onOpenNewNote={openNewNote}
+      onViewModeChange={setViewMode}
+      onToggleSelectedTag={toggleSelectedTag}
+      onOpenTagSettings={openTagSettings}
+    >
       {viewMode === "settings" ? (
-        <SettingsPanel
-          data={data}
-          language={currentLanguage}
-          onSettingsChange={handleSettingsChange}
-          onStartupChange={handleStartupChange}
-          onResetSettings={() => setIsResetSettingsConfirmOpen(true)}
-          onBack={() => setViewMode("active")}
-        />
+        <>
+          <SettingsPanel
+            data={data}
+            language={currentLanguage}
+            isSaving={isSaving}
+            saveError={!isResetSettingsConfirmOpen ? mainSaveFeedback : null}
+            onSettingsChange={handleSettingsChange}
+            onStartupChange={handleStartupChange}
+            onResetSettings={() => {
+              setSaveFeedback(null);
+              setIsResetSettingsConfirmOpen(true);
+            }}
+            onBack={() => setViewMode("active")}
+          />
+        </>
+      ) : null}
+
+      {mainSaveFeedback && hasConfirmDialog ? (
+        <div className="app-error-alert dialog-error-alert" role="alert">
+          {mainSaveFeedback}
+        </div>
       ) : null}
 
       {isResetSettingsConfirmOpen && (
@@ -607,6 +494,7 @@ export default function App(): ReactElement {
           onConfirm={handleConfirmResetSettings}
           panelClassName="settings-reset-confirm-panel"
           confirmLabel={copy.confirm}
+          isBusy={isSaving}
         />
       )}
 
@@ -619,8 +507,12 @@ export default function App(): ReactElement {
           noteTimestamps={editingNote}
           setDraft={setDraft}
           onToggleTag={toggleDraftTag}
-          onCancel={() => setIsEditorOpen(false)}
+          onCancel={() => {
+            if (!isSaving) setIsEditorOpen(false);
+          }}
           onSave={handleSaveNote}
+          saveError={editorSaveFeedback}
+          isSaving={isSaving}
         />
       ) : null}
 
@@ -630,6 +522,7 @@ export default function App(): ReactElement {
           copy={copy}
           onCancel={() => setDeleteTarget(null)}
           onConfirm={() => handlePermanentDelete(deleteTarget.id)}
+          isBusy={isSaving}
         />
       ) : null}
 
@@ -640,8 +533,9 @@ export default function App(): ReactElement {
           copy={copy}
           onCancel={() => setIsClearTrashConfirmOpen(false)}
           onConfirm={handleClearTrash}
+          isBusy={isSaving}
         />
       )}
-    </div>
+    </AppShell>
   );
 }

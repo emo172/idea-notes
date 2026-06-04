@@ -20,7 +20,7 @@ import {
   renameTag,
   restoreNoteFromTrash,
 } from "@shared/noteLogic";
-import type { IdeaNote, IdeaNotesData } from "@shared/types";
+import type { IdeaNote, IdeaNotesData, IdeaSettings } from "@shared/types";
 
 const baseTime = Date.parse("2026-05-29T08:00:00.000Z");
 
@@ -207,7 +207,10 @@ describe("noteLogic", () => {
     expect(purgeExpiredTrash(neverData, now)).toBe(neverData);
     const invalidRetentionData = {
       ...data,
-      settings: { ...defaultSettings, trashAutoDelete: "invalid" },
+      settings: {
+        ...defaultSettings,
+        trashAutoDelete: "invalid",
+      } as unknown as IdeaSettings,
     };
     expect(purgeExpiredTrash(invalidRetentionData, now)).toBe(
       invalidRetentionData,

@@ -8,7 +8,6 @@ import type { IdeaNotesData, IdeaSettings } from "./types";
 // 默认设置用于首次启动、数据文件缺失或后续重置设置时初始化应用偏好。
 export const defaultSettings: IdeaSettings = {
   themeMode: "light",
-  backgroundColor: "#f8fafc",
   startup: false,
   trashAutoDelete: "never",
   language: "zh-CN",

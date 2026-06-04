@@ -95,6 +95,35 @@ describe("App shell navigation and buttons", () => {
     );
   });
 
+  it("首次加载后使用主进程返回的窗口状态初始化标题栏按钮", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME), {
+      windowState: { isAlwaysOnTop: true, isMaximized: true },
+    });
+
+    render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    expect(api.getWindowState).toHaveBeenCalledTimes(1);
+    expect(
+      screen.getByRole("button", { name: "取消置顶" }).classList,
+    ).toContain("active");
+    expect(screen.getByRole("button", { name: "还原窗口" })).toBeTruthy();
+  });
+
+  it("窗口状态读取失败时保留默认标题栏状态并继续加载数据", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    vi.mocked(api.getWindowState).mockRejectedValueOnce(
+      new Error("window state failed"),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByText("重构 Desktop App 导航栏")).toBeTruthy();
+    expect(api.getWindowState).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "置顶" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "最大化" })).toBeTruthy();
+  });
+
   it("标题栏图标组件从 Phosphor 图标库导入", () => {
     const packageJson = JSON.parse(
       readFileSync(resolve("package.json"), "utf8"),
@@ -171,14 +200,14 @@ describe("App shell navigation and buttons", () => {
   });
 
   it("筛选重置按钮使用重置图标", () => {
-    const appSource = readFileSync(
-      resolve("src/renderer/src/app/IdeaNotesApp.tsx"),
+    const toolbarSource = readFileSync(
+      resolve("src/renderer/src/components/toolbar/NotesToolbar.tsx"),
       "utf8",
     );
 
-    expect(appSource).toContain("ArrowCounterClockwiseIcon");
-    expect(appSource).not.toContain("BroomIcon");
-    expect(appSource).not.toContain("XCircleIcon");
+    expect(toolbarSource).toContain("ArrowCounterClockwiseIcon");
+    expect(toolbarSource).not.toContain("BroomIcon");
+    expect(toolbarSource).not.toContain("XCircleIcon");
   });
 
   it.each([
@@ -257,6 +286,15 @@ describe("App shell navigation and buttons", () => {
       styles,
       ".note-delete-action",
     );
+    const buttonSizeMdBlock = readCssRuleBlock(
+      styles,
+      ".app-button-size-md",
+    );
+    const iconButtonBlock = readCssRuleBlock(
+      styles,
+      ".app-button-variant-icon",
+    );
+    const toolbarBlock = readCssRuleBlock(styles, ".toolbar");
     const titlebarIcons = readFileSync(
       resolve(RENDERER_SRC, "components/titlebar/TitlebarIcons.tsx"),
       "utf8",
@@ -278,8 +316,13 @@ describe("App shell navigation and buttons", () => {
     expect(styles).toContain(".app-button-icon");
     expect(styles).toContain(".app-button-variant-icon");
     expect(styles).toContain(".app-button-size-md");
-    expect(styles).toContain("width: 100px;");
-    expect(styles).toContain("height: 40px;");
+    expect(buttonSizeMdBlock).toContain("min-width: 100px;");
+    expect(buttonSizeMdBlock).toContain("height: 40px;");
+    expect(buttonSizeMdBlock).not.toMatch(/(?:^|[{\s;])width:\s*100px;/);
+    expect(iconButtonBlock).toContain("width: 32px;");
+    expect(iconButtonBlock).toContain("height: 32px;");
+    expect(iconButtonBlock).toContain("min-width: 32px;");
+    expect(toolbarBlock).toContain("flex-wrap: wrap;");
     expect(styles).toContain(".editor-action-button");
     expect(styles).toContain(".editor-cancel-action");
     expect(styles).toContain(".editor-save-action");

@@ -1,0 +1,13 @@
+/*
+ * 笔记列表样式模块。
+ * 只维护列表滚动区和卡片间距，不处理单张卡片内部布局。
+ */
+.notes-list {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  padding-right: 4px;
+}

@@ -1,0 +1,48 @@
+/*
+ * 笔记卡片动作样式模块。
+ * 管理卡片头部菜单入口、上下文菜单定位和底部动作按钮状态色。
+ */
+.note-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -4px;
+}
+
+.note-icon-btn {
+  color: var(--muted);
+}
+
+.note-context-menu {
+  right: 0;
+}
+
+.card-actions {
+  gap: 6px;
+}
+
+.note-complete-action {
+  --button-bg: color-mix(in oklab, var(--success), transparent 90%);
+  --button-border: color-mix(in oklab, var(--success), var(--surface) 70%);
+  color: var(--success);
+}
+
+.note-complete-action:hover {
+  --button-bg: var(--success);
+  --button-border: var(--success);
+  --button-hover-shadow: 0 10px 22px rgba(22, 163, 74, 0.2);
+  color: #ffffff;
+}
+
+.note-delete-action {
+  --button-bg: color-mix(in oklab, var(--danger), transparent 92%);
+  --button-border: color-mix(in oklab, var(--danger), var(--surface) 72%);
+  color: var(--danger);
+}
+
+.note-delete-action:hover {
+  --button-bg: var(--danger);
+  --button-border: var(--danger);
+  --button-hover-shadow: 0 10px 22px rgba(220, 38, 38, 0.22);
+  color: #ffffff;
+}

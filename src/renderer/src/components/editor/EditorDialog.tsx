@@ -20,6 +20,8 @@ interface EditorDialogProps {
   onToggleTag: (tag: string) => void;
   onCancel: () => void;
   onSave: () => Promise<void>;
+  saveError?: string | null;
+  isSaving?: boolean;
 }
 
 export function EditorDialog({
@@ -32,6 +34,8 @@ export function EditorDialog({
   onToggleTag,
   onCancel,
   onSave,
+  saveError,
+  isSaving = false,
 }: EditorDialogProps): ReactElement {
   // 行号至少保留三行，空白新笔记也能呈现接近真实编辑器的输入基线。
   const lineNumbers = Array.from(
@@ -44,6 +48,8 @@ export function EditorDialog({
       <AppButton
         className="editor-action-button editor-cancel-action"
         icon={<XCircleIcon className="editor-cancel-icon" weight="bold" />}
+        disabled={isSaving}
+        aria-busy={isSaving}
         onClick={onCancel}
       >
         {copy.cancel}
@@ -52,6 +58,8 @@ export function EditorDialog({
         className="editor-action-button editor-save-action"
         variant="primary"
         icon={<FloppyDiskIcon weight="bold" />}
+        disabled={isSaving}
+        aria-busy={isSaving}
         onClick={onSave}
       >
         {copy.saveNote}
@@ -69,12 +77,19 @@ export function EditorDialog({
       bodyClassName="editor-body"
       actionsClassName="editor-actions"
       actions={actions}
+      onEscape={onCancel}
     >
+      {saveError ? (
+        <div className="app-error-alert editor-error-alert" role="alert">
+          {saveError}
+        </div>
+      ) : null}
       <div className="editor-main">
         <label className="form-field">
           <span>{copy.title}</span>
           <input
             aria-label={copy.title}
+            disabled={isSaving}
             value={draft.title}
             onChange={(event) =>
               setDraft((currentDraft) => ({
@@ -96,6 +111,7 @@ export function EditorDialog({
             <textarea
               aria-label={copy.body}
               className="editor-textarea"
+              disabled={isSaving}
               value={draft.body}
               onChange={(event) =>
                 setDraft((currentDraft) => ({
@@ -113,6 +129,7 @@ export function EditorDialog({
           <span>{copy.priority}</span>
           <select
             className="priority-select"
+            disabled={isSaving}
             value={draft.priority}
             onChange={(event) =>
               setDraft((currentDraft) => ({
@@ -136,6 +153,7 @@ export function EditorDialog({
           <span>{copy.dueAt}</span>
           <input
             type="datetime-local"
+            disabled={isSaving}
             value={draft.dueAt ?? ""}
             onChange={(event) =>
               setDraft((currentDraft) => ({
@@ -178,6 +196,7 @@ export function EditorDialog({
                     : "tag-option"
                 }
                 type="button"
+                disabled={isSaving}
                 key={tag}
                 onClick={() => onToggleTag(tag)}
               >

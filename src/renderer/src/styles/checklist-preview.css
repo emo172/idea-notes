@@ -1,0 +1,60 @@
+/*
+ * 笔记卡片清单预览样式模块。
+ * 只维护清单条目、完成摘要和分段进度条。
+ */
+.checklist-preview {
+  display: grid;
+  gap: 4px;
+}
+
+.check-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--fg-2);
+  font-size: 13px;
+  line-height: 1.25;
+}
+
+.check-item input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  min-height: 0;
+}
+
+.check-item.checked span {
+  color: var(--muted);
+  text-decoration: line-through;
+}
+
+.progress-bar-container {
+  display: flex;
+  gap: 2px;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: var(--surface);
+}
+
+.completion-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.progress-bar-segment {
+  flex: 1;
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.progress-bar-segment.completed {
+  background: var(--success);
+}
+
+.progress-bar-segment.pending {
+  background: var(--border);
+}

@@ -7,7 +7,11 @@
 import { app, BrowserWindow, ipcMain } from "electron";
 import { join } from "node:path";
 import { readData, saveData } from "./store";
-import type { DesktopWindowState, IdeaNotesData } from "@shared/types";
+import {
+  assertIdeaNotesData,
+  sanitizeIdeaNotesData,
+} from "@shared/ideaNotesDataValidation";
+import type { DesktopWindowState } from "@shared/types";
 
 if (process.platform === "linux") {
   app.setName("idea-notes");
@@ -49,7 +53,7 @@ function createWindow(): void {
   mainWindow = new BrowserWindow({
     width: 1180,
     height: 760,
-    minWidth: 960,
+    minWidth: 720,
     minHeight: 640,
     title: "灵感笔记",
     frame: false,
@@ -86,10 +90,18 @@ function registerIpc(): void {
     return readData();
   });
 
-  ipcMain.handle("notes:save-data", async (event, data: IdeaNotesData) => {
+  ipcMain.handle("notes:save-data", async (event, data: unknown) => {
     assertMainWindow(BrowserWindow.fromWebContents(event.sender));
-    // 数据结构由 shared 类型约束，真正写盘统一交给 store 层。
-    return saveData(data);
+    const validatedData = assertIdeaNotesData(data);
+    const sanitizedData = sanitizeIdeaNotesData(validatedData);
+    return saveData(sanitizedData);
+  });
+
+  ipcMain.handle("window:get-state", (event) => {
+    const window = assertMainWindow(
+      BrowserWindow.fromWebContents(event.sender),
+    );
+    return getWindowState(window);
   });
 
   ipcMain.handle("window:minimize", (event) => {
@@ -126,6 +138,9 @@ function registerIpc(): void {
 
   ipcMain.handle("app:set-startup", (event, enabled: boolean) => {
     assertMainWindow(BrowserWindow.fromWebContents(event.sender));
+    if (typeof enabled !== "boolean") {
+      throw new Error("Invalid startup payload");
+    }
     // 开机自启动必须在主进程调用系统 API，renderer 只传递布尔意图。
     app.setLoginItemSettings({ openAtLogin: enabled });
     return app.getLoginItemSettings().openAtLogin;
