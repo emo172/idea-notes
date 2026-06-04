@@ -43,6 +43,7 @@ describe("preload 暴露的桌面能力 API", () => {
     expect(Object.keys(api).sort()).toEqual([
       "closeWindow",
       "getData",
+      "getWindowState",
       "minimizeWindow",
       "saveData",
       "setStartup",
@@ -73,30 +74,36 @@ describe("preload 暴露的桌面能力 API", () => {
   it("将窗口和系统能力映射到固定 IPC 通道", async () => {
     const api = await loadPreloadApi();
     electronMock.invoke
+      .mockResolvedValueOnce({ isAlwaysOnTop: true, isMaximized: true })
       .mockResolvedValueOnce({ isAlwaysOnTop: false, isMaximized: false })
       .mockResolvedValueOnce({ isAlwaysOnTop: false, isMaximized: true })
       .mockResolvedValueOnce(undefined)
       .mockResolvedValueOnce({ isAlwaysOnTop: true, isMaximized: false })
       .mockResolvedValueOnce(true);
 
+    await api.getWindowState();
     await api.minimizeWindow();
     await api.toggleMaximizeWindow();
     await api.closeWindow();
     await api.toggleAlwaysOnTop();
     await api.setStartup(true);
 
-    expect(electronMock.invoke).toHaveBeenNthCalledWith(1, "window:minimize");
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(1, "window:get-state");
     expect(electronMock.invoke).toHaveBeenNthCalledWith(
       2,
+      "window:minimize",
+    );
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(
+      3,
       "window:toggle-maximize",
     );
-    expect(electronMock.invoke).toHaveBeenNthCalledWith(3, "window:close");
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(4, "window:close");
     expect(electronMock.invoke).toHaveBeenNthCalledWith(
-      4,
+      5,
       "window:toggle-always-on-top",
     );
     expect(electronMock.invoke).toHaveBeenNthCalledWith(
-      5,
+      6,
       "app:set-startup",
       true,
     );

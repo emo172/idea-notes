@@ -14,6 +14,7 @@ const api: IdeaNotesApi = {
   saveData: (data: IdeaNotesData) =>
     ipcRenderer.invoke("notes:save-data", data),
   // 窗口控制动作全部封装为明确 API，便于主进程校验来源。
+  getWindowState: () => ipcRenderer.invoke("window:get-state"),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
   toggleMaximizeWindow: () => ipcRenderer.invoke("window:toggle-maximize"),
   closeWindow: () => ipcRenderer.invoke("window:close"),

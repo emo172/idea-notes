@@ -85,6 +85,7 @@ export interface DesktopWindowState {
 // preload 暴露给渲染层的唯一桌面能力入口，禁止直接暴露 ipcRenderer。
 export interface IdeaNotesApi {
   getData: () => Promise<IdeaNotesData>;
+  getWindowState: () => Promise<DesktopWindowState>;
   saveData: (data: IdeaNotesData) => Promise<IdeaNotesData>;
   minimizeWindow: () => Promise<DesktopWindowState>;
   toggleMaximizeWindow: () => Promise<DesktopWindowState>;
