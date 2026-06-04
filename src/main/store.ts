@@ -14,6 +14,9 @@ import type { IdeaNotesData } from "@shared/types";
 
 // 数据文件放在 Electron userData 目录，避免写入安装目录或源码目录。
 const dataFileName = "idea-notes-data.json";
+const themeModes = new Set(["light", "dark", "system"]);
+const trashRetentions = new Set(["never", "7", "30", "90"]);
+const appLanguages = new Set(["zh-CN", "zh-TW", "en"]);
 
 function dataPath(): string {
   return join(app.getPath("userData"), dataFileName);
@@ -51,6 +54,32 @@ function normalizeTags(tags: unknown): string[] {
   return [...new Set(normalized)];
 }
 
+function normalizeSettings(settings: unknown): IdeaNotesData["settings"] {
+  const legacySettings = isRecord(settings) ? settings : {};
+  return {
+    ...legacySettings,
+    themeMode:
+      typeof legacySettings.themeMode === "string" &&
+      themeModes.has(legacySettings.themeMode)
+        ? legacySettings.themeMode
+        : defaultSettings.themeMode,
+    startup:
+      typeof legacySettings.startup === "boolean"
+        ? legacySettings.startup
+        : defaultSettings.startup,
+    trashAutoDelete:
+      typeof legacySettings.trashAutoDelete === "string" &&
+      trashRetentions.has(legacySettings.trashAutoDelete)
+        ? legacySettings.trashAutoDelete
+        : defaultSettings.trashAutoDelete,
+    language:
+      typeof legacySettings.language === "string" &&
+      appLanguages.has(legacySettings.language)
+        ? legacySettings.language
+        : defaultSettings.language,
+  } as IdeaNotesData["settings"];
+}
+
 function normalizeData(data: IdeaNotesData): IdeaNotesData {
   return sanitizeIdeaNotesData({
     ...data,
@@ -59,10 +88,7 @@ function normalizeData(data: IdeaNotesData): IdeaNotesData {
       ...note,
       tags: normalizeTags(note.tags),
     })),
-    settings: {
-      ...defaultSettings,
-      ...data.settings,
-    },
+    settings: normalizeSettings(data.settings),
   });
 }
 
