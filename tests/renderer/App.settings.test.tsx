@@ -6,10 +6,11 @@
 // 3. 按功能域拆分测试，避免单个文件过大。
 import { existsSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { defaultSettings, getDefaultData } from "@shared/defaultData";
+import type { IdeaNotesData } from "@shared/types";
 import App from "../../src/renderer/src/app/IdeaNotesApp";
 import { settingsCopy } from "../../src/renderer/src/i18n";
 import { BASE_TIME, RENDERER_SRC, installApi } from "./testUtils";
@@ -47,6 +48,10 @@ describe("App settings and i18n", () => {
   });
 
   it("设置中心使用外观和系统页签且不显示背景颜色设置", async () => {
+    expect(defaultSettings).not.toHaveProperty("backgroundColor");
+    expect(getDefaultData(BASE_TIME).settings).not.toHaveProperty(
+      "backgroundColor",
+    );
     installApi(getDefaultData(BASE_TIME));
     const user = userEvent.setup();
 
@@ -72,12 +77,11 @@ describe("App settings and i18n", () => {
     data.settings = {
       ...defaultSettings,
       themeMode: "dark",
-      backgroundColor: "#111827",
       startup: true,
       trashAutoDelete: "30",
     };
     const { api, saved } = installApi(data);
-    api.setStartup = vi.fn(async () => true);
+    api.setStartup = vi.fn(async (enabled) => enabled);
     const confirmSpy = vi.spyOn(window, "confirm");
     const resetDialogName = "确认重置所有设置？";
     const user = userEvent.setup();
@@ -113,10 +117,285 @@ describe("App settings and i18n", () => {
 
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
     expect(api.setStartup).toHaveBeenCalledWith(defaultSettings.startup);
-    expect(saved.at(-1)?.settings).toEqual({
+    expect(saved.at(-1)?.settings).toEqual(defaultSettings);
+  });
+
+  it("设置重置保存失败时保留确认弹窗和当前设置并显示错误提示", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings = {
       ...defaultSettings,
+      themeMode: "dark",
       startup: true,
+      trashAutoDelete: "30",
+    };
+    const { api } = installApi(data);
+    api.setStartup = vi.fn(async () => true);
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
     });
+    const resetDialogName = "确认重置所有设置？";
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(getSettingsResetButton());
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: resetDialogName,
+    });
+    await user.click(
+      within(confirmDialog).getByRole("button", { name: "确认" }),
+    );
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(screen.getByRole("dialog", { name: resetDialogName })).toBeTruthy();
+    expect(
+      (
+        screen.getByRole("combobox", {
+          name: /主题模式/,
+        }) as HTMLSelectElement
+      ).value,
+    ).toBe("dark");
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
+    expect(api.setStartup).toHaveBeenNthCalledWith(1, false);
+    expect(api.setStartup).toHaveBeenNthCalledWith(2, true);
+  });
+
+  it("设置保存 pending 时禁用设置控件并阻止开机自启动副作用", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings.startup = false;
+    let resolveSave: ((data: IdeaNotesData) => void) | undefined;
+    const { api } = installApi(data);
+    api.saveData = vi.fn(
+      (_nextData) =>
+        new Promise<IdeaNotesData>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    api.setStartup = vi.fn(async (enabled) => enabled);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(screen.getByRole("button", { name: "系统设置" }));
+    const languageSelect = screen.getByRole("combobox", {
+      name: /语言/,
+    }) as HTMLSelectElement;
+    await user.selectOptions(languageSelect, "en");
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+
+    const startupSwitch = screen.getByRole("checkbox", {
+      name: /启动行为/,
+    }) as HTMLInputElement;
+    expect(languageSelect.disabled).toBe(true);
+    expect(startupSwitch.disabled).toBe(true);
+
+    await user.click(startupSwitch);
+    expect(api.setStartup).not.toHaveBeenCalled();
+    expect(api.saveData).toHaveBeenCalledTimes(1);
+
+    const finishSave = resolveSave;
+    if (!finishSave) throw new Error("save promise was not created");
+    await act(async () => {
+      finishSave({
+        ...data,
+        settings: {
+          ...data.settings,
+          language: "en",
+        },
+      });
+    });
+  });
+
+  it("设置重置保存 pending 时保留确认弹窗并禁用确认动作", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings = {
+      ...defaultSettings,
+      themeMode: "dark",
+      startup: true,
+      trashAutoDelete: "30",
+    };
+    let resolveSave: ((data: IdeaNotesData) => void) | undefined;
+    const { api } = installApi(data);
+    api.setStartup = vi.fn(async (enabled) => enabled);
+    api.saveData = vi.fn(
+      (nextData) =>
+        new Promise<IdeaNotesData>((resolve) => {
+          resolveSave = () => resolve(nextData);
+        }),
+    );
+    const resetDialogName = "确认重置所有设置？";
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(getSettingsResetButton());
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: resetDialogName,
+    });
+    await user.click(
+      within(confirmDialog).getByRole("button", { name: "确认" }),
+    );
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+    const cancelButton = within(confirmDialog).getByRole("button", {
+      name: "取消",
+    }) as HTMLButtonElement;
+    const confirmButton = within(confirmDialog).getByRole("button", {
+      name: "确认",
+    }) as HTMLButtonElement;
+    expect(cancelButton.disabled).toBe(true);
+    expect(confirmButton.disabled).toBe(true);
+
+    await user.keyboard("{Escape}");
+    await user.click(cancelButton);
+    await user.click(confirmButton);
+
+    expect(screen.getByRole("dialog", { name: resetDialogName })).toBeTruthy();
+    expect(api.saveData).toHaveBeenCalledTimes(1);
+
+    const finishSave = resolveSave;
+    if (!finishSave) throw new Error("save promise was not created");
+    await act(async () => {
+      finishSave({
+        ...data,
+        settings: defaultSettings,
+      });
+    });
+    await waitFor(() =>
+      expect(screen.queryByRole("dialog", { name: resetDialogName })).toBeNull(),
+    );
+  });
+
+  it("设置重置开机自启动失败时恢复可判定状态并显示错误提示", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings = {
+      ...defaultSettings,
+      themeMode: "dark",
+      startup: true,
+      trashAutoDelete: "30",
+    };
+    const { api, saved } = installApi(data);
+    api.setStartup = vi.fn(async () => {
+      throw new Error("startup failed");
+    });
+    const resetDialogName = "确认重置所有设置？";
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(getSettingsResetButton());
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: resetDialogName,
+    });
+    await user.click(
+      within(confirmDialog).getByRole("button", { name: "确认" }),
+    );
+
+    await waitFor(() => expect(api.setStartup).toHaveBeenCalledWith(false));
+    expect(api.saveData).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog", { name: resetDialogName })).toBeTruthy();
+    expect(saved).toEqual([]);
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
+  });
+
+  it("设置重置系统状态变更成功但本地保存失败时回滚系统状态", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings = {
+      ...defaultSettings,
+      themeMode: "dark",
+      startup: true,
+      trashAutoDelete: "30",
+    };
+    const { api } = installApi(data);
+    api.setStartup = vi.fn(async (enabled) => enabled);
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const resetDialogName = "确认重置所有设置？";
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(getSettingsResetButton());
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: resetDialogName,
+    });
+    await user.click(
+      within(confirmDialog).getByRole("button", { name: "确认" }),
+    );
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+    expect(api.setStartup).toHaveBeenNthCalledWith(1, false);
+    expect(api.setStartup).toHaveBeenNthCalledWith(2, true);
+    expect(screen.getByRole("dialog", { name: resetDialogName })).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
+    await user.click(within(confirmDialog).getByRole("button", { name: "取消" }));
+    await user.click(screen.getByRole("button", { name: "系统设置" }));
+    const startupSwitch = screen.getByRole("checkbox", {
+      name: /启动行为/,
+    }) as HTMLInputElement;
+    expect(startupSwitch.checked).toBe(true);
+  });
+
+  it("设置页保存失败提示显示在设置内容区内", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /主题模式/ }),
+      "dark",
+    );
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    const alert = screen.getByRole("alert");
+    expect(alert.textContent).toBe("保存失败，本地数据没有写入。请重试。");
+    expect(alert.classList.contains("settings-error-alert")).toBe(true);
+    expect(alert.closest(".settings-main")).toBeTruthy();
+  });
+
+  it("开机自启动系统变更成功但保存失败时回滚系统状态", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings.startup = false;
+    const { api } = installApi(data);
+    api.setStartup = vi.fn(async (enabled) => enabled);
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(screen.getByRole("button", { name: "系统设置" }));
+    const startupSwitch = screen.getByRole("checkbox", {
+      name: /启动行为/,
+    }) as HTMLInputElement;
+    await user.click(startupSwitch);
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(api.setStartup).toHaveBeenNthCalledWith(1, true);
+    expect(api.setStartup).toHaveBeenNthCalledWith(2, false);
+    expect(startupSwitch.checked).toBe(false);
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
   });
 
   it("设置重置和清空回收站确认弹窗共用按钮布局和样式", async () => {

@@ -4,10 +4,11 @@
 // 1. 使用 jsdom 模拟浏览器环境，避免启动真实 Electron 窗口。
 // 2. 用假的 window.ideaNotes 验证 App 会从 preload API 加载数据。
 // 3. 按功能域拆分测试，避免单个文件过大。
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultData } from "@shared/defaultData";
+import type { IdeaNotesData } from "@shared/types";
 import App from "../../src/renderer/src/app/IdeaNotesApp";
 import { BASE_TIME, installApi } from "./testUtils";
 
@@ -33,6 +34,122 @@ describe("App note cards", () => {
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
     expect(saved.at(-1)?.notes[0]?.title).toBe("重构 Desktop App 导航栏 副本");
     expect(saved.at(-1)?.notes[1]?.title).toBe("重构 Desktop App 导航栏");
+  });
+
+  it("卡片状态保存失败时保留当前视图和原卡片状态并显示错误提示", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "完成" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    const currentCard = screen
+      .getByText("重构 Desktop App 导航栏")
+      .closest("article") as HTMLElement;
+    expect(within(currentCard).getByText(/状态：进行中/)).toBeTruthy();
+    expect(screen.getByRole("region", { name: "进行中" })).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
+  });
+
+  it("卡片移入回收站保存失败时保留当前视图和原卡片状态并显示错误提示", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "删除" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    const currentCard = screen
+      .getByText("重构 Desktop App 导航栏")
+      .closest("article") as HTMLElement;
+    expect(within(currentCard).getByText(/状态：进行中/)).toBeTruthy();
+    expect(screen.getByRole("region", { name: "进行中" })).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
+  });
+
+  it("回收站恢复保存失败时保留回收站视图和原卡片状态并显示错误提示", async () => {
+    const trashData = getDefaultData(BASE_TIME);
+    trashData.notes = [
+      {
+        ...trashData.notes[0],
+        status: "trash",
+        trashedAt: Date.parse("2026-05-29T09:00:00.000Z"),
+      },
+      trashData.notes[1],
+    ];
+    const { api } = installApi(trashData);
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /回收站/ }));
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "恢复" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    const currentCard = screen
+      .getByText("重构 Desktop App 导航栏")
+      .closest("article") as HTMLElement;
+    expect(within(currentCard).getByText(/状态：回收站/)).toBeTruthy();
+    expect(screen.getByRole("region", { name: "回收站" })).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
+  });
+
+  it("保存进行中再次触发卡片保存动作时显示忙碌提示", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    let resolveSave: ((data: IdeaNotesData) => void) | undefined;
+    api.saveData = vi.fn(
+      (nextData) =>
+        new Promise<IdeaNotesData>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "完成" }));
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+    await user.click(within(card).getByRole("button", { name: "删除" }));
+    await user.click(within(card).getByRole("button", { name: "编辑笔记" }));
+
+    expect(api.saveData).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("heading", { name: "编辑笔记" })).toBeNull();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "正在保存，请稍后再试。",
+    );
+
+    const finishSave = resolveSave;
+    if (!finishSave) throw new Error("save promise was not created");
+    await act(async () => {
+      finishSave(getDefaultData(BASE_TIME));
+    });
+    await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
 
   it.each([
@@ -289,6 +406,37 @@ describe("App note cards", () => {
     expect(emptyCard.querySelector(".deadline-status")).toBeNull();
   });
 
+  it("无截止时间的笔记卡片显示空截止文案且不回退到更新时间", async () => {
+    const updatedAt = Date.parse("2026-05-25T10:30:00.000Z");
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[1],
+        id: "note-without-due-date",
+        title: "没有截止时间的卡片",
+        dueAt: undefined,
+        updatedAt,
+      },
+    ];
+    const formattedUpdatedAt = new Intl.DateTimeFormat("zh-CN", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(updatedAt));
+    installApi(data);
+
+    render(<App />);
+
+    const title = await screen.findByText("没有截止时间的卡片");
+    const card = title.closest("article") as HTMLElement;
+    const meta = card.querySelector(".note-meta") as HTMLElement;
+
+    expect(meta.textContent).toContain("截止时间：未设置截止时间");
+    expect(meta.textContent).not.toContain(`截止时间：${formattedUpdatedAt}`);
+  });
+
   it("笔记卡片状态和截止时间标签显示图标", async () => {
     installApi(getDefaultData(BASE_TIME));
 
@@ -460,6 +608,40 @@ describe("App note cards", () => {
     );
   });
 
+  it("彻底删除保存失败时保留确认弹窗和回收站笔记并显示错误提示", async () => {
+    const trashData = getDefaultData(BASE_TIME);
+    const deleteDialogName = "确认彻底删除？";
+    trashData.notes = [
+      {
+        ...trashData.notes[0],
+        status: "trash",
+        trashedAt: Date.parse("2026-05-29T09:00:00.000Z"),
+      },
+      trashData.notes[1],
+    ];
+    const { api } = installApi(trashData);
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /回收站/ }));
+    await user.click(screen.getByRole("button", { name: "删除" }));
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: deleteDialogName,
+    });
+    await user.click(within(confirmDialog).getByRole("button", { name: "确认" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(screen.getByRole("dialog", { name: deleteDialogName })).toBeTruthy();
+    expect(screen.getByText("重构 Desktop App 导航栏")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
+  });
+
   it("清空回收站前要求确认并只删除回收站全部记录", async () => {
     const trashData = getDefaultData(BASE_TIME);
     const clearTrashDialogName = "确认清空回收站？";
@@ -504,5 +686,48 @@ describe("App note cards", () => {
 
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
     expect(saved.at(-1)?.notes.map((note) => note.id)).toEqual(["active-note"]);
+  });
+
+  it("清空回收站保存失败时保留确认弹窗和回收站笔记并显示错误提示", async () => {
+    const trashData = getDefaultData(BASE_TIME);
+    const clearTrashDialogName = "确认清空回收站？";
+    trashData.notes = [
+      {
+        ...trashData.notes[0],
+        id: "first-trash-note",
+        status: "trash",
+        trashedAt: Date.parse("2026-05-29T09:00:00.000Z"),
+      },
+      {
+        ...trashData.notes[1],
+        id: "second-trash-note",
+        status: "trash",
+        trashedAt: Date.parse("2026-05-29T10:00:00.000Z"),
+      },
+    ];
+    const { api } = installApi(trashData);
+    api.saveData = vi.fn(async () => {
+      throw new Error("write failed");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /回收站/ }));
+    await user.click(screen.getByRole("button", { name: "清空回收站" }));
+    const confirmDialog = await screen.findByRole("dialog", {
+      name: clearTrashDialogName,
+    });
+    await user.click(within(confirmDialog).getByRole("button", { name: "确认" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(
+      screen.getByRole("dialog", { name: clearTrashDialogName }),
+    ).toBeTruthy();
+    expect(screen.getByText("重构 Desktop App 导航栏")).toBeTruthy();
+    expect(screen.getByText("产品命名灵感")).toBeTruthy();
+    expect(screen.getByRole("alert").textContent).toBe(
+      "保存失败，本地数据没有写入。请重试。",
+    );
   });
 });

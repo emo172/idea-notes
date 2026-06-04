@@ -6,6 +6,7 @@
 .toolbar {
   min-height: 58px;
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   padding: 10px 12px;
@@ -15,26 +16,31 @@
   background: var(--surface);
 }
 
-.search-field,
-.toolbar-select-group {
+.search-field {
   display: flex;
+  flex: 1 1 240px;
+  flex-direction: column;
   gap: 6px;
   color: var(--muted);
   font-size: 12px;
   font-weight: 700;
-}
-
-.search-field {
-  flex-direction: column;
-}
-
-.search-field {
-  flex: 1;
+  min-width: 0;
 }
 
 .toolbar-select-group {
+  display: flex;
+  flex: 1 1 132px;
   flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
   min-width: 132px;
+}
+
+.toolbar input,
+.toolbar select {
+  width: 100%;
 }
 
 input,

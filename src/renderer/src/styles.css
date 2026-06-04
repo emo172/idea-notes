@@ -10,6 +10,10 @@
 @import "./styles/sidebar.css";
 @import "./styles/toolbar.css";
 @import "./styles/notes.css";
+@import "./styles/notes-list.css";
+@import "./styles/note-card.css";
+@import "./styles/checklist-preview.css";
+@import "./styles/note-actions.css";
 @import "./styles/dialogs.css";
 @import "./styles/editor.css";
 @import "./styles/settings.css";

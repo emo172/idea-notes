@@ -71,6 +71,18 @@ function installMatchMedia(matches: boolean): {
   };
 }
 
+const noteStyleFiles = [
+  "notes.css",
+  "notes-list.css",
+  "note-card.css",
+  "checklist-preview.css",
+  "note-actions.css",
+] as const;
+
+function readStyleFile(file: string): string {
+  return readFileSync(resolve(RENDERER_SRC, "styles", file), "utf8");
+}
+
 describe("App theme and style contracts", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
@@ -174,12 +186,27 @@ describe("App theme and style contracts", () => {
     );
   });
 
-  it("暗色模式的笔记状态页面忽略自定义浅色背景", async () => {
+  it("系统主题监听逻辑由 useSystemTheme hook 维护", () => {
+    const hookPath = resolve(RENDERER_SRC, "hooks/useSystemTheme.ts");
+    const appSource = readFileSync(
+      resolve(RENDERER_SRC, "app/IdeaNotesApp.tsx"),
+      "utf8",
+    );
+
+    expect(existsSync(hookPath)).toBe(true);
+    expect(appSource).toContain(
+      'import { useSystemTheme } from "../hooks/useSystemTheme";',
+    );
+    expect(appSource).toContain("const systemPrefersDark = useSystemTheme();");
+    expect(appSource).not.toContain("window.matchMedia(darkModeQuery)");
+    expect(appSource).not.toContain("setSystemPrefersDark");
+  });
+
+  it("暗色模式的笔记状态页面不使用 settings 背景内联样式", async () => {
     const darkData = getDefaultData(BASE_TIME);
     darkData.settings = {
       ...darkData.settings,
       themeMode: "dark",
-      backgroundColor: "#ffffff",
     };
     darkData.notes = [
       {
@@ -223,12 +250,13 @@ describe("App theme and style contracts", () => {
     expect(appWindow.style.backgroundColor).toBe("");
   });
 
-  it("浅色模式继续允许自定义背景以内联样式覆盖", async () => {
+  it("浅色模式也不使用旧 settings.backgroundColor 内联背景", async () => {
     const lightData = getDefaultData(BASE_TIME);
-    lightData.settings = {
-      ...lightData.settings,
-      backgroundColor: "#102030",
-    };
+    (
+      lightData.settings as typeof lightData.settings & {
+        backgroundColor: string;
+      }
+    ).backgroundColor = "#102030";
     installApi(lightData);
 
     const { container } = render(<App />);
@@ -237,7 +265,7 @@ describe("App theme and style contracts", () => {
     const appWindow = container.querySelector(".app-window") as HTMLElement;
     expect(appWindow).toBeTruthy();
     expect(appWindow.classList.contains("dark")).toBe(false);
-    expect(appWindow.style.backgroundColor).toBe("rgb(16, 32, 48)");
+    expect(appWindow.style.backgroundColor).toBe("");
   });
 
   it("渲染层样式入口拆分为按职责维护的目录文件", () => {
@@ -252,7 +280,7 @@ describe("App theme and style contracts", () => {
       "layout.css",
       "sidebar.css",
       "toolbar.css",
-      "notes.css",
+      ...noteStyleFiles,
       "dialogs.css",
       "editor.css",
       "settings.css",
@@ -262,9 +290,63 @@ describe("App theme and style contracts", () => {
       expect(existsSync(resolve(RENDERER_SRC, "styles", file))).toBe(true);
       expect(styleEntry).toContain(`@import "./styles/${file}";`);
     }
+    expect(styleEntry).toContain(
+      [
+        '@import "./styles/base.css";',
+        '@import "./styles/buttons.css";',
+        '@import "./styles/dropdown.css";',
+        '@import "./styles/layout.css";',
+        '@import "./styles/sidebar.css";',
+        '@import "./styles/toolbar.css";',
+        '@import "./styles/notes.css";',
+        '@import "./styles/notes-list.css";',
+        '@import "./styles/note-card.css";',
+        '@import "./styles/checklist-preview.css";',
+        '@import "./styles/note-actions.css";',
+        '@import "./styles/dialogs.css";',
+        '@import "./styles/editor.css";',
+        '@import "./styles/settings.css";',
+      ].join("\n"),
+    );
 
     expect(styleEntry).not.toContain(".note-card {");
     expect(styleEntry).not.toContain(".settings-view {");
+  });
+
+  it("720-960 窄屏不被基础宽度和工具栏固定布局阻断", () => {
+    const baseStyles = readFileSync(
+      resolve(RENDERER_SRC, "styles/base.css"),
+      "utf8",
+    );
+    const toolbarStyles = readFileSync(
+      resolve(RENDERER_SRC, "styles/toolbar.css"),
+      "utf8",
+    );
+    const bodyBlock = readCssRuleBlock(baseStyles, "body");
+    const toolbarBlock = readCssRuleBlock(toolbarStyles, ".toolbar");
+    const searchFieldBlock = readCssRuleBlock(toolbarStyles, ".search-field");
+    const selectGroupBlock = readCssRuleBlock(
+      toolbarStyles,
+      ".toolbar-select-group",
+    );
+    const toolbarControlBlock = readCssRuleBlock(
+      toolbarStyles,
+      ".toolbar input,\n.toolbar select",
+    );
+
+    expect(bodyBlock).toContain("min-width: 720px;");
+    expect(bodyBlock).not.toContain("min-width: 960px;");
+    expect(bodyBlock).not.toMatch(
+      /min-width:\s*(?:9[6-9]\d|[1-9]\d{3,})px;/,
+    );
+    expect(toolbarBlock).toContain("flex-wrap: wrap;");
+    expect(toolbarBlock).not.toContain("overflow-x:");
+    expect(searchFieldBlock).toContain("flex: 1 1 240px;");
+    expect(searchFieldBlock).toContain("min-width: 0;");
+    expect(selectGroupBlock).toContain("flex: 1 1 132px;");
+    expect(selectGroupBlock).toContain("min-width: 132px;");
+    expect(toolbarControlBlock).toContain("width: 100%;");
+    expect(toolbarStyles).not.toContain("white-space: nowrap;");
   });
 
   it("下拉按钮和菜单组件按 ui 子目录独立维护", () => {
@@ -299,6 +381,10 @@ describe("App theme and style contracts", () => {
       resolve(RENDERER_SRC, "styles/notes.css"),
       "utf8",
     );
+    const noteListStyles = readStyleFile("notes-list.css");
+    const noteCardStyles = readStyleFile("note-card.css");
+    const checklistPreviewStyles = readStyleFile("checklist-preview.css");
+    const noteActionStyles = readStyleFile("note-actions.css");
     const editorStyles = readFileSync(
       resolve(RENDERER_SRC, "styles/editor.css"),
       "utf8",
@@ -309,19 +395,31 @@ describe("App theme and style contracts", () => {
     expect(sidebarStyles).not.toContain(".tag-manager-list");
     expect(toolbarStyles).not.toContain(".form-field");
     expect(toolbarStyles).not.toContain(".setting-row");
-    expect(noteStyles).not.toContain(".settings-actions");
-    expect(noteStyles).not.toContain(".editor-head");
-    expect(noteStyles).not.toContain(".tag-add-row");
+    for (const styles of [
+      noteStyles,
+      noteListStyles,
+      noteCardStyles,
+      checklistPreviewStyles,
+      noteActionStyles,
+    ]) {
+      expect(styles).not.toContain(".settings-actions");
+      expect(styles).not.toContain(".editor-head");
+      expect(styles).not.toContain(".tag-add-row");
+    }
+    expect(noteStyles).not.toContain(".note-card");
+    expect(noteStyles).not.toContain(".checklist-preview");
+    expect(noteStyles).not.toContain(".card-actions");
+    expect(noteListStyles).toContain(".notes-list");
+    expect(noteCardStyles).toContain(".note-card");
+    expect(checklistPreviewStyles).toContain(".checklist-preview");
+    expect(noteActionStyles).toContain(".card-actions");
     expect(editorStyles).not.toContain(".settings-head");
     expect(editorStyles).not.toContain(".settings-main");
   });
 
   it("笔记卡片清单预览使用紧凑行距", () => {
     // 卡片预览的视觉密度由职责样式文件锁定，避免组件测试依赖浏览器布局实现。
-    const noteStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/notes.css"),
-      "utf8",
-    );
+    const noteStyles = readStyleFile("checklist-preview.css");
     const checklistPreviewBlock =
       noteStyles.match(/\.checklist-preview\s*\{[^}]*\}/)?.[0] ?? "";
     const checkItemBlock =
@@ -339,10 +437,7 @@ describe("App theme and style contracts", () => {
   });
 
   it("笔记卡片分段进度条使用不同状态色", () => {
-    const noteStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/notes.css"),
-      "utf8",
-    );
+    const noteStyles = readStyleFile("checklist-preview.css");
     const containerBlock = readCssRuleBlock(
       noteStyles,
       ".progress-bar-container",
@@ -375,7 +470,7 @@ describe("App theme and style contracts", () => {
       "utf8",
     );
     const noteStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/notes.css"),
+      resolve(RENDERER_SRC, "styles/note-card.css"),
       "utf8",
     );
     const rootBlock = readCssRuleBlock(baseStyles, ":root");

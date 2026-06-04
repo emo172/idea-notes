@@ -13,9 +13,12 @@ interface TagSettingsPanelProps {
   data: IdeaNotesData | null;
   copy: AppCopy;
   tagName: string;
+  tagInputError?: string | null;
+  tagSaveFeedback?: string | null;
+  isSaving?: boolean;
   setTagName: (value: string) => void;
-  onAddTag: () => Promise<void>;
-  onRenameTag: (from: string, to: string) => Promise<void>;
+  onAddTag: () => Promise<boolean>;
+  onRenameTag: (from: string, to: string) => Promise<boolean>;
   onDeleteTag: (tag: string) => Promise<void>;
 }
 
@@ -23,6 +26,9 @@ export function TagSettingsPanel({
   data,
   copy,
   tagName,
+  tagInputError,
+  tagSaveFeedback,
+  isSaving = false,
   setTagName,
   onAddTag,
   onRenameTag,
@@ -44,13 +50,13 @@ export function TagSettingsPanel({
 
   async function commitTagRename(tag: string): Promise<void> {
     const nextTag = (tagDrafts.get(tag) ?? tag).trim();
-    // 空值或未修改时只清掉草稿；重复名称由 App 层按全局标签库拒绝。
-    if (!nextTag || nextTag === tag) {
+    // App 层返回成功后才清草稿，保存失败或输入错误时保留用户输入。
+    if (nextTag === tag) {
       clearTagDraft(tag);
       return;
     }
-    await onRenameTag(tag, nextTag);
-    clearTagDraft(tag);
+    const didSave = await onRenameTag(tag, nextTag);
+    if (didSave) clearTagDraft(tag);
   }
 
   if (!data) return <div className="empty-state">{copy.loadingTags}</div>;
@@ -69,25 +75,43 @@ export function TagSettingsPanel({
       <div className="tag-add-row">
         <input
           autoFocus
+          disabled={isSaving}
+          aria-busy={isSaving}
           value={tagName}
           onChange={(event) => setTagName(event.target.value)}
           onKeyDown={async (event) => {
-            if (event.key === "Enter") {
+            if (event.key === "Enter" && !isSaving) {
               event.preventDefault();
               await onAddTag();
             }
           }}
           placeholder={copy.newTagPlaceholder}
         />
-        <AppButton icon={<TagIcon weight="bold" />} onClick={onAddTag}>
+        <AppButton
+          icon={<TagIcon weight="bold" />}
+          disabled={isSaving}
+          aria-busy={isSaving}
+          onClick={onAddTag}
+        >
           {copy.addTag}
         </AppButton>
       </div>
+      {tagSaveFeedback ? (
+        <div className="app-error-alert tag-save-feedback" role="alert">
+          {tagSaveFeedback}
+        </div>
+      ) : null}
+      {tagInputError ? (
+        <div className="app-error-alert tag-input-error" role="alert">
+          {tagInputError}
+        </div>
+      ) : null}
       <div className="tag-manager-list">
         {data.tags.map((tag) => (
           <div className="tag-manager-item" key={tag}>
             <input
               aria-label={`${copy.tagInputLabel} ${tag}`}
+              disabled={isSaving}
               value={tagDrafts.get(tag) ?? tag}
               onChange={(event) =>
                 setTagDrafts((drafts) => {
@@ -98,11 +122,14 @@ export function TagSettingsPanel({
                 })
               }
               onBlur={() => commitTagRename(tag)}
+              aria-busy={isSaving}
             />
             <AppButton
               className="danger"
               aria-label={`${copy.deleteTagLabel} ${tag}`}
               icon={<TrashIcon weight="bold" />}
+              disabled={isSaving}
+              aria-busy={isSaving}
               onClick={() => onDeleteTag(tag)}
             >
               {copy.delete}

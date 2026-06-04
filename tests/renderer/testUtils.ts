@@ -17,6 +17,7 @@ export const RENDERER_SRC = resolve("src/renderer/src");
 
 interface InstallApiOptions {
   getData?: IdeaNotesApi["getData"];
+  windowState?: DesktopWindowState;
 }
 
 export function installApi(
@@ -28,12 +29,13 @@ export function installApi(
 } {
   // 渲染层测试用假的 preload API 代替 Electron，仍然验证真实 React 交互。
   const saved: IdeaNotesData[] = [];
-  const windowState: DesktopWindowState = {
+  const windowState: DesktopWindowState = options.windowState ?? {
     isAlwaysOnTop: false,
     isMaximized: false,
   };
   const api: IdeaNotesApi = {
     getData: vi.fn(options.getData ?? (async () => data)),
+    getWindowState: vi.fn(async () => windowState),
     saveData: vi.fn(async (nextData) => {
       saved.push(nextData);
       return nextData;
@@ -69,6 +71,10 @@ export function readRendererStyles(): string {
     "styles/sidebar.css",
     "styles/toolbar.css",
     "styles/notes.css",
+    "styles/notes-list.css",
+    "styles/note-card.css",
+    "styles/checklist-preview.css",
+    "styles/note-actions.css",
     "styles/dialogs.css",
     "styles/editor.css",
     "styles/settings.css",

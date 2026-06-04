@@ -93,3 +93,33 @@
   color: var(--muted);
   background: color-mix(in oklab, var(--surface), transparent 35%);
 }
+
+.app-error-alert {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in oklab, var(--danger), var(--border) 35%);
+  border-radius: 10px;
+  color: var(--danger);
+  background: color-mix(in oklab, var(--danger), var(--surface) 88%);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.editor-error-alert {
+  grid-column: 1 / -1;
+}
+
+.dialog-error-alert {
+  position: absolute;
+  top: 64px;
+  right: 18px;
+  z-index: 80;
+  max-width: min(420px, calc(100vw - 36px));
+}
+
+.settings-error-alert {
+  max-width: 100%;
+}
+
+.dialog-error-alert {
+  z-index: 90;
+}

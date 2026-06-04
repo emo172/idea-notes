@@ -68,7 +68,11 @@ export interface AppCopy {
   loadErrorTitle: string;
   loadErrorBody: string;
   retryLoad: string;
+  saveFailed: string;
+  saveBusy: string;
   loadingTags: string;
+  tagNameRequired: string;
+  tagAlreadyExists: string;
   noDueDate: string;
   unnamedNote: string;
   statusPrefix: string;
