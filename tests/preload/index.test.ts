@@ -64,11 +64,7 @@ describe("preload 暴露的桌面能力 API", () => {
     await expect(api.saveData(data)).resolves.toBe(data);
 
     expect(electronMock.invoke).toHaveBeenNthCalledWith(1, "notes:get-data");
-    expect(electronMock.invoke).toHaveBeenNthCalledWith(
-      2,
-      "notes:save-data",
-      data,
-    );
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(2, "notes:save-data", data);
   });
 
   it("将窗口和系统能力映射到固定 IPC 通道", async () => {
@@ -89,23 +85,13 @@ describe("preload 暴露的桌面能力 API", () => {
     await api.setStartup(true);
 
     expect(electronMock.invoke).toHaveBeenNthCalledWith(1, "window:get-state");
-    expect(electronMock.invoke).toHaveBeenNthCalledWith(
-      2,
-      "window:minimize",
-    );
-    expect(electronMock.invoke).toHaveBeenNthCalledWith(
-      3,
-      "window:toggle-maximize",
-    );
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(2, "window:minimize");
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(3, "window:toggle-maximize");
     expect(electronMock.invoke).toHaveBeenNthCalledWith(4, "window:close");
     expect(electronMock.invoke).toHaveBeenNthCalledWith(
       5,
       "window:toggle-always-on-top",
     );
-    expect(electronMock.invoke).toHaveBeenNthCalledWith(
-      6,
-      "app:set-startup",
-      true,
-    );
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(6, "app:set-startup", true);
   });
 });

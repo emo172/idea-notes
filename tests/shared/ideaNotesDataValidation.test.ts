@@ -46,10 +46,7 @@ describe("validateIdeaNotesData", () => {
 
     expect(sanitized.settings).not.toHaveProperty("backgroundColor");
     expect(sanitized.settings).toHaveProperty("legacySetting", true);
-    expect(sanitized.notes[0]).toHaveProperty(
-      "legacyNoteField",
-      "保留但不消费",
-    );
+    expect(sanitized.notes[0]).toHaveProperty("legacyNoteField", "保留但不消费");
   });
 
   it.each([
