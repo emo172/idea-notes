@@ -1,0 +1,9 @@
+node_modules/
+out/
+release/
+coverage/
+docs/
+.omo/
+.worktrees/
+dist/
+package-lock.json

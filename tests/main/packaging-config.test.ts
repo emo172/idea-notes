@@ -31,6 +31,16 @@ describe("安装包打包配置", () => {
     });
   });
 
+  it("安装依赖后下载 Electron 二进制", () => {
+    const packageJson = JSON.parse(
+      readFileSync(resolve("package.json"), "utf8"),
+    ) as PackageJson;
+
+    expect(packageJson.scripts).toMatchObject({
+      postinstall: "install-electron",
+    });
+  });
+
   it("配置 macOS、Windows 和 Linux 安装包目标", () => {
     const builderConfig = readFileSync(resolve("electron-builder.yml"), "utf8");
 
