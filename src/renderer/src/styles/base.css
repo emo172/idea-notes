@@ -19,16 +19,8 @@
   --priority-high: #dc2626;
   --priority-medium: #d97706;
   --priority-low: #2563eb;
-  --deadline-overdue-card-bg: color-mix(
-    in oklab,
-    var(--danger),
-    var(--surface) 92%
-  );
-  --deadline-pending-card-bg: color-mix(
-    in oklab,
-    var(--success),
-    var(--surface) 94%
-  );
+  --deadline-overdue-card-bg: color-mix(in oklab, var(--danger), var(--surface) 92%);
+  --deadline-pending-card-bg: color-mix(in oklab, var(--success), var(--surface) 94%);
   --deadline-overdue-text: var(--danger);
   --deadline-pending-text: var(--success);
   --shadow: 0 18px 48px rgba(15, 23, 42, 0.12);

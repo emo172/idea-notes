@@ -35,9 +35,7 @@ export function ChecklistPreview({
               checked={item.checked}
               // 已完成和回收站笔记没有编辑入口，清单项也保持只读。
               disabled={!canEdit}
-              onChange={(event) =>
-                onToggleChecklist(item.id, event.target.checked)
-              }
+              onChange={(event) => onToggleChecklist(item.id, event.target.checked)}
             />
             <span>{item.text}</span>
           </label>

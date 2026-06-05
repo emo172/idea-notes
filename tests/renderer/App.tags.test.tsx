@@ -30,15 +30,10 @@ describe("App tags", () => {
     await user.click(await screen.findByRole("button", { name: "标签设置" }));
     expect(screen.getByRole("heading", { name: "标签设置" })).toBeTruthy();
     expect(
-      screen.getByText(
-        "管理全局标签库，变更会同步到左侧筛选和编辑页标签选择。",
-      ),
+      screen.getByText("管理全局标签库，变更会同步到左侧筛选和编辑页标签选择。"),
     ).toBeTruthy();
 
-    await user.type(
-      screen.getByPlaceholderText("输入新标签名称"),
-      "阅读{Enter}",
-    );
+    await user.type(screen.getByPlaceholderText("输入新标签名称"), "阅读{Enter}");
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
     expect(saved.at(-1)?.tags).toContain("阅读");
 
@@ -152,9 +147,9 @@ describe("App tags", () => {
     await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
 
     expect((newTagInput as HTMLInputElement).disabled).toBe(true);
-    expect(
-      (screen.getByLabelText("标签 工作") as HTMLInputElement).disabled,
-    ).toBe(true);
+    expect((screen.getByLabelText("标签 工作") as HTMLInputElement).disabled).toBe(
+      true,
+    );
 
     await user.type(newTagInput, "后续输入{Enter}");
     expect(api.saveData).toHaveBeenCalledTimes(1);
@@ -178,9 +173,7 @@ describe("App tags", () => {
     expect(tagSettings.classList.contains("scrollable-panel")).toBe(true);
     expect(screen.queryByRole("region", { name: "进行中" })).toBeNull();
     expect(screen.queryByRole("region", { name: "设置" })).toBeNull();
-    expect(screen.getByPlaceholderText("输入新标签名称")).toBe(
-      document.activeElement,
-    );
+    expect(screen.getByPlaceholderText("输入新标签名称")).toBe(document.activeElement);
 
     const workTagInput = screen.getByDisplayValue("工作");
     await user.clear(workTagInput);

@@ -10,9 +10,7 @@ interface AppearanceSettingsProps {
   copy: SettingsCopy;
   isSaving: boolean;
   settings: IdeaNotesData["settings"];
-  onSettingsChange: (
-    settings: Partial<IdeaNotesData["settings"]>,
-  ) => Promise<void>;
+  onSettingsChange: (settings: Partial<IdeaNotesData["settings"]>) => Promise<void>;
 }
 
 export function AppearanceSettings({

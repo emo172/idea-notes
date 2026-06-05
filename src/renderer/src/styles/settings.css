@@ -222,8 +222,7 @@
 .switch input:checked + .switch-slider::after {
   transform: translate(
     calc(
-      var(--switch-width) - var(--switch-thumb-size) -
-        (var(--switch-thumb-offset) * 2)
+      var(--switch-width) - var(--switch-thumb-size) - (var(--switch-thumb-offset) * 2)
     ),
     -50%
   );
@@ -231,4 +230,39 @@
 
 .switch input:focus-visible + .switch-slider {
   box-shadow: 0 0 0 2px rgba(255, 87, 1, 0.22);
+}
+
+@media (max-width: 760px) {
+  .settings-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .settings-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-sidebar {
+    flex-direction: row;
+    gap: 8px;
+    padding: 12px 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .settings-tab {
+    flex: 1 0 160px;
+  }
+
+  .settings-actions,
+  .tag-add-row,
+  .tag-manager-item,
+  .setting-row {
+    flex-wrap: wrap;
+  }
+
+  .settings-main {
+    padding: 14px;
+  }
 }

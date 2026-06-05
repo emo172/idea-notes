@@ -3,11 +3,7 @@
 // 1. 渲染设置中心系统页签中的开机自启动、回收站保留和语言设置。
 // 2. 保持开机自启动走独立回调，其余设置变更交给 App 统一持久化。
 import type { ReactElement } from "react";
-import type {
-  AppLanguage,
-  IdeaNotesData,
-  TrashRetention,
-} from "@shared/types";
+import type { AppLanguage, IdeaNotesData, TrashRetention } from "@shared/types";
 import type { SettingsCopy } from "../../i18n";
 
 const languageLabels: Record<AppLanguage, string> = {
@@ -20,9 +16,7 @@ interface SystemSettingsProps {
   copy: SettingsCopy;
   isSaving: boolean;
   settings: IdeaNotesData["settings"];
-  onSettingsChange: (
-    settings: Partial<IdeaNotesData["settings"]>,
-  ) => Promise<void>;
+  onSettingsChange: (settings: Partial<IdeaNotesData["settings"]>) => Promise<void>;
   onStartupChange: (enabled: boolean) => Promise<void>;
 }
 

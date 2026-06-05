@@ -13,12 +13,25 @@ describe("App renderer test structure", () => {
     const splitFiles = [
       "testUtils.ts",
       "App.core.test.tsx",
-      "App.editor.test.tsx",
-      "App.shell.test.tsx",
-      "App.theme.test.tsx",
+      "App.editor-create.test.tsx",
+      "App.editor-update.test.tsx",
+      "App.editor-failure.test.tsx",
+      "App.sidebar.test.tsx",
+      "App.window-controls.test.tsx",
+      "App.toolbar.test.tsx",
+      "App.theme-mode.test.tsx",
+      "App.style-boundary.test.tsx",
+      "App.responsive-style.test.tsx",
+      "App.deadline-style.test.tsx",
       "App.tags.test.tsx",
-      "App.settings.test.tsx",
-      "App.cards.test.tsx",
+      "App.settings-appearance.test.tsx",
+      "App.settings-system.test.tsx",
+      "App.settings-reset.test.tsx",
+      "App.settings-i18n.test.tsx",
+      "App.card-render.test.tsx",
+      "App.card-actions.test.tsx",
+      "App.trash-flow.test.tsx",
+      "App.duplicate-flow.test.tsx",
     ];
 
     for (const file of splitFiles) {
@@ -50,30 +63,32 @@ describe("App renderer test structure", () => {
 
   it("抽出 NotesToolbar 承载工具栏 JSX", () => {
     const toolbarPath = resolve("src/renderer/src/components/toolbar/NotesToolbar.tsx");
-    const appPath = resolve("src/renderer/src/app/IdeaNotesApp.tsx");
-    const appSource = readFileSync(appPath, "utf8");
+    const mainContentPath = resolve("src/renderer/src/app/AppMainContent.tsx");
+    const mainContentSource = readFileSync(mainContentPath, "utf8");
 
     expect(existsSync(toolbarPath)).toBe(true);
-    expect(appSource).toContain(
+    expect(mainContentSource).toContain(
       'import { NotesToolbar } from "../components/toolbar/NotesToolbar";',
     );
-    expect(appSource).toContain("<NotesToolbar");
-    expect(appSource).not.toContain('className="toolbar"');
-    expect(appSource).not.toContain('className="search-field"');
-    expect(appSource).not.toContain('className="toolbar-select-group"');
+    expect(mainContentSource).toContain("<NotesToolbar");
+    expect(mainContentSource).not.toContain('className="toolbar"');
+    expect(mainContentSource).not.toContain('className="search-field"');
+    expect(mainContentSource).not.toContain('className="toolbar-select-group"');
   });
 
   it("抽出 NotesList 承载笔记列表 JSX", () => {
     const notesListPath = resolve("src/renderer/src/components/notes/NotesList.tsx");
-    const appPath = resolve("src/renderer/src/app/IdeaNotesApp.tsx");
-    const appSource = readFileSync(appPath, "utf8");
+    const mainContentPath = resolve("src/renderer/src/app/AppMainContent.tsx");
+    const mainContentSource = readFileSync(mainContentPath, "utf8");
 
     expect(existsSync(notesListPath)).toBe(true);
-    expect(appSource).toContain('import { NotesList } from "../components/notes/NotesList";');
-    expect(appSource).toContain("<NotesList");
-    expect(appSource).not.toContain('className="notes-list"');
-    expect(appSource).not.toContain("visibleNotes.map(");
-    expect(appSource).not.toContain("copy.loadErrorTitle");
+    expect(mainContentSource).toContain(
+      'import { NotesList } from "../components/notes/NotesList";',
+    );
+    expect(mainContentSource).toContain("<NotesList");
+    expect(mainContentSource).not.toContain('className="notes-list"');
+    expect(mainContentSource).not.toContain("visibleNotes.map(");
+    expect(mainContentSource).not.toContain("copy.loadErrorTitle");
   });
 
   it("拆分 NoteCard 子结构并隔离截止状态逻辑", () => {
@@ -92,11 +107,19 @@ describe("App renderer test structure", () => {
       expect(existsSync(resolve(notesPath, file))).toBe(true);
     }
 
-    expect(noteCardSource).toContain('import { NoteCardHeader } from "./NoteCardHeader";');
+    expect(noteCardSource).toContain(
+      'import { NoteCardHeader } from "./NoteCardHeader";',
+    );
     expect(noteCardSource).toContain('import { NoteCardMeta } from "./NoteCardMeta";');
-    expect(noteCardSource).toContain('import { NoteContentPreview } from "./NoteContentPreview";');
-    expect(noteCardSource).toContain('import { NoteCardActions } from "./NoteCardActions";');
-    expect(noteCardSource).toContain('import { getDeadlineStatus } from "./noteDeadline";');
+    expect(noteCardSource).toContain(
+      'import { NoteContentPreview } from "./NoteContentPreview";',
+    );
+    expect(noteCardSource).toContain(
+      'import { NoteCardActions } from "./NoteCardActions";',
+    );
+    expect(noteCardSource).toContain(
+      'import { getDeadlineStatus } from "./noteDeadline";',
+    );
     expect(noteCardSource).not.toContain("function getDeadlineStatus");
   });
 

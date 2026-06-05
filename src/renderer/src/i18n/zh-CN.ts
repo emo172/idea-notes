@@ -110,8 +110,7 @@ export const zhCN: AppCopy = {
   createdAt: "创建时间",
   updatedAt: "修改时间",
   tags: "标签",
-  tagSettingsDescription:
-    "管理全局标签库，变更会同步到左侧筛选和编辑页标签选择。",
+  tagSettingsDescription: "管理全局标签库，变更会同步到左侧筛选和编辑页标签选择。",
   newTagPlaceholder: "输入新标签名称",
   addTag: "新增",
   tagInputLabel: "标签",

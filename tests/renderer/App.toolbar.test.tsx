@@ -1,17 +1,16 @@
 /** @vitest-environment jsdom */
-// React 渲染层测试。
+// React 渲染层工具栏和通用 UI 契约测试。
 // 作用：
-// 1. 使用 jsdom 模拟浏览器环境，避免启动真实 Electron 窗口。
-// 2. 用假的 window.ideaNotes 验证 App 会从 preload API 加载数据。
-// 3. 按功能域拆分测试，避免单个文件过大。
+// 1. 覆盖筛选重置按钮和不同视图下的筛选清空行为。
+// 2. 锁定通用按钮、图标和 DialogShell 复用契约。
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultData } from "@shared/defaultData";
-import App from "../../src/renderer/src/app/IdeaNotesApp";
 import type { NoteStatus } from "@shared/types";
+import App from "../../src/renderer/src/app/IdeaNotesApp";
 import {
   BASE_TIME,
   RENDERER_SRC,
@@ -20,133 +19,13 @@ import {
   readRendererStyles,
 } from "./testUtils";
 
-describe("App shell navigation and buttons", () => {
+describe("App toolbar and UI contracts", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
-  });
-
-  it("按原型支持侧栏收起和展开", async () => {
-    installApi(getDefaultData(BASE_TIME));
-    const user = userEvent.setup();
-
-    const { container } = render(<App />);
-
-    await screen.findByText("重构 Desktop App 导航栏");
-    expect(container.querySelector(".app-body.sidebar-collapsed")).toBeNull();
-    const sidebarToggle = screen.getByRole("button", {
-      name: "收起/展开侧栏",
-    });
-    expect(sidebarToggle.getAttribute("title")).toBe("收起");
-
-    await user.click(sidebarToggle);
-    expect(container.querySelector(".app-body.sidebar-collapsed")).toBeTruthy();
-    expect(sidebarToggle.getAttribute("title")).toBe("展开");
-
-    await user.click(sidebarToggle);
-    expect(container.querySelector(".app-body.sidebar-collapsed")).toBeNull();
-    expect(sidebarToggle.getAttribute("title")).toBe("收起");
-  });
-
-  it("设置中心支持返回笔记列表", async () => {
-    installApi(getDefaultData(BASE_TIME));
-    const user = userEvent.setup();
-
-    render(<App />);
-
-    await user.click(await screen.findByRole("button", { name: "设置" }));
-    expect(screen.getByRole("heading", { name: "设置中心" })).toBeTruthy();
-
-    await user.click(screen.getByRole("button", { name: "返回" }));
-    expect(await screen.findByText("重构 Desktop App 导航栏")).toBeTruthy();
-  });
-
-  it("标题栏置顶和设置按钮使用图标并保留可访问名称", async () => {
-    installApi(getDefaultData(BASE_TIME));
-    const user = userEvent.setup();
-
-    render(<App />);
-
-    await screen.findByText("重构 Desktop App 导航栏");
-    const pinButton = screen.getByRole("button", { name: "置顶" });
-    const settingsButton = screen.getByRole("button", { name: "设置" });
-    const pinIcon = pinButton.querySelector("svg");
-
-    expect(pinIcon).toBeTruthy();
-    expect(pinIcon?.classList.contains("titlebar-pin-icon-unpinned")).toBe(
-      true,
-    );
-    expect(pinButton.getAttribute("title")).toBe("置顶");
-    expect(settingsButton.querySelector("svg")).toBeTruthy();
-    expect(pinButton.textContent?.trim()).toBe("");
-    expect(settingsButton.textContent?.trim()).toBe("");
-
-    await user.click(pinButton);
-    const pinnedButton = await screen.findByRole("button", {
-      name: "取消置顶",
-    });
-    const pinnedIcon = pinnedButton.querySelector("svg");
-    expect(pinnedButton.getAttribute("title")).toBe("取消置顶");
-    expect(pinnedIcon?.classList.contains("titlebar-pin-icon-pinned")).toBe(
-      true,
-    );
-  });
-
-  it("首次加载后使用主进程返回的窗口状态初始化标题栏按钮", async () => {
-    const { api } = installApi(getDefaultData(BASE_TIME), {
-      windowState: { isAlwaysOnTop: true, isMaximized: true },
-    });
-
-    render(<App />);
-
-    await screen.findByText("重构 Desktop App 导航栏");
-    expect(api.getWindowState).toHaveBeenCalledTimes(1);
-    expect(
-      screen.getByRole("button", { name: "取消置顶" }).classList,
-    ).toContain("active");
-    expect(screen.getByRole("button", { name: "还原窗口" })).toBeTruthy();
-  });
-
-  it("窗口状态读取失败时保留默认标题栏状态并继续加载数据", async () => {
-    const { api } = installApi(getDefaultData(BASE_TIME));
-    vi.mocked(api.getWindowState).mockRejectedValueOnce(
-      new Error("window state failed"),
-    );
-
-    render(<App />);
-
-    expect(await screen.findByText("重构 Desktop App 导航栏")).toBeTruthy();
-    expect(api.getWindowState).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole("button", { name: "置顶" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "最大化" })).toBeTruthy();
-  });
-
-  it("标题栏图标组件从 Phosphor 图标库导入", () => {
-    const packageJson = JSON.parse(
-      readFileSync(resolve("package.json"), "utf8"),
-    );
-    const appSource = readFileSync(
-      resolve(RENDERER_SRC, "app/IdeaNotesApp.tsx"),
-      "utf8",
-    );
-    const titlebarIcons = readFileSync(
-      resolve(RENDERER_SRC, "components/titlebar/TitlebarIcons.tsx"),
-      "utf8",
-    );
-
-    expect(packageJson.dependencies?.["@phosphor-icons/react"]).toBeTruthy();
-    expect(titlebarIcons).toContain('from "@phosphor-icons/react"');
-    expect(titlebarIcons).not.toContain("<svg");
-    expect(titlebarIcons).not.toContain("<path");
-    expect(titlebarIcons).not.toContain("<circle");
-    expect(appSource).not.toContain("☰");
-    expect(appSource).not.toContain("−");
-    expect(appSource).not.toContain("□");
-    expect(appSource).not.toContain("▢");
-    expect(appSource).not.toContain("×");
   });
 
   it("关键按钮使用统一按钮组件并展示更醒目的图标", async () => {
@@ -250,9 +129,7 @@ describe("App shell navigation and buttons", () => {
       await screen.findByText(title);
 
       const searchInput = screen.getByLabelText("搜索") as HTMLInputElement;
-      const prioritySelect = screen.getByLabelText(
-        "优先级",
-      ) as HTMLSelectElement;
+      const prioritySelect = screen.getByLabelText("优先级") as HTMLSelectElement;
       const sortSelect = screen.getByLabelText("排序") as HTMLSelectElement;
       const workTagButton = screen.getByRole("button", { name: "#工作" });
 
@@ -278,22 +155,10 @@ describe("App shell navigation and buttons", () => {
   it("按钮组件和样式集中维护 hover 与图标强度", () => {
     const appButtonPath = resolve(RENDERER_SRC, "components/ui/AppButton.tsx");
     const styles = readRendererStyles();
-    const noteCompleteActionBlock = readCssRuleBlock(
-      styles,
-      ".note-complete-action",
-    );
-    const noteDeleteActionBlock = readCssRuleBlock(
-      styles,
-      ".note-delete-action",
-    );
-    const buttonSizeMdBlock = readCssRuleBlock(
-      styles,
-      ".app-button-size-md",
-    );
-    const iconButtonBlock = readCssRuleBlock(
-      styles,
-      ".app-button-variant-icon",
-    );
+    const noteCompleteActionBlock = readCssRuleBlock(styles, ".note-complete-action");
+    const noteDeleteActionBlock = readCssRuleBlock(styles, ".note-delete-action");
+    const buttonSizeMdBlock = readCssRuleBlock(styles, ".app-button-size-md");
+    const iconButtonBlock = readCssRuleBlock(styles, ".app-button-variant-icon");
     const toolbarBlock = readCssRuleBlock(styles, ".toolbar");
     const titlebarIcons = readFileSync(
       resolve(RENDERER_SRC, "components/titlebar/TitlebarIcons.tsx"),
@@ -356,10 +221,7 @@ describe("App shell navigation and buttons", () => {
   });
 
   it("确认弹窗和编辑器弹窗共用 DialogShell 外壳", () => {
-    const dialogShellPath = resolve(
-      RENDERER_SRC,
-      "components/dialogs/DialogShell.tsx",
-    );
+    const dialogShellPath = resolve(RENDERER_SRC, "components/dialogs/DialogShell.tsx");
     const confirmDialogSource = readFileSync(
       resolve(RENDERER_SRC, "components/dialogs/ConfirmDialog.tsx"),
       "utf8",

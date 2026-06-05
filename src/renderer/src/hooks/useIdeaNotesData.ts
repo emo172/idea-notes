@@ -24,10 +24,7 @@ interface UseIdeaNotesDataResult {
   saveFeedback: SaveFeedback | null;
   setSaveFeedback: Dispatch<SetStateAction<SaveFeedback | null>>;
   loadData: (shouldCommit?: () => boolean) => Promise<void>;
-  persist: (
-    nextData: IdeaNotesData,
-    errorTarget?: SaveErrorTarget,
-  ) => Promise<boolean>;
+  persist: (nextData: IdeaNotesData, errorTarget?: SaveErrorTarget) => Promise<boolean>;
   runSavingTask: (
     errorTarget: SaveErrorTarget,
     task: () => Promise<void>,
@@ -43,7 +40,7 @@ export function useIdeaNotesData(): UseIdeaNotesDataResult {
   const isSavingRef = useRef(false);
   const [saveFeedback, setSaveFeedback] = useState<SaveFeedback | null>(null);
 
-  const loadData = useCallback(async (shouldCommit = () => true) => {
+  const loadData = useCallback(async (shouldCommit: () => boolean = () => true) => {
     setIsLoading(true);
     setHasLoadError(false);
     try {
@@ -108,14 +105,11 @@ export function useIdeaNotesData(): UseIdeaNotesDataResult {
     [runSavingTask],
   );
 
-  const blockIfSaving = useCallback(
-    (errorTarget: SaveErrorTarget): boolean => {
-      if (!isSavingRef.current) return false;
-      setSaveFeedback({ target: errorTarget, kind: "busy" });
-      return true;
-    },
-    [],
-  );
+  const blockIfSaving = useCallback((errorTarget: SaveErrorTarget): boolean => {
+    if (!isSavingRef.current) return false;
+    setSaveFeedback({ target: errorTarget, kind: "busy" });
+    return true;
+  }, []);
 
   return {
     data,

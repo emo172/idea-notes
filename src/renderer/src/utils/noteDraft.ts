@@ -28,13 +28,8 @@ export function draftToUpdatedNote(
   draft: NoteDraft,
   fallbackTitle: string,
 ): IdeaNote {
-  const checklist = buildChecklistItems(
-    draft.body,
-    note.id,
-    (text, index) =>
-      note.checklist[index]?.text === text
-        ? note.checklist[index].checked
-        : false,
+  const checklist = buildChecklistItems(draft.body, note.id, (text, index) =>
+    note.checklist[index]?.text === text ? note.checklist[index].checked : false,
   );
 
   return {

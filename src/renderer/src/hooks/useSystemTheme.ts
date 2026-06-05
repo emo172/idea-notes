@@ -8,15 +8,12 @@ const darkModeQuery = "(prefers-color-scheme: dark)";
 
 function getSystemPrefersDark(): boolean {
   return (
-    typeof window.matchMedia === "function" &&
-    window.matchMedia(darkModeQuery).matches
+    typeof window.matchMedia === "function" && window.matchMedia(darkModeQuery).matches
   );
 }
 
 export function useSystemTheme(): boolean {
-  const [systemPrefersDark, setSystemPrefersDark] = useState(
-    getSystemPrefersDark,
-  );
+  const [systemPrefersDark, setSystemPrefersDark] = useState(getSystemPrefersDark);
 
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
