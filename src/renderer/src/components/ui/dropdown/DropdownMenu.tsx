@@ -19,9 +19,7 @@ export function DropdownMenu({
   onClose,
 }: DropdownMenuProps): ReactElement {
   const menuRef = useRef<HTMLDivElement>(null);
-  const classNames = ["dropdown-menu", className ?? ""]
-    .filter(Boolean)
-    .join(" ");
+  const classNames = ["dropdown-menu", className ?? ""].filter(Boolean).join(" ");
 
   useEffect(() => {
     getMenuItems(menuRef.current).at(0)?.focus();
@@ -56,9 +54,7 @@ export function DropdownMenu({
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
-      menuItems[
-        currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1
-      ]?.focus();
+      menuItems[currentIndex > 0 ? currentIndex - 1 : menuItems.length - 1]?.focus();
       return;
     }
 
@@ -76,8 +72,7 @@ export function DropdownMenu({
 
     if (event.key === "Enter" || event.key === " ") {
       event.preventDefault();
-      const targetItem =
-        currentIndex >= 0 ? menuItems[currentIndex] : menuItems[0];
+      const targetItem = currentIndex >= 0 ? menuItems[currentIndex] : menuItems[0];
       targetItem?.click();
     }
   }

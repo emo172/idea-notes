@@ -27,10 +27,7 @@ function isDenseArrayOf<T>(
 }
 
 function isStringArray(value: unknown): value is string[] {
-  return isDenseArrayOf(
-    value,
-    (item) => typeof item === "string",
-  );
+  return isDenseArrayOf(value, (item) => typeof item === "string");
 }
 
 function isFiniteNumber(value: unknown): value is number {

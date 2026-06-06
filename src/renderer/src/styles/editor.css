@@ -155,3 +155,30 @@
   padding-left: 18px;
   border-left: 1px solid var(--border);
 }
+
+@media (max-width: 760px) {
+  .editor-body {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .editor-side {
+    padding-left: 0;
+    padding-top: 14px;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+
+  .editor-actions {
+    flex-wrap: wrap;
+  }
+
+  .editor-action-button {
+    flex: 1 1 140px;
+  }
+
+  .editor-textarea {
+    min-height: 220px;
+  }
+}

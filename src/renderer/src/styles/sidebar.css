@@ -80,11 +80,13 @@
 }
 
 .tag-option {
+  max-width: 100%;
   min-height: 30px;
   padding: 0 10px;
   color: var(--fg-2);
   background: var(--surface);
   border: 1px solid var(--border);
+  overflow-wrap: anywhere;
 }
 
 .tag-option.selected {

@@ -5,99 +5,25 @@
 // 3. 使用临时文件加 rename 的方式写入，降低写入中断造成文件损坏的概率。
 // 4. 为主进程 IPC handler 提供 readData/saveData 两个持久化入口。
 import { app } from "electron";
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { dirname, join } from "node:path";
-import { defaultSettings, getDefaultData } from "@shared/defaultData";
-import { sanitizeIdeaNotesData } from "@shared/ideaNotesDataValidation";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+import { getDefaultData } from "@shared/defaultData";
 import { purgeExpiredTrash } from "@shared/noteLogic";
 import type { IdeaNotesData } from "@shared/types";
+import { normalizeData } from "./store/normalizeData";
+import { writeJsonFile } from "./store/writeJsonFile";
 
 // 数据文件放在 Electron userData 目录，避免写入安装目录或源码目录。
 const dataFileName = "idea-notes-data.json";
-const themeModes = new Set(["light", "dark", "system"]);
-const trashRetentions = new Set(["never", "7", "30", "90"]);
-const appLanguages = new Set(["zh-CN", "zh-TW", "en"]);
 
 function dataPath(): string {
   return join(app.getPath("userData"), dataFileName);
 }
 
-// 使用临时文件 + rename 的方式写入，降低写入中断导致 JSON 损坏的概率。
-async function writeJsonFile(path: string, data: IdeaNotesData): Promise<void> {
-  await mkdir(dirname(path), { recursive: true });
-  const tempPath = `${path}.tmp`;
-  await writeFile(tempPath, JSON.stringify(data, null, 2), "utf8");
-  await rename(tempPath, path);
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function normalizeTag(tag: unknown): string | null {
-  if (typeof tag === "string") {
-    const name = tag.trim();
-    return name || null;
-  }
-  if (isRecord(tag) && typeof tag.name === "string") {
-    const name = tag.name.trim();
-    return name || null;
-  }
-  return null;
-}
-
-function normalizeTags(tags: unknown): string[] {
-  if (!Array.isArray(tags)) return [];
-  const normalized = tags
-    .map(normalizeTag)
-    .filter((tag): tag is string => tag !== null);
-  return [...new Set(normalized)];
-}
-
-function normalizeSettings(settings: unknown): IdeaNotesData["settings"] {
-  const legacySettings = isRecord(settings) ? settings : {};
-  return {
-    ...legacySettings,
-    themeMode:
-      typeof legacySettings.themeMode === "string" &&
-      themeModes.has(legacySettings.themeMode)
-        ? legacySettings.themeMode
-        : defaultSettings.themeMode,
-    startup:
-      typeof legacySettings.startup === "boolean"
-        ? legacySettings.startup
-        : defaultSettings.startup,
-    trashAutoDelete:
-      typeof legacySettings.trashAutoDelete === "string" &&
-      trashRetentions.has(legacySettings.trashAutoDelete)
-        ? legacySettings.trashAutoDelete
-        : defaultSettings.trashAutoDelete,
-    language:
-      typeof legacySettings.language === "string" &&
-      appLanguages.has(legacySettings.language)
-        ? legacySettings.language
-        : defaultSettings.language,
-  } as IdeaNotesData["settings"];
-}
-
-function normalizeData(data: IdeaNotesData): IdeaNotesData {
-  return sanitizeIdeaNotesData({
-    ...data,
-    tags: normalizeTags(data.tags),
-    notes: data.notes.map((note) => ({
-      ...note,
-      tags: normalizeTags(note.tags),
-    })),
-    settings: normalizeSettings(data.settings),
-  });
-}
-
 export async function readData(): Promise<IdeaNotesData> {
   const path = dataPath();
   try {
-    const storedData = JSON.parse(
-      await readFile(path, "utf8"),
-    ) as IdeaNotesData;
+    const storedData = JSON.parse(await readFile(path, "utf8")) as IdeaNotesData;
     const normalizedData = normalizeData(storedData);
     const cleanedData = purgeExpiredTrash(normalizedData);
     if (JSON.stringify(cleanedData) !== JSON.stringify(storedData)) {

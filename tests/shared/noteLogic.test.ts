@@ -19,6 +19,8 @@ import {
   purgeExpiredTrash,
   renameTag,
   restoreNoteFromTrash,
+  toggleChecklistItem,
+  toggleNoteCompleted,
 } from "@shared/noteLogic";
 import type { IdeaNote, IdeaNotesData, IdeaSettings } from "@shared/types";
 
@@ -121,6 +123,27 @@ describe("noteLogic", () => {
     expect(result.map((item) => item.id)).toEqual(["n1"]);
   });
 
+  it("默认生成 ID 时同一毫秒创建和复制笔记也不碰撞", () => {
+    const draft = {
+      title: "同毫秒新建",
+      body: "第一项\n第二项",
+      priority: "medium" as const,
+      tags: [],
+    };
+    const firstCreated = createNote(draft, { now: baseTime });
+    const secondCreated = createNote(draft, { now: baseTime });
+    const source = note({ id: "copy-source", title: "复制来源" });
+    const firstCopied = duplicateNote(source, { now: baseTime });
+    const secondCopied = duplicateNote(source, { now: baseTime });
+
+    expect(firstCreated.id).not.toBe(secondCreated.id);
+    expect(firstCopied.id).not.toBe(secondCopied.id);
+    expect(firstCreated.checklist.map((item) => item.id)).toEqual([
+      `${firstCreated.id}-item-1`,
+      `${firstCreated.id}-item-2`,
+    ]);
+  });
+
   it("重命名与删除标签同步到笔记", () => {
     // 标签管理必须同步全局标签和笔记引用，否则筛选入口会与数据不一致。
     const data: IdeaNotesData = {
@@ -141,9 +164,29 @@ describe("noteLogic", () => {
 
     const removed = deleteTag(renamed, "灵感");
     expect(removed.tags).toEqual(["项目", "待办"]);
-    expect(removed.notes.find((item) => item.id === "n1")?.tags).toEqual([
+    expect(removed.notes.find((item) => item.id === "n1")?.tags).toEqual(["项目"]);
+  });
+
+  it("标签重命名在 shared 层裁剪空白并拒绝空值和重复名", () => {
+    const data: IdeaNotesData = {
+      tags: ["工作", "灵感", "待办"],
+      settings: { ...defaultSettings },
+      notes: [
+        note({ id: "n1", tags: ["工作", "灵感"] }),
+        note({ id: "n2", tags: ["待办"] }),
+      ],
+    };
+
+    const renamed = renameTag(data, "工作", " 项目 ");
+    expect(renamed.tags).toEqual(["项目", "灵感", "待办"]);
+    expect(renamed.notes.find((item) => item.id === "n1")?.tags).toEqual([
       "项目",
+      "灵感",
     ]);
+
+    expect(renameTag(data, "工作", " ")).toBe(data);
+    expect(renameTag(data, "工作", "灵感")).toBe(data);
+    expect(renameTag(data, "工作", " 工作 ")).toBe(data);
   });
 
   it("回收站流程只影响目标状态并支持彻底删除", () => {
@@ -170,10 +213,36 @@ describe("noteLogic", () => {
 
     const remaining = permanentlyDeleteAllTrash([active, trashed, completed]);
 
-    expect(remaining.map((item) => item.id)).toEqual([
-      "active-note",
-      "completed-note",
-    ]);
+    expect(remaining.map((item) => item.id)).toEqual(["active-note", "completed-note"]);
+  });
+
+  it("无效清单项更新不会修改笔记或更新时间", () => {
+    const source = note({
+      id: "checklist-source",
+      updatedAt: baseTime,
+      checklist: [{ id: "item-1", text: "已有任务", checked: false }],
+    });
+
+    const result = toggleChecklistItem(source, "missing-item", true, baseTime + 10);
+
+    expect(result).toBe(source);
+    expect(result.updatedAt).toBe(baseTime);
+    expect(result.checklist[0]?.checked).toBe(false);
+  });
+
+  it("回收站笔记不会被 shared 完成态切换函数恢复为已完成", () => {
+    const trashed = note({
+      id: "trash-complete-guard",
+      status: "trash",
+      trashedAt: baseTime,
+      updatedAt: baseTime,
+    });
+
+    const result = toggleNoteCompleted(trashed, baseTime + 10);
+
+    expect(result).toBe(trashed);
+    expect(result.status).toBe("trash");
+    expect(result.updatedAt).toBe(baseTime);
   });
 
   it("按回收站保留天数删除过期回收站笔记", () => {
@@ -212,9 +281,7 @@ describe("noteLogic", () => {
         trashAutoDelete: "invalid",
       } as unknown as IdeaSettings,
     };
-    expect(purgeExpiredTrash(invalidRetentionData, now)).toBe(
-      invalidRetentionData,
-    );
+    expect(purgeExpiredTrash(invalidRetentionData, now)).toBe(invalidRetentionData);
   });
 
   it("复制笔记支持调用方传入语言化标题后缀", () => {

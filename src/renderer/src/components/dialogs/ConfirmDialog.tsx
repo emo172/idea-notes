@@ -39,11 +39,7 @@ export function ConfirmDialog({
     : "confirm-panel";
   const actions = (
     <>
-      <AppButton
-        disabled={isBusy}
-        icon={<XIcon weight="bold" />}
-        onClick={onCancel}
-      >
+      <AppButton disabled={isBusy} icon={<XIcon weight="bold" />} onClick={onCancel}>
         {copy.cancel}
       </AppButton>
       <AppButton

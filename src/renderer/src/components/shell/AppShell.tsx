@@ -4,12 +4,7 @@
 // 2. 让 App 专注业务状态编排，避免把通用框架 JSX 与保存/编辑逻辑混在一起。
 // 3. 保持原有 className、ARIA 名称和窗口控制回调契约稳定。
 import type { ReactElement, ReactNode } from "react";
-import {
-  CheckCircleIcon,
-  PlusIcon,
-  TagIcon,
-  TrashIcon,
-} from "@phosphor-icons/react";
+import { CheckCircleIcon, PlusIcon, TagIcon, TrashIcon } from "@phosphor-icons/react";
 import type { DesktopWindowState, NoteStatus } from "@shared/types";
 import type { AppCopy } from "../../i18n";
 import {
@@ -84,9 +79,7 @@ export function AppShell({
         </div>
         <div className="titlebar-actions">
           <AppButton
-            className={
-              windowState.isAlwaysOnTop ? "icon-btn active" : "icon-btn"
-            }
+            className={windowState.isAlwaysOnTop ? "icon-btn active" : "icon-btn"}
             active={windowState.isAlwaysOnTop}
             variant="icon"
             aria-label={pinButtonLabel}
@@ -111,12 +104,8 @@ export function AppShell({
             />
             <AppButton
               variant="icon"
-              aria-label={
-                windowState.isMaximized ? copy.restoreWindow : copy.maximize
-              }
-              icon={
-                windowState.isMaximized ? <RestoreIcon /> : <MaximizeIcon />
-              }
+              aria-label={windowState.isMaximized ? copy.restoreWindow : copy.maximize}
+              icon={windowState.isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
               onClick={onToggleMaximizeWindow}
             />
             <AppButton
@@ -142,20 +131,18 @@ export function AppShell({
             </AppButton>
           </div>
           <nav className="nav-menu" aria-label={copy.notesNav}>
-            {(["active", "completed", "trash"] as NoteStatus[]).map(
-              (status) => (
-                <AppButton
-                  className="nav-link"
-                  active={viewMode === status}
-                  icon={statusIcons[status]}
-                  key={status}
-                  onClick={() => onViewModeChange(status)}
-                >
-                  <span>{copy.statusLabels[status]}</span>
-                  <span className="nav-badge">{counts[status]}</span>
-                </AppButton>
-              ),
-            )}
+            {(["active", "completed", "trash"] as NoteStatus[]).map((status) => (
+              <AppButton
+                className="nav-link"
+                active={viewMode === status}
+                icon={statusIcons[status]}
+                key={status}
+                onClick={() => onViewModeChange(status)}
+              >
+                <span>{copy.statusLabels[status]}</span>
+                <span className="nav-badge">{counts[status]}</span>
+              </AppButton>
+            ))}
           </nav>
           <section className="tags-section">
             <div className="section-title">{copy.tagFilter}</div>
@@ -163,9 +150,7 @@ export function AppShell({
               {tags.map((tag) => (
                 <button
                   className={
-                    selectedTags.includes(tag)
-                      ? "tag-option selected"
-                      : "tag-option"
+                    selectedTags.includes(tag) ? "tag-option selected" : "tag-option"
                   }
                   type="button"
                   key={tag}

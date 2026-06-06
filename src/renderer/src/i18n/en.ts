@@ -66,7 +66,8 @@ export const en: AppCopy = {
   emptyNotes: "No matching notes",
   loadingNotes: "Loading local notes...",
   loadErrorTitle: "Could not load local notes",
-  loadErrorBody: "Check the local data file and try again. The app will not overwrite existing data.",
+  loadErrorBody:
+    "Check the local data file and try again. The app will not overwrite existing data.",
   retryLoad: "Retry",
   saveFailed: "Save failed. Local data was not written. Please try again.",
   saveBusy: "Saving is still in progress. Please wait.",

@@ -35,9 +35,7 @@ export function TagSettingsPanel({
   onDeleteTag,
 }: TagSettingsPanelProps): ReactElement {
   // 重命名时先把每个标签的输入草稿存在本地 Map，失焦提交后再交给 App 写盘。
-  const [tagDrafts, setTagDrafts] = useState<Map<string, string>>(
-    () => new Map(),
-  );
+  const [tagDrafts, setTagDrafts] = useState<Map<string, string>>(() => new Map());
 
   function clearTagDraft(tag: string): void {
     setTagDrafts((drafts) => {

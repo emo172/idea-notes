@@ -3,10 +3,7 @@
 // 1. 渲染卡片标题、编辑按钮和更多操作菜单。
 // 2. 按笔记状态控制菜单项，不改变 App 传入回调的触发语义。
 import type { ReactElement } from "react";
-import {
-  DotsThreeIcon,
-  PencilSimpleIcon,
-} from "@phosphor-icons/react";
+import { DotsThreeIcon, PencilSimpleIcon } from "@phosphor-icons/react";
 import type { IdeaNote } from "@shared/types";
 import type { AppCopy } from "../../i18n";
 import { AppButton } from "../ui/AppButton";
@@ -43,11 +40,7 @@ export function NoteCardHeader({
   return (
     <div className="note-header">
       {canEdit ? (
-        <button
-          className="note-title"
-          type="button"
-          onClick={() => onOpen(note)}
-        >
+        <button className="note-title" type="button" onClick={() => onOpen(note)}>
           {note.title}
         </button>
       ) : (
@@ -69,67 +62,36 @@ export function NoteCardHeader({
           icon={<DotsThreeIcon weight="bold" />}
           label={copy.moreActions}
         >
-          <DropdownMenu
-            className="note-context-menu"
-            label={copy.moreActions}
-          >
+          <DropdownMenu className="note-context-menu" label={copy.moreActions}>
             {canEdit ? (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onOpen(note)}
-                >
+                <button type="button" role="menuitem" onClick={() => onOpen(note)}>
                   {copy.menuEdit}
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={onToggleCompleted}
-                >
+                <button type="button" role="menuitem" onClick={onToggleCompleted}>
                   {copy.menuComplete}
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onDuplicate(note)}
-                >
+                <button type="button" role="menuitem" onClick={() => onDuplicate(note)}>
                   {copy.menuDuplicate}
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onTrash(note)}
-                >
+                <button type="button" role="menuitem" onClick={() => onTrash(note)}>
                   {copy.menuMoveTrash}
                 </button>
               </>
             ) : null}
             {isCompleted ? (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={onToggleCompleted}
-                >
+                <button type="button" role="menuitem" onClick={onToggleCompleted}>
                   {copy.menuRestoreProgress}
                 </button>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onTrash(note)}
-                >
+                <button type="button" role="menuitem" onClick={() => onTrash(note)}>
                   {copy.menuMoveTrash}
                 </button>
               </>
             ) : null}
             {isInTrash ? (
               <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onRestore(note)}
-                >
+                <button type="button" role="menuitem" onClick={() => onRestore(note)}>
                   {copy.menuRestoreTrash}
                 </button>
                 <button

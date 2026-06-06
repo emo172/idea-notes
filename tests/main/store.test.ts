@@ -159,9 +159,9 @@ describe("主进程本地存储", () => {
     const { readData } = await importStore();
 
     await expect(readData()).rejects.toThrow();
-    await expect(
-      readFile(join(userDataDir, dataFileName), "utf8"),
-    ).resolves.toBe(brokenJson);
+    await expect(readFile(join(userDataDir, dataFileName), "utf8")).resolves.toBe(
+      brokenJson,
+    );
   });
 
   it("读取旧标签对象数据时迁移为字符串标签并补齐设置", async () => {

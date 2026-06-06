@@ -6,12 +6,7 @@
 import { useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { filterAndSortNotes } from "@shared/noteLogic";
-import type {
-  IdeaNote,
-  NotePriority,
-  NoteStatus,
-  SortMode,
-} from "@shared/types";
+import type { IdeaNote, NotePriority, NoteStatus, SortMode } from "@shared/types";
 
 interface UseNoteFiltersInput {
   notes: IdeaNote[];

@@ -11,8 +11,7 @@ import type { IdeaNotesApi, IdeaNotesData } from "@shared/types";
 const api: IdeaNotesApi = {
   // 笔记数据读写统一走主进程，renderer 不直接访问文件系统。
   getData: () => ipcRenderer.invoke("notes:get-data"),
-  saveData: (data: IdeaNotesData) =>
-    ipcRenderer.invoke("notes:save-data", data),
+  saveData: (data: IdeaNotesData) => ipcRenderer.invoke("notes:save-data", data),
   // 窗口控制动作全部封装为明确 API，便于主进程校验来源。
   getWindowState: () => ipcRenderer.invoke("window:get-state"),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),
@@ -20,8 +19,7 @@ const api: IdeaNotesApi = {
   closeWindow: () => ipcRenderer.invoke("window:close"),
   toggleAlwaysOnTop: () => ipcRenderer.invoke("window:toggle-always-on-top"),
   // 开机自启动需要主进程调用系统集成能力。
-  setStartup: (enabled: boolean) =>
-    ipcRenderer.invoke("app:set-startup", enabled),
+  setStartup: (enabled: boolean) => ipcRenderer.invoke("app:set-startup", enabled),
 };
 
 // 对 renderer 暴露 window.ideaNotes，作为桌面能力的唯一入口。

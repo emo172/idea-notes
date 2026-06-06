@@ -110,8 +110,7 @@ export const zhTW: AppCopy = {
   createdAt: "建立時間",
   updatedAt: "修改時間",
   tags: "標籤",
-  tagSettingsDescription:
-    "管理全域標籤庫，變更會同步到左側篩選和編輯頁標籤選擇。",
+  tagSettingsDescription: "管理全域標籤庫，變更會同步到左側篩選和編輯頁標籤選擇。",
   newTagPlaceholder: "輸入新標籤名稱",
   addTag: "新增",
   tagInputLabel: "標籤",

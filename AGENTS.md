@@ -16,26 +16,41 @@
 ## 常用命令
 
 - 安装依赖：`npm install`。
+- CI 依赖安装：`npm ci`。
 - 开发启动：`npm run dev`。
+- 类型检查：`npm run typecheck`。
+- 静态检查：`npm run lint`。
+- 格式检查：`npm run format:check`。
+- 自动格式化：`npm run format`。
 - 全量测试：`npm test`。
 - 聚焦测试：
   - 共享逻辑：`npm test -- tests/shared/noteLogic.test.ts`。
   - 主进程：`npm test -- tests/main`。
   - preload：`npm test -- tests/preload`。
   - 渲染层：`npm test -- tests/renderer`。
-  - 主进程入口约定：`npm test -- tests/main/preload-path.test.ts`。
+  - 主窗口配置：`npm test -- tests/main/window-config.test.ts`。
+  - 主进程 IPC：`npm test -- tests/main/ipc-contract.test.ts`。
+  - Linux 启动约定：`npm test -- tests/main/linux-startup.test.ts`。
+  - smoke 脚本和测试扫描边界：`npm test -- tests/main/smoke-script.test.ts tests/main/vitest-config.test.ts`。
 - 生产构建：`npm run build`，产物在 `out/`。
+- 构建产物冒烟检查：`npm run smoke`，需先有 `out/`。
+- 合并前完整验证：`npm run ci`。
 - 目录打包：`npm run package`，会先 build，再用 `electron-builder --dir` 输出到 `release/`，不生成安装包。
 
 ## 架构地图
 
-- `src/main/` 是 Electron 主进程；`index.ts` 创建无边框窗口、注册 IPC、关闭默认菜单并处理本地开发 GPU/sandbox 开关；`store.ts` 把 JSON 数据写入 Electron `userData`（临时文件 + rename）。
+- `src/main/` 是 Electron 主进程；`index.ts` 只做启动编排；`window/createMainWindow.ts` 创建无边框窗口；`ipc/registerIpc.ts` 注册 IPC；`platform/linuxStartup.ts` 处理本地开发 GPU/sandbox 开关；`startup/loginItems.ts` 封装开机自启动；`store.ts` 把 JSON 数据写入 Electron `userData`。
+- `src/main/store/normalizeData.ts` 负责旧数据迁移和归一化；`src/main/store/writeJsonFile.ts` 负责临时文件 + rename 安全写入。
 - `src/preload/index.ts` 是 renderer 唯一桌面能力入口，只通过 `window.ideaNotes` 暴露固定 API，不暴露 `ipcRenderer`。
-- `src/renderer/src/main.tsx` 只做 React 挂载和全局样式导入；业务状态集中在 `src/renderer/src/app/IdeaNotesApp.tsx`。
+- `src/renderer/src/main.tsx` 只做 React 挂载和全局样式导入；业务状态来源集中在 `src/renderer/src/app/IdeaNotesApp.tsx`。
 - `src/renderer/src/app/IdeaNotesApp.tsx` 是 React 主组件；没有 `src/renderer/src/App.tsx`。
+- `src/renderer/src/app/AppMainContent.tsx` 组合标签设置、工具栏和笔记列表；`src/renderer/src/app/AppOverlays.tsx` 组合设置页、编辑器和确认弹窗。
 - `src/renderer/src/components/` 按职责拆分：`notes/`、`editor/`、`settings/`、`dialogs/`、`titlebar/`、`ui/`。
+- `src/renderer/src/hooks/` 放渲染层状态和命令 hook，包括数据、筛选、窗口控制、笔记命令、标签命令、设置命令、编辑器状态和焦点陷阱。
 - `src/renderer/src/utils/` 放渲染层复用工具（如 `noteDraft.ts`、`dateFormatting.ts`），不要把 renderer-only 工具放进 `src/shared/`。
 - `src/shared/` 只能放 main/preload/renderer/tests 共用的类型和纯业务逻辑；不要引入 Electron 或 React。
+- `src/shared/noteLogic.ts` 是兼容聚合导出入口；具体逻辑在 `src/shared/notes/`、`src/shared/tags/`、`src/shared/settings/`。
+- `src/shared/ideaNotesDataValidation.ts` 提供主进程保存入口的运行时 payload 校验。
 - `src/shared/defaultData.ts` 提供首次启动种子数据和测试默认值。
 - `@shared/*` 别名在 `electron.vite.config.ts`、`vitest.config.ts`、`tsconfig.json` 中分别维护；新增共享文件时保持三处可解析。
 
@@ -58,11 +73,11 @@
 
 ## IPC 与安全边界
 
-- 新增桌面能力必须同步改四处：`src/shared/types.ts` 的 `IdeaNotesApi`、`src/preload/index.ts`、`src/main/index.ts` 的 IPC handler、相关 renderer 调用/测试。
+- 新增桌面能力必须同步改四处：`src/shared/types.ts` 的 `IdeaNotesApi`、`src/preload/index.ts`、`src/main/ipc/registerIpc.ts` 的 IPC handler、相关 renderer 调用/测试。
 - 主进程 IPC handler 必须继续用 `assertMainWindow()` 校验来源；不要让 renderer 自定义通道名或直接访问 Node/Electron。
 - preload 只能暴露固定函数，不暴露 `ipcRenderer` 本体；`tests/preload/index.test.ts` 锁定此约定。
 - 窗口配置当前是 `contextIsolation: true`、`nodeIntegration: false`、`sandbox: false`；不要在 renderer 中引入 `node:fs` 或 `electron`。
-- preload 构建产物是 `out/preload/index.mjs`。`package.json` 为 ESM，主进程路径必须保持 `../preload/index.mjs`；`tests/main/preload-path.test.ts` 锁定此约定。
+- preload 构建产物是 `out/preload/index.mjs`。`package.json` 为 ESM，主进程路径必须保持 `../preload/index.mjs`；`tests/main/window-config.test.ts` 锁定此约定。
 
 ## 数据与存储约定
 
@@ -76,39 +91,49 @@
 - UI 文案在 `src/renderer/src/i18n/{zh-CN,zh-TW,en}.ts`，字段契约在 `i18n/types.ts`；新增文案必须补齐三种语言。
 - 组件按职责放在 `components/` 子目录；桌面能力调用通过 props 回调回到 App 统一处理。
 - 图标统一来自 `@phosphor-icons/react`，不要回退到手写 SVG 或字符图标。
-- 全局样式入口是 `src/renderer/src/styles.css`，只按顺序 `@import` `styles/` 下职责文件：`base.css`、`buttons.css`、`dropdown.css`、`layout.css`、`sidebar.css`、`toolbar.css`、`notes.css`、`dialogs.css`、`editor.css`、`settings.css`。
-- `tests/renderer/App.theme.test.tsx` 和 `tests/renderer/App.test.tsx` 会检查样式职责边界和测试拆分结构；移动样式或测试时同步维护对应断言。
+- 全局样式入口是 `src/renderer/src/styles.css`，只按顺序 `@import` `styles/` 下职责文件：`base.css`、`buttons.css`、`dropdown.css`、`layout.css`、`sidebar.css`、`toolbar.css`、`notes-list.css`、`note-card.css`、`checklist-preview.css`、`note-actions.css`、`dialogs.css`、`editor.css`、`settings.css`；笔记样式直接按列表、卡片、清单预览和卡片动作拆分维护。
+- `tests/renderer/App.style-boundary.test.tsx`、`tests/renderer/App.responsive-style.test.tsx` 和 `tests/renderer/App.test.tsx` 会检查样式职责边界、响应式契约和测试拆分结构；移动样式或测试时同步维护对应断言。
 
 ## 测试策略
 
 - 修改 `src/shared/` 先跑 `npm test -- tests/shared/noteLogic.test.ts`；这些测试不应依赖 Electron 或 React。
 - 修改 `src/main/store.ts` 跑 `npm test -- tests/main/store.test.ts`。
-- 修改主进程入口、preload 路径、ESM 设置或 electron-vite 输出路径跑 `npm test -- tests/main/preload-path.test.ts`。
+- 修改主窗口配置、preload 路径、ESM 设置或 electron-vite 输出路径跑 `npm test -- tests/main/window-config.test.ts`。
+- 修改主进程 IPC 注册跑 `npm test -- tests/main/ipc-contract.test.ts`。
+- 修改 Linux 启动参数跑 `npm test -- tests/main/linux-startup.test.ts`。
 - 修改 `src/preload/index.ts` 或 `IdeaNotesApi` 跑 `npm test -- tests/preload/index.test.ts`。
 - 修改 renderer 交互、i18n、样式或组件跑 `npm test -- tests/renderer`。
 - 修改测试拆分或共享测试工具时跑 `npm test -- tests/renderer`，并确认 `tests/renderer/App.test.tsx` 仍只是结构守护。
-- 完成前至少跑 `npm test`；涉及构建、入口、打包、preload、主进程或样式拆分时再跑 `npm run build`。
+- 修改 TypeScript、TSX 或配置脚本后跑 `npm run lint`。
+- 修改源码、测试、配置或版本化文档后跑 `npm run format:check`；需要统一格式时运行 `npm run format`。
+- 完成前至少跑 `npm test`；涉及构建、入口、打包、preload、主进程或样式拆分时再跑 `npm run build`。合并前运行 `npm run ci`。
 - 新增测试优先覆盖真实行为和边界，不要只测试 mock；mock 仅用于隔离 Electron API 或外部系统能力。
 
 ## 现有测试地图
 
 - `tests/shared/noteLogic.test.ts`：纯业务逻辑、筛选排序、标签同步、回收站流程。
 - `tests/main/packaging-config.test.ts`：跨平台打包脚本、electron-builder 安装包目标和桌面图标配置。
-- `tests/main/preload-path.test.ts`：主进程入口、preload 路径、Linux 启动脚本和图标约定。
+- `tests/main/window-config.test.ts`：主窗口配置、preload 路径和图标约定。
+- `tests/main/linux-startup.test.ts`：Linux 启动脚本、GPU 和 sandbox 开关约定。
+- `tests/main/ipc-contract.test.ts`：IPC handler 注册、通道和来源校验约定。
+- `tests/main/smoke-script.test.ts`：`package.json` smoke 脚本和 CI 串联。
+- `tests/main/vitest-config.test.ts`：测试扫描排除本地 worktree、构建产物和本地计划目录。
 - `tests/main/store.test.ts`：本地数据文件创建、保存和损坏 JSON 行为。
 - `tests/preload/index.test.ts`：preload 暴露 API 与 IPC 通道契约。
-- `tests/renderer/testUtils.ts`：渲染层测试共享 fake preload API 与样式读取工具。
-- `tests/renderer/App.*.test.tsx`：按 core/editor/shell/theme/tags/settings/cards 拆分的 React 交互和样式契约测试。
+- `tests/renderer/testUtils.ts`：渲染层测试兼容导出入口；具体工具在 `tests/renderer/helpers/`。
+- `tests/renderer/App.*.test.tsx`：按 core/editor/sidebar/toolbar/theme/tags/settings/cards/trash 等域拆分的 React 交互和样式契约测试。
+- `tests/smoke/build-output.test.ts`：生产构建产物 smoke，需先运行 `npm run build`。
 - `tests/renderer/DropdownMenu.test.tsx`：通用下拉菜单组件行为。
 
 ## 提交规范
 
+- 禁止直接在 `main` 分支提交、暂存并提交文件变更或推送；需要提交时，必须先确认当前分支不是 `main`，把变更提交到非 `main` 分支，再推送远端分支并创建 PR。
 - 提交前先检查 `git status --short`、`git diff`、`git diff --staged` 和最近提交风格；提交信息使用约定式提交：`type(scope): 中文摘要`。
 - 常用类型限定为 `feat`、`fix`、`refactor`、`style`、`chore`、`test`、`docs`、`build`、`ci`、`perf`、`revert`；摘要保持一句话，不超过 72 个字符。
 - 默认拆分为原子提交；不要把功能、修复、重构、格式化、文档或构建配置混在同一次提交中。
 - 测试与对应实现拆开会导致中间提交不完整时，测试必须和实现放在同一提交；纯测试补充可单独使用 `test:`。
 - 暂存时使用精确文件列表或非交互补丁；不要用交互式暂存，也不要把 `out/`、`release/`、`node_modules/`、`docs/`、`.omo/` 或敏感文件加入提交。
-- 未经用户明确要求，不要提交、推送、改写历史或 amend；若用户授权提交，每次提交前后都要核对暂存内容和工作区状态。
+- 未经用户明确要求，不要提交、推送、改写历史或 amend；若用户授权提交，每次提交前后都要核对暂存内容、工作区状态和当前分支，确认不会直接落到 `main`。
 
 ## 本地运行坑
 

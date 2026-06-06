@@ -4,10 +4,7 @@
 // 2. 将设置变更、开机自启动和重置动作通过回调交给 App 统一持久化。
 import { useState } from "react";
 import type { ReactElement } from "react";
-import {
-  ArrowCounterClockwiseIcon,
-  ArrowLeftIcon,
-} from "@phosphor-icons/react";
+import { ArrowCounterClockwiseIcon, ArrowLeftIcon } from "@phosphor-icons/react";
 import type { AppLanguage, IdeaNotesData } from "@shared/types";
 import { AppButton } from "../ui/AppButton";
 import { settingsCopy } from "../../i18n";
@@ -21,9 +18,7 @@ interface SettingsPanelProps {
   language: AppLanguage;
   isSaving?: boolean;
   saveError?: string | null;
-  onSettingsChange: (
-    settings: Partial<IdeaNotesData["settings"]>,
-  ) => Promise<void>;
+  onSettingsChange: (settings: Partial<IdeaNotesData["settings"]>) => Promise<void>;
   onStartupChange: (enabled: boolean) => Promise<void>;
   onResetSettings: () => void;
   onBack: () => void;
@@ -42,11 +37,7 @@ export function SettingsPanel({
   const [activeTab, setActiveTab] = useState<SettingsTab>("appearance");
 
   if (!data)
-    return (
-      <div className="empty-state">
-        {settingsCopy[language].loadingSettings}
-      </div>
-    );
+    return <div className="empty-state">{settingsCopy[language].loadingSettings}</div>;
   const { settings } = data;
   const copy = settingsCopy[settings.language];
 
