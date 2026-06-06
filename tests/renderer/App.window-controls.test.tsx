@@ -77,6 +77,30 @@ describe("App window controls", () => {
     expect(screen.getByRole("button", { name: "最大化" })).toBeTruthy();
   });
 
+  it("最小化和关闭窗口失败时显式忽略 IPC 拒绝", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+    const unhandledRejection = vi.fn();
+    vi.mocked(api.minimizeWindow).mockRejectedValueOnce(new Error("minimize failed"));
+    vi.mocked(api.closeWindow).mockRejectedValueOnce(new Error("close failed"));
+    process.on("unhandledRejection", unhandledRejection);
+
+    try {
+      render(<App />);
+
+      await screen.findByText("重构 Desktop App 导航栏");
+      await user.click(screen.getByRole("button", { name: "最小化" }));
+      await user.click(screen.getByRole("button", { name: "关闭" }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(api.minimizeWindow).toHaveBeenCalledTimes(1);
+      expect(api.closeWindow).toHaveBeenCalledTimes(1);
+      expect(unhandledRejection).not.toHaveBeenCalled();
+    } finally {
+      process.off("unhandledRejection", unhandledRejection);
+    }
+  });
+
   it("标题栏图标组件从 Phosphor 图标库导入", () => {
     const packageJson = JSON.parse(readFileSync(resolve("package.json"), "utf8"));
     const appSource = readFileSync(

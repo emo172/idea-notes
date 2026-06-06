@@ -35,10 +35,14 @@ export function useWindowControls(): {
     toggleAlwaysOnTop: async () => {
       setWindowState(await window.ideaNotes.toggleAlwaysOnTop());
     },
-    minimizeWindow: () => window.ideaNotes.minimizeWindow(),
+    minimizeWindow: () => {
+      void window.ideaNotes.minimizeWindow().catch(() => undefined);
+    },
     toggleMaximizeWindow: async () => {
       setWindowState(await window.ideaNotes.toggleMaximizeWindow());
     },
-    closeWindow: () => window.ideaNotes.closeWindow(),
+    closeWindow: () => {
+      void window.ideaNotes.closeWindow().catch(() => undefined);
+    },
   };
 }
