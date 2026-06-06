@@ -4,7 +4,7 @@
 // 2. 同步当前筛选标签，避免删除或重命名后保留失效筛选。
 import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { deleteTag, renameTag } from "@shared/noteLogic";
+import { createTag, deleteTag, renameTag, updateTagColor } from "@shared/noteLogic";
 import type { IdeaNotesData } from "@shared/types";
 import type { SaveErrorTarget } from "./useIdeaNotesData";
 
@@ -34,6 +34,7 @@ export function useTagCommands({
   setTagName: (value: string) => void;
   handleAddTag: () => Promise<boolean>;
   handleRenameTag: (from: string, to: string) => Promise<boolean>;
+  handleTagColorChange: (tag: string, color: string) => Promise<boolean>;
   handleDeleteTag: (tag: string) => Promise<void>;
 } {
   const [tagInputError, setTagInputError] = useState<TagInputError | null>(null);
@@ -52,12 +53,15 @@ export function useTagCommands({
       setTagInputError("required");
       return false;
     }
-    if (data.tags.includes(nextTag)) {
+    if (data.tags.some((tag) => tag.name === nextTag)) {
       setTagInputError("duplicate");
       return false;
     }
     setTagInputError(null);
-    const didSave = await persist({ ...data, tags: [...data.tags, nextTag] });
+    const didSave = await persist({
+      ...data,
+      tags: [...data.tags, createTag(nextTag, data.tags.length)],
+    });
     if (!didSave) return false;
     setRawTagName("");
     return true;
@@ -75,7 +79,7 @@ export function useTagCommands({
       setTagInputError(null);
       return true;
     }
-    if (data.tags.includes(nextTag)) {
+    if (data.tags.some((tag) => tag.name === nextTag)) {
       setTagInputError("duplicate");
       return false;
     }
@@ -85,6 +89,15 @@ export function useTagCommands({
     setSelectedTags((tags) => tags.map((item) => (item === from ? nextTag : item)));
     setTagInputError(null);
     return true;
+  }
+
+  async function handleTagColorChange(tag: string, color: string): Promise<boolean> {
+    if (!data) return false;
+    setSaveFeedback(null);
+    setTagInputError(null);
+    const currentTag = data.tags.find((item) => item.name === tag);
+    if (!currentTag || currentTag.color === color) return true;
+    return persist(updateTagColor(data, tag, color));
   }
 
   async function handleDeleteTag(tag: string): Promise<void> {
@@ -103,6 +116,7 @@ export function useTagCommands({
     setTagName,
     handleAddTag,
     handleRenameTag,
+    handleTagColorChange,
     handleDeleteTag,
   };
 }

@@ -25,6 +25,7 @@ interface UseIdeaNotesDataResult {
   setSaveFeedback: Dispatch<SetStateAction<SaveFeedback | null>>;
   loadData: (shouldCommit?: () => boolean) => Promise<void>;
   persist: (nextData: IdeaNotesData, errorTarget?: SaveErrorTarget) => Promise<boolean>;
+  replaceData: (nextData: IdeaNotesData) => void;
   runSavingTask: (
     errorTarget: SaveErrorTarget,
     task: () => Promise<void>,
@@ -105,6 +106,11 @@ export function useIdeaNotesData(): UseIdeaNotesDataResult {
     [runSavingTask],
   );
 
+  const replaceData = useCallback((nextData: IdeaNotesData): void => {
+    setData(nextData);
+    setSaveFeedback(null);
+  }, []);
+
   const blockIfSaving = useCallback((errorTarget: SaveErrorTarget): boolean => {
     if (!isSavingRef.current) return false;
     setSaveFeedback({ target: errorTarget, kind: "busy" });
@@ -121,6 +127,7 @@ export function useIdeaNotesData(): UseIdeaNotesDataResult {
     setSaveFeedback,
     loadData,
     persist,
+    replaceData,
     runSavingTask,
     blockIfSaving,
   };

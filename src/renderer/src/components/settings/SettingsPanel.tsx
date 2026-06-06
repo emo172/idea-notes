@@ -5,21 +5,26 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 import { ArrowCounterClockwiseIcon, ArrowLeftIcon } from "@phosphor-icons/react";
-import type { AppLanguage, IdeaNotesData } from "@shared/types";
+import type { AppLanguage, IdeaNotesData, ImportDataMode } from "@shared/types";
 import { AppButton } from "../ui/AppButton";
 import { settingsCopy } from "../../i18n";
-import { AppearanceSettings } from "./AppearanceSettings";
+import { DataSettings } from "./DataSettings";
+import { InterfaceSettings } from "./InterfaceSettings";
+import { ReminderSettings } from "./ReminderSettings";
 import { SettingsTabs } from "./SettingsTabs";
 import type { SettingsTab } from "./SettingsTabs";
-import { SystemSettings } from "./SystemSettings";
+import { StartupSettings } from "./StartupSettings";
 
 interface SettingsPanelProps {
   data: IdeaNotesData | null;
   language: AppLanguage;
   isSaving?: boolean;
   saveError?: string | null;
+  backupFeedback?: string | null;
   onSettingsChange: (settings: Partial<IdeaNotesData["settings"]>) => Promise<void>;
   onStartupChange: (enabled: boolean) => Promise<void>;
+  onExportData: () => Promise<void>;
+  onRequestImportData: (mode: ImportDataMode) => void;
   onResetSettings: () => void;
   onBack: () => void;
 }
@@ -29,12 +34,15 @@ export function SettingsPanel({
   language,
   isSaving = false,
   saveError = null,
+  backupFeedback = null,
   onSettingsChange,
   onStartupChange,
+  onExportData,
+  onRequestImportData,
   onResetSettings,
   onBack,
 }: SettingsPanelProps): ReactElement {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("appearance");
+  const [activeTab, setActiveTab] = useState<SettingsTab>("interface");
 
   if (!data)
     return <div className="empty-state">{settingsCopy[language].loadingSettings}</div>;
@@ -77,22 +85,41 @@ export function SettingsPanel({
               {saveError}
             </div>
           ) : null}
-          {activeTab === "appearance" ? (
-            <AppearanceSettings
+          {activeTab === "interface" ? (
+            <InterfaceSettings
               copy={copy}
               isSaving={isSaving}
               settings={settings}
               onSettingsChange={onSettingsChange}
             />
-          ) : (
-            <SystemSettings
+          ) : null}
+          {activeTab === "startup" ? (
+            <StartupSettings
               copy={copy}
               isSaving={isSaving}
               settings={settings}
-              onSettingsChange={onSettingsChange}
               onStartupChange={onStartupChange}
             />
-          )}
+          ) : null}
+          {activeTab === "reminders" ? (
+            <ReminderSettings
+              copy={copy}
+              isSaving={isSaving}
+              settings={settings}
+              onSettingsChange={onSettingsChange}
+            />
+          ) : null}
+          {activeTab === "data" ? (
+            <DataSettings
+              copy={copy}
+              isSaving={isSaving}
+              settings={settings}
+              backupFeedback={backupFeedback}
+              onSettingsChange={onSettingsChange}
+              onExportData={onExportData}
+              onRequestImportData={onRequestImportData}
+            />
+          ) : null}
         </div>
       </div>
     </section>

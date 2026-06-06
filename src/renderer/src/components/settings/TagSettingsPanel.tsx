@@ -5,7 +5,8 @@
 import { useState } from "react";
 import type { ReactElement } from "react";
 import { TagIcon, TrashIcon } from "@phosphor-icons/react";
-import type { IdeaNotesData } from "@shared/types";
+import type { IdeaNotesData, IdeaTag } from "@shared/types";
+import { getTagStyle } from "../../utils/tagDisplay";
 import { AppButton } from "../ui/AppButton";
 import type { AppCopy } from "../../i18n";
 
@@ -19,6 +20,7 @@ interface TagSettingsPanelProps {
   setTagName: (value: string) => void;
   onAddTag: () => Promise<boolean>;
   onRenameTag: (from: string, to: string) => Promise<boolean>;
+  onTagColorChange: (tag: string, color: string) => Promise<boolean>;
   onDeleteTag: (tag: string) => Promise<void>;
 }
 
@@ -32,6 +34,7 @@ export function TagSettingsPanel({
   setTagName,
   onAddTag,
   onRenameTag,
+  onTagColorChange,
   onDeleteTag,
 }: TagSettingsPanelProps): ReactElement {
   // 重命名时先把每个标签的输入草稿存在本地 Map，失焦提交后再交给 App 写盘。
@@ -105,30 +108,44 @@ export function TagSettingsPanel({
         </div>
       ) : null}
       <div className="tag-manager-list">
-        {data.tags.map((tag) => (
-          <div className="tag-manager-item" key={tag}>
+        {data.tags.map((tag: IdeaTag) => (
+          <div className="tag-manager-item" key={tag.id}>
+            <span
+              className="tag-color-swatch"
+              style={getTagStyle(data.tags, tag.name)}
+              aria-hidden="true"
+            />
             <input
-              aria-label={`${copy.tagInputLabel} ${tag}`}
+              aria-label={`${copy.tagInputLabel} ${tag.name}`}
               disabled={isSaving}
-              value={tagDrafts.get(tag) ?? tag}
+              value={tagDrafts.get(tag.name) ?? tag.name}
               onChange={(event) =>
                 setTagDrafts((drafts) => {
                   // 每个标签独立保存草稿，避免编辑一个标签时覆盖其它输入框。
                   const nextDrafts = new Map(drafts);
-                  nextDrafts.set(tag, event.target.value);
+                  nextDrafts.set(tag.name, event.target.value);
                   return nextDrafts;
                 })
               }
-              onBlur={() => commitTagRename(tag)}
+              onBlur={() => commitTagRename(tag.name)}
               aria-busy={isSaving}
+            />
+            <input
+              type="text"
+              className="tag-color-input"
+              aria-label={`${copy.tagColorLabel} ${tag.name}`}
+              disabled={isSaving}
+              value={tag.color}
+              onChange={(event) => onTagColorChange(tag.name, event.target.value)}
+              onBlur={(event) => onTagColorChange(tag.name, event.target.value)}
             />
             <AppButton
               className="danger"
-              aria-label={`${copy.deleteTagLabel} ${tag}`}
+              aria-label={`${copy.deleteTagLabel} ${tag.name}`}
               icon={<TrashIcon weight="bold" />}
               disabled={isSaving}
               aria-busy={isSaving}
-              onClick={() => onDeleteTag(tag)}
+              onClick={() => onDeleteTag(tag.name)}
             >
               {copy.delete}
             </AppButton>

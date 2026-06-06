@@ -168,6 +168,14 @@
   white-space: pre-line;
 }
 
+.search-highlight {
+  padding: 0 2px;
+  border-radius: 4px;
+  color: var(--fg);
+  background: color-mix(in oklab, var(--priority-medium), transparent 72%);
+  font-weight: inherit;
+}
+
 /* 正文和清单预览共用浅色底面，让卡片主体内容从标题、状态和底部动作中分离出来。 */
 .note-content-preview {
   margin: 12px 0;
@@ -184,7 +192,11 @@
 .tag {
   max-width: 100%;
   padding: 5px 8px;
-  color: var(--muted);
-  background: var(--surface-warm);
+  color: var(--tag-color, var(--muted));
+  background: color-mix(
+    in oklab,
+    var(--tag-color, var(--surface-warm)),
+    transparent 88%
+  );
   overflow-wrap: anywhere;
 }

@@ -9,7 +9,10 @@ import userEvent from "@testing-library/user-event";
 import { useState } from "react";
 import type { ReactElement } from "react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { getDefaultData } from "@shared/defaultData";
+import App from "../../src/renderer/src/app/IdeaNotesApp";
 import { DialogShell } from "../../src/renderer/src/components/dialogs/DialogShell";
+import { BASE_TIME, installApi } from "./testUtils";
 
 function renderDialog(onEscape = vi.fn()): void {
   render(
@@ -128,5 +131,31 @@ describe("DialogShell", () => {
 
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(triggerButton).toBe(document.activeElement);
+  });
+
+  it("应用快捷键中 Escape 优先关闭当前确认弹窗", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "shortcut-trash-note",
+        title: "快捷键删除目标",
+        status: "trash",
+        trashedAt: BASE_TIME,
+      },
+    ];
+    installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /回收站/ }));
+    await user.click(screen.getByRole("button", { name: "删除" }));
+    expect(screen.getByRole("dialog", { name: "确认彻底删除？" })).toBeTruthy();
+
+    await user.keyboard("{Escape}");
+
+    expect(screen.queryByRole("dialog", { name: "确认彻底删除？" })).toBeNull();
+    expect(await screen.findByText("快捷键删除目标")).toBeTruthy();
   });
 });

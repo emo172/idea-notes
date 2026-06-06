@@ -4,7 +4,7 @@
 // 1. 使用 jsdom 模拟浏览器环境，避免启动真实 Electron 窗口。
 // 2. 用假的 window.ideaNotes 验证 App 会从 preload API 加载数据。
 // 3. 按功能域拆分测试，避免单个文件过大。
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultData } from "@shared/defaultData";
@@ -35,15 +35,17 @@ describe("App tags", () => {
 
     await user.type(screen.getByPlaceholderText("输入新标签名称"), "阅读{Enter}");
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
-    expect(saved.at(-1)?.tags).toContain("阅读");
+    expect(saved.at(-1)?.tags.map((tag) => tag.name)).toContain("阅读");
 
     const workTagInput = screen.getByDisplayValue("工作");
     await user.clear(workTagInput);
     await user.type(workTagInput, "项目");
     await user.tab();
 
-    await waitFor(() => expect(saved.at(-1)?.tags).toContain("项目"));
-    expect(saved.at(-1)?.tags).not.toContain("工作");
+    await waitFor(() =>
+      expect(saved.at(-1)?.tags.map((tag) => tag.name)).toContain("项目"),
+    );
+    expect(saved.at(-1)?.tags.map((tag) => tag.name)).not.toContain("工作");
     expect(saved.at(-1)?.notes[0]?.tags).toContain("项目");
   });
 
@@ -181,5 +183,38 @@ describe("App tags", () => {
     await user.tab();
 
     expect(api.saveData).not.toHaveBeenCalled();
+  });
+
+  it("标签颜色保存后在侧栏、卡片和编辑器中保持一致", async () => {
+    const { api, saved } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "标签设置" }));
+    const workColorInput = screen.getByLabelText("标签颜色 工作");
+    await user.clear(workColorInput);
+    await user.type(workColorInput, "#10b981");
+    await user.tab();
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(saved.at(-1)?.tags.find((tag) => tag.name === "工作")?.color).toBe(
+      "#10b981",
+    );
+
+    const workSidebarTag = screen.getByRole("button", { name: "#工作" });
+    expect(workSidebarTag.getAttribute("style")).toContain("--tag-color: #10b981");
+
+    await user.click(screen.getByRole("button", { name: /进行中/ }));
+    const card = (await screen.findByText("重构 Desktop App 导航栏")).closest(
+      "article",
+    ) as HTMLElement;
+    const cardTag = within(card).getByText("#工作");
+    expect(cardTag.getAttribute("style")).toContain("--tag-color: #10b981");
+
+    await user.click(screen.getAllByRole("button", { name: "编辑笔记" })[0]);
+    const editor = screen.getByRole("dialog", { name: "编辑笔记" });
+    const editorTag = within(editor).getByRole("button", { name: "#工作" });
+    expect(editorTag.getAttribute("style")).toContain("--tag-color: #10b981");
   });
 });

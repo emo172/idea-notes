@@ -5,6 +5,7 @@
 import type { ReactElement } from "react";
 import {
   ArrowCounterClockwiseIcon,
+  ArchiveBoxIcon,
   CheckCircleIcon,
   TrashIcon,
 } from "@phosphor-icons/react";
@@ -16,8 +17,10 @@ interface NoteCardActionsProps {
   note: IdeaNote;
   copy: AppCopy;
   onToggleCompleted: () => Promise<void>;
+  onArchive: (note: IdeaNote) => Promise<void>;
   onTrash: (note: IdeaNote) => Promise<void>;
   onRestore: (note: IdeaNote) => Promise<void>;
+  onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDelete: (note: IdeaNote) => void;
 }
 
@@ -25,8 +28,10 @@ export function NoteCardActions({
   note,
   copy,
   onToggleCompleted,
+  onArchive,
   onTrash,
   onRestore,
+  onRestoreArchived,
   onDelete,
 }: NoteCardActionsProps): ReactElement {
   return (
@@ -47,6 +52,22 @@ export function NoteCardActions({
             {copy.permanentDelete}
           </AppButton>
         </>
+      ) : note.status === "archive" ? (
+        <>
+          <AppButton
+            icon={<ArrowCounterClockwiseIcon weight="bold" />}
+            onClick={() => onRestoreArchived(note)}
+          >
+            {copy.restore}
+          </AppButton>
+          <AppButton
+            className="note-delete-action"
+            icon={<TrashIcon weight="bold" />}
+            onClick={() => onTrash(note)}
+          >
+            {copy.delete}
+          </AppButton>
+        </>
       ) : (
         <>
           <AppButton
@@ -55,6 +76,12 @@ export function NoteCardActions({
             onClick={onToggleCompleted}
           >
             {note.status === "completed" ? copy.resume : copy.markComplete}
+          </AppButton>
+          <AppButton
+            icon={<ArchiveBoxIcon weight="bold" />}
+            onClick={() => onArchive(note)}
+          >
+            {copy.archive}
           </AppButton>
           <AppButton
             className="note-delete-action"

@@ -29,15 +29,7 @@ interface UseNoteEditorInput {
   setViewMode: (viewMode: NoteStatus) => void;
 }
 
-export function useNoteEditor({
-  data,
-  notes,
-  copy,
-  persist,
-  blockIfSaving,
-  setSaveFeedback,
-  setViewMode,
-}: UseNoteEditorInput): {
+export interface UseNoteEditorResult {
   draft: NoteDraft;
   setDraft: Dispatch<SetStateAction<NoteDraft>>;
   isEditorOpen: boolean;
@@ -47,7 +39,17 @@ export function useNoteEditor({
   openExistingNote: (note: IdeaNote) => void;
   handleSaveNote: () => Promise<void>;
   toggleDraftTag: (tag: string) => void;
-} {
+}
+
+export function useNoteEditor({
+  data,
+  notes,
+  copy,
+  persist,
+  blockIfSaving,
+  setSaveFeedback,
+  setViewMode,
+}: UseNoteEditorInput): UseNoteEditorResult {
   const [draft, setDraft] = useState<NoteDraft>(initialDraft);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 

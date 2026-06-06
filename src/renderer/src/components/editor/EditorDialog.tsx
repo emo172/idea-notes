@@ -3,7 +3,7 @@
 // 1. 渲染新建和编辑笔记共用的标题、正文、优先级、截止时间和标签选择表单。
 // 2. 只维护传入草稿的字段变更，不直接保存本地数据。
 import type { Dispatch, ReactElement, SetStateAction } from "react";
-import type { AppLanguage, NoteDraft } from "@shared/types";
+import type { AppLanguage, IdeaTag, NoteDraft } from "@shared/types";
 import { DialogShell } from "../dialogs/DialogShell";
 import type { AppCopy } from "../../i18n";
 import { EditorDialogActions } from "./EditorDialogActions";
@@ -12,7 +12,7 @@ import { EditorSidePanel } from "./EditorSidePanel";
 
 interface EditorDialogProps {
   draft: NoteDraft;
-  tags: string[];
+  tags: IdeaTag[];
   copy: AppCopy;
   language: AppLanguage;
   noteTimestamps?: { createdAt: number; updatedAt: number };

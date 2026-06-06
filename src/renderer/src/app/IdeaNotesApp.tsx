@@ -3,11 +3,11 @@
 // 1. 渲染自定义标题栏、侧边栏、筛选工具栏，并组合笔记卡片、编辑器和设置面板。
 // 2. 通过拆分后的 hooks 编排数据、窗口、笔记、标签、设置和编辑器命令。
 // 3. 将渲染层状态编排与拆分后的组件、工具函数、多语言文案连接起来。
-import { useEffect, useState } from "react";
-import type { ReactElement } from "react";
+import { useEffect, useState, type ReactElement } from "react";
 import { defaultSettings } from "@shared/defaultData";
-import type { IdeaNote, NoteStatus } from "@shared/types";
+import type { IdeaNote } from "@shared/types";
 import { AppShell } from "../components/shell/AppShell";
+import { useDataBackupCommands } from "../hooks/useDataBackupCommands";
 import { useIdeaNotesData } from "../hooks/useIdeaNotesData";
 import { useNoteCommands } from "../hooks/useNoteCommands";
 import { useNoteEditor } from "../hooks/useNoteEditor";
@@ -15,12 +15,13 @@ import { useNoteFilters } from "../hooks/useNoteFilters";
 import { useSettingsCommands } from "../hooks/useSettingsCommands";
 import { useSystemTheme } from "../hooks/useSystemTheme";
 import { useTagCommands } from "../hooks/useTagCommands";
+import { useViewCommands } from "../hooks/useViewCommands";
 import { useWindowControls } from "../hooks/useWindowControls";
 import { appCopy } from "../i18n";
 import { AppMainContent } from "./AppMainContent";
 import { AppOverlays } from "./AppOverlays";
-
-type ViewMode = NoteStatus | "settings" | "tag-settings";
+import { getAppPresentationState } from "./appPresentation";
+import { toNoteViewMode, type ViewMode } from "./viewMode";
 
 export default function App(): ReactElement {
   const {
@@ -33,6 +34,7 @@ export default function App(): ReactElement {
     setSaveFeedback,
     loadData,
     persist,
+    replaceData,
     runSavingTask,
     blockIfSaving,
   } = useIdeaNotesData();
@@ -56,9 +58,7 @@ export default function App(): ReactElement {
     document.documentElement.lang = currentLanguage;
   }, [currentLanguage]);
 
-  // 设置页和标签设置页会覆盖主内容区，但底层笔记列表仍保持进行中筛选状态。
-  const noteViewMode: NoteStatus =
-    viewMode === "settings" || viewMode === "tag-settings" ? "active" : viewMode;
+  const noteViewMode = toNoteViewMode(viewMode);
   const notes = data?.notes ?? [];
   const {
     visibleNotes,
@@ -73,17 +73,7 @@ export default function App(): ReactElement {
     toggleSelectedTag,
     resetFilters,
   } = useNoteFilters({ notes, status: noteViewMode });
-  const {
-    draft,
-    setDraft,
-    isEditorOpen,
-    setIsEditorOpen,
-    editingNote,
-    openNewNote,
-    openExistingNote,
-    handleSaveNote,
-    toggleDraftTag,
-  } = useNoteEditor({
+  const noteEditor = useNoteEditor({
     data,
     notes,
     copy,
@@ -99,6 +89,7 @@ export default function App(): ReactElement {
     setTagName,
     handleAddTag,
     handleRenameTag,
+    handleTagColorChange,
     handleDeleteTag,
   } = useTagCommands({
     data,
@@ -109,6 +100,8 @@ export default function App(): ReactElement {
   const {
     handleMoveToTrash,
     handleRestore,
+    handleArchiveNote,
+    handleRestoreArchivedNote,
     handleDuplicateNote,
     handlePermanentDelete,
     handleClearTrash,
@@ -130,58 +123,54 @@ export default function App(): ReactElement {
       setIsResetSettingsConfirmOpen,
       persist,
     });
+  const {
+    backupFeedback,
+    importConfirmMode,
+    setImportConfirmMode,
+    clearBackupFeedback,
+    handleExportData,
+    handleConfirmImportData,
+  } = useDataBackupCommands({
+    currentLanguage,
+    replaceData,
+    runSavingTask,
+  });
+  const viewCommands = useViewCommands({
+    blockIfSaving,
+    isEditorOpen: noteEditor.isEditorOpen,
+    setSaveFeedback,
+    clearBackupFeedback,
+    setTagInputError,
+    setIsEditorOpen: noteEditor.setIsEditorOpen,
+    resetFilters,
+    setPriority,
+    setSelectedTags,
+    setViewMode,
+  });
 
-  function openSettings(): void {
-    if (blockIfSaving(isEditorOpen ? "editor" : "main")) return;
-    setSaveFeedback(null);
-    setTagInputError(null);
-    setIsEditorOpen(false);
-    setViewMode("settings");
-  }
-
-  function openTagSettings(): void {
-    if (blockIfSaving(isEditorOpen ? "editor" : "main")) return;
-    setSaveFeedback(null);
-    setTagInputError(null);
-    setIsEditorOpen(false);
-    setViewMode("tag-settings");
-  }
-
-  const counts = {
-    active: notes.filter((note) => note.status === "active").length,
-    completed: notes.filter((note) => note.status === "completed").length,
-    trash: notes.filter((note) => note.status === "trash").length,
-  };
-  const isDarkTheme =
-    data?.settings.themeMode === "dark" ||
-    (data?.settings.themeMode === "system" && systemPrefersDark);
-  const appClassName = isDarkTheme ? "app-window dark" : "app-window";
-  const appBodyClassName = isSidebarCollapsed
-    ? "app-body sidebar-collapsed"
-    : "app-body";
-  const pinButtonLabel = windowState.isAlwaysOnTop
-    ? copy.cancelAlwaysOnTop
-    : copy.alwaysOnTop;
-  const sidebarToggleTitle = isSidebarCollapsed ? copy.expand : copy.collapse;
-  const saveFeedbackMessage =
-    saveFeedback?.kind === "failed"
-      ? copy.saveFailed
-      : saveFeedback?.kind === "busy"
-        ? copy.saveBusy
-        : null;
-  const mainSaveFeedback = saveFeedback?.target === "main" ? saveFeedbackMessage : null;
-  const editorSaveFeedback =
-    saveFeedback?.target === "editor" ? saveFeedbackMessage : null;
-  const tagInputErrorMessage =
-    tagInputError === "required"
-      ? copy.tagNameRequired
-      : tagInputError === "duplicate"
-        ? copy.tagAlreadyExists
-        : null;
-  const hasConfirmDialog =
-    Boolean(deleteTarget) || isClearTrashConfirmOpen || isResetSettingsConfirmOpen;
-  const shouldShowMainSaveError =
-    Boolean(mainSaveFeedback) && viewMode !== "settings" && !hasConfirmDialog;
+  const {
+    counts,
+    appClassName,
+    appBodyClassName,
+    pinButtonLabel,
+    sidebarToggleTitle,
+    mainSaveFeedback,
+    editorSaveFeedback,
+    hasConfirmDialog,
+    shouldShowMainSaveError,
+  } = getAppPresentationState({
+    data,
+    systemPrefersDark,
+    isSidebarCollapsed,
+    windowState,
+    copy,
+    saveFeedback,
+    viewMode,
+    deleteTarget,
+    isClearTrashConfirmOpen,
+    isResetSettingsConfirmOpen,
+    importConfirmMode,
+  });
 
   return (
     <AppShell
@@ -200,11 +189,14 @@ export default function App(): ReactElement {
           data={data}
           copy={copy}
           currentLanguage={currentLanguage}
+          tags={data?.tags ?? []}
           tagName={tagName}
-          tagInputErrorMessage={tagInputErrorMessage}
+          tagInputError={tagInputError}
           mainSaveFeedback={mainSaveFeedback}
           shouldShowMainSaveError={shouldShowMainSaveError}
           isSaving={isSaving}
+          isEditorOpen={noteEditor.isEditorOpen}
+          hasConfirmDialog={hasConfirmDialog}
           searchQuery={searchQuery}
           priority={priority}
           sortMode={sortMode}
@@ -218,7 +210,14 @@ export default function App(): ReactElement {
           setTagName={setTagName}
           handleAddTag={handleAddTag}
           handleRenameTag={handleRenameTag}
+          handleTagColorChange={handleTagColorChange}
           handleDeleteTag={handleDeleteTag}
+          openNewNote={noteEditor.openNewNote}
+          handleSaveNote={noteEditor.handleSaveNote}
+          setViewMode={(status) => setViewMode(status)}
+          onStatsStatusClick={viewCommands.showStatsStatus}
+          onStatsPriorityClick={viewCommands.showStatsPriority}
+          onStatsTagClick={viewCommands.showStatsTag}
           setSearchQuery={setSearchQuery}
           setPriority={setPriority}
           setSortMode={setSortMode}
@@ -226,24 +225,26 @@ export default function App(): ReactElement {
           resetFilters={resetFilters}
           onClearTrash={() => setIsClearTrashConfirmOpen(true)}
           loadData={loadData}
-          openExistingNote={openExistingNote}
+          openExistingNote={noteEditor.openExistingNote}
           handleToggleCompleted={handleToggleCompleted}
           handleToggleChecklist={handleToggleChecklist}
+          handleArchiveNote={handleArchiveNote}
           handleMoveToTrash={handleMoveToTrash}
           handleRestore={handleRestore}
+          handleRestoreArchivedNote={handleRestoreArchivedNote}
           handleDuplicateNote={handleDuplicateNote}
           setDeleteTarget={setDeleteTarget}
         />
       }
       onToggleAlwaysOnTop={toggleAlwaysOnTop}
-      onOpenSettings={openSettings}
+      onOpenSettings={() => viewCommands.openAuxiliaryView("settings")}
       onMinimizeWindow={minimizeWindow}
       onToggleMaximizeWindow={toggleMaximizeWindow}
       onCloseWindow={closeWindow}
-      onOpenNewNote={openNewNote}
+      onOpenNewNote={noteEditor.openNewNote}
       onViewModeChange={setViewMode}
       onToggleSelectedTag={toggleSelectedTag}
-      onOpenTagSettings={openTagSettings}
+      onOpenTagSettings={() => viewCommands.openAuxiliaryView("tag-settings")}
     >
       <AppOverlays
         viewMode={viewMode}
@@ -253,21 +254,20 @@ export default function App(): ReactElement {
         isSaving={isSaving}
         mainSaveFeedback={mainSaveFeedback}
         editorSaveFeedback={editorSaveFeedback}
+        backupFeedback={backupFeedback}
         hasConfirmDialog={hasConfirmDialog}
         isResetSettingsConfirmOpen={isResetSettingsConfirmOpen}
+        importConfirmMode={importConfirmMode}
         setIsResetSettingsConfirmOpen={setIsResetSettingsConfirmOpen}
+        setImportConfirmMode={setImportConfirmMode}
         setSaveFeedback={setSaveFeedback}
         setViewMode={setViewMode}
         handleSettingsChange={handleSettingsChange}
         handleStartupChange={handleStartupChange}
+        handleExportData={handleExportData}
+        handleConfirmImportData={handleConfirmImportData}
         handleConfirmResetSettings={handleConfirmResetSettings}
-        draft={draft}
-        setDraft={setDraft}
-        isEditorOpen={isEditorOpen}
-        setIsEditorOpen={setIsEditorOpen}
-        editingNote={editingNote}
-        toggleDraftTag={toggleDraftTag}
-        handleSaveNote={handleSaveNote}
+        noteEditor={noteEditor}
         deleteTarget={deleteTarget}
         setDeleteTarget={setDeleteTarget}
         handlePermanentDelete={handlePermanentDelete}

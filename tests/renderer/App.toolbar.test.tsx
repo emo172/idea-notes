@@ -152,6 +152,168 @@ describe("App toolbar and UI contracts", () => {
     },
   );
 
+  it("搜索框支持标签、优先级和截止状态语法并兼容标签名普通搜索", async () => {
+    vi.spyOn(Date, "now").mockReturnValue(BASE_TIME);
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "search-overdue-work",
+        title: "桌面窗口实现",
+        body: "Electron 主进程",
+        priority: "high",
+        tags: ["工作"],
+        dueAt: "2026-05-28T18:00",
+        updatedAt: BASE_TIME + 20,
+      },
+      {
+        ...data.notes[1],
+        id: "search-reading-note",
+        title: "书单整理",
+        body: "本周阅读计划",
+        priority: "medium",
+        tags: ["阅读"],
+        dueAt: "2026-05-30T18:00",
+        updatedAt: BASE_TIME + 40,
+      },
+      {
+        ...data.notes[1],
+        id: "search-other-work",
+        title: "工作复盘",
+        body: "窗口体验回顾",
+        priority: "low",
+        tags: ["工作"],
+        dueAt: "2026-05-30T18:00",
+        updatedAt: BASE_TIME + 60,
+      },
+    ];
+    installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const searchInput = await screen.findByLabelText("搜索");
+    await user.type(searchInput, "窗口 tag:工作 priority:high due:overdue");
+
+    expect(
+      await screen.findByText(
+        (_, element) =>
+          element?.classList.contains("note-title") === true &&
+          element.textContent === "桌面窗口实现",
+      ),
+    ).toBeTruthy();
+    expect(screen.queryByText("书单整理")).toBeNull();
+    expect(screen.queryByText("工作复盘")).toBeNull();
+
+    await user.clear(searchInput);
+    await user.type(searchInput, "阅读");
+
+    expect(await screen.findByText("书单整理")).toBeTruthy();
+    expect(screen.queryByText("桌面窗口实现")).toBeNull();
+  });
+
+  it("Ctrl+F 聚焦搜索，Ctrl+数字切换视图且输入时不误切视图", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "active-shortcut-note",
+        title: "进行中快捷键目标",
+        status: "active",
+      },
+      {
+        ...data.notes[1],
+        id: "completed-shortcut-note",
+        title: "已完成快捷键目标",
+        status: "completed",
+      },
+      {
+        ...data.notes[1],
+        id: "archive-shortcut-note",
+        title: "归档快捷键目标",
+        status: "archive",
+      },
+      {
+        ...data.notes[1],
+        id: "trash-shortcut-note",
+        title: "回收站快捷键目标",
+        status: "trash",
+        trashedAt: BASE_TIME,
+      },
+    ];
+    installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await screen.findByText("进行中快捷键目标");
+    await user.keyboard("{Control>}f{/Control}");
+    const searchInput = screen.getByLabelText("搜索");
+    expect(searchInput).toBe(document.activeElement);
+
+    await user.keyboard("{Control>}2{/Control}");
+    expect(screen.queryByText("已完成快捷键目标")).toBeNull();
+
+    await user.keyboard("{Control>}1{/Control}");
+    expect(await screen.findByText("进行中快捷键目标")).toBeTruthy();
+    await searchInput.blur();
+    await user.keyboard("{Control>}2{/Control}");
+    expect(await screen.findByText("已完成快捷键目标")).toBeTruthy();
+    await user.keyboard("{Control>}3{/Control}");
+    expect(await screen.findByText("归档快捷键目标")).toBeTruthy();
+    await user.keyboard("{Control>}4{/Control}");
+    expect(await screen.findByText("回收站快捷键目标")).toBeTruthy();
+  });
+
+  it("概览统计项可点击反向筛选到对应列表", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "stats-high-work",
+        title: "统计高优先级工作",
+        status: "active",
+        priority: "high",
+        tags: ["工作"],
+      },
+      {
+        ...data.notes[1],
+        id: "stats-low-idea",
+        title: "统计低优先级灵感",
+        status: "active",
+        priority: "low",
+        tags: ["灵感"],
+      },
+      {
+        ...data.notes[1],
+        id: "stats-archive",
+        title: "统计归档笔记",
+        status: "archive",
+        priority: "medium",
+        tags: ["工作"],
+      },
+    ];
+    installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "概览" }));
+    await user.click(screen.getByRole("button", { name: "归档 1" }));
+    expect(await screen.findByText("统计归档笔记")).toBeTruthy();
+    expect(screen.queryByText("统计高优先级工作")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "概览" }));
+    await user.click(screen.getByRole("button", { name: "重要 1" }));
+    expect(await screen.findByText("统计高优先级工作")).toBeTruthy();
+    expect(screen.queryByText("统计低优先级灵感")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "概览" }));
+    await user.click(screen.getByRole("button", { name: "#灵感 1" }));
+    expect(await screen.findByText("统计低优先级灵感")).toBeTruthy();
+    expect(screen.queryByText("统计高优先级工作")).toBeNull();
+  });
+
   it("按钮组件和样式集中维护 hover 与图标强度", () => {
     const appButtonPath = resolve(RENDERER_SRC, "components/ui/AppButton.tsx");
     const styles = readRendererStyles();

@@ -95,4 +95,60 @@ describe("App editor update", () => {
       },
     ]);
   });
+
+  it("编辑已有笔记时可以保存截止时间供提醒调度使用", async () => {
+    const initialData = getDefaultData(BASE_TIME);
+    const sourceNote = {
+      ...initialData.notes[1],
+      id: "due-editor-note",
+      title: "设置提醒截止时间",
+      dueAt: undefined,
+    };
+    const { api, saved } = installApi({
+      ...initialData,
+      notes: [sourceNote],
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: sourceNote.title }));
+    await user.type(screen.getByLabelText("截止时间"), "2026-05-30T18:00");
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(saved.at(-1)?.notes[0].dueAt).toBe("2026-05-30T18:00");
+  });
+
+  it("编辑器 Markdown 预览安全渲染有限语法并保留原文保存", async () => {
+    const initialData = getDefaultData(BASE_TIME);
+    const sourceNote = {
+      ...initialData.notes[0],
+      title: "Markdown 预览",
+      body: "# 标题\n- 第一项\n> 引用\n```ts\nconst value = 1;\n```\n<script>alert(1)</script>",
+    };
+    const { api, saved } = installApi({
+      ...initialData,
+      notes: [sourceNote],
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: sourceNote.title }));
+    await user.click(screen.getByRole("button", { name: "预览" }));
+
+    const preview = screen.getByRole("region", { name: "Markdown 预览" });
+    expect(preview.querySelector("h1")?.textContent).toBe("标题");
+    expect(preview.querySelector("li")?.textContent).toBe("第一项");
+    expect(preview.querySelector("blockquote")?.textContent).toBe("引用");
+    expect(preview.querySelector("code")?.textContent).toBe("const value = 1;");
+    expect(screen.getByText("<script>alert(1)</script>")).toBeTruthy();
+    expect(preview.querySelector("script")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "保存" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(saved.at(-1)?.notes[0].body).toBe(sourceNote.body);
+  });
 });

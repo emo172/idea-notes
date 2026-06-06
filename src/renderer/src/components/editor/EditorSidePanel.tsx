@@ -3,13 +3,14 @@
 // 1. 渲染优先级、截止时间、时间戳和标签选择。
 // 2. 隔离编辑器元信息字段，保持 EditorDialog 只负责组合弹窗。
 import type { Dispatch, ReactElement, SetStateAction } from "react";
-import type { AppLanguage, NoteDraft, NotePriority } from "@shared/types";
+import type { AppLanguage, IdeaTag, NoteDraft, NotePriority } from "@shared/types";
 import type { AppCopy } from "../../i18n";
 import { formatDate } from "../../utils/dateFormatting";
+import { getTagStyle } from "../../utils/tagDisplay";
 
 interface EditorSidePanelProps {
   draft: NoteDraft;
-  tags: string[];
+  tags: IdeaTag[];
   copy: AppCopy;
   language: AppLanguage;
   noteTimestamps?: { createdAt: number; updatedAt: number };
@@ -96,14 +97,15 @@ export function EditorSidePanel({
           {tags.map((tag) => (
             <button
               className={
-                draft.tags.includes(tag) ? "tag-option selected" : "tag-option"
+                draft.tags.includes(tag.name) ? "tag-option selected" : "tag-option"
               }
+              style={getTagStyle(tags, tag.name)}
               type="button"
               disabled={isSaving}
-              key={tag}
-              onClick={() => onToggleTag(tag)}
+              key={tag.id}
+              onClick={() => onToggleTag(tag.name)}
             >
-              #{tag}
+              #{tag.name}
             </button>
           ))}
         </div>

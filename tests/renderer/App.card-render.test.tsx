@@ -118,6 +118,38 @@ describe("App card rendering", () => {
     expect(bodyPreview?.textContent).toContain("Idea Notes");
   });
 
+  it("搜索命中时高亮标题和正文预览且不会执行用户 HTML", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[1],
+        id: "highlight-body-note",
+        title: "Idea 命名灵感",
+        body: "Idea Notes <script>alert(1)</script>",
+        tags: ["灵感"],
+        checklist: [],
+      },
+    ];
+    installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await screen.findByText("Idea 命名灵感");
+    await user.type(screen.getByLabelText("搜索"), "Idea");
+
+    const card = screen.getByText("命名灵感").closest("article") as HTMLElement;
+    const highlights = within(card).getAllByText("Idea");
+    const bodyPreview = card.querySelector(".note-body-preview") as HTMLElement;
+
+    expect(highlights).toHaveLength(2);
+    expect(
+      highlights.every((item) => item.classList.contains("search-highlight")),
+    ).toBe(true);
+    expect(bodyPreview.textContent).toContain("Idea Notes <script>alert(1)</script>");
+    expect(bodyPreview.querySelector("script")).toBeNull();
+  });
+
   it("笔记卡片按原型展示完成进度、分段进度条、正文背景和优先级位置", async () => {
     installApi(getDefaultData(BASE_TIME));
 

@@ -29,7 +29,7 @@ describe("App settings i18n", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "设置" }));
-    await user.click(screen.getByRole("button", { name: "系统设置" }));
+    await user.click(screen.getByRole("button", { name: "界面设置" }));
     const languageSelect = screen.getByRole("combobox", {
       name: /语言/,
     }) as HTMLSelectElement;
@@ -43,7 +43,7 @@ describe("App settings i18n", () => {
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
     expect(saved.at(-1)?.settings.language).toBe("en");
     expect(document.documentElement.lang).toBe("en");
-    expect(screen.getByRole("heading", { name: "System Settings" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Interface Settings" })).toBeTruthy();
     const updatedLanguageSelect = screen.getByRole("combobox", {
       name: /Language/,
     }) as HTMLSelectElement;
@@ -63,7 +63,7 @@ describe("App settings i18n", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "设置" }));
-    await user.click(screen.getByRole("button", { name: "系统设置" }));
+    await user.click(screen.getByRole("button", { name: "界面设置" }));
     await user.selectOptions(screen.getByRole("combobox", { name: /语言/ }), "en");
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
 
@@ -108,7 +108,7 @@ describe("App settings i18n", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "设置" }));
-    await user.click(screen.getByRole("button", { name: "系统设置" }));
+    await user.click(screen.getByRole("button", { name: "界面设置" }));
     await user.selectOptions(screen.getByRole("combobox", { name: /语言/ }), "en");
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
 
