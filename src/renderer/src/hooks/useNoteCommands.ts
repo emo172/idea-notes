@@ -4,10 +4,12 @@
 // 2. 让 App 只负责把命令传给组件，不直接组合每个持久化 payload。
 import type { Dispatch, SetStateAction } from "react";
 import {
+  archiveNote,
   duplicateNote,
   moveNoteToTrash,
   permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
+  restoreArchivedNote,
   restoreNoteFromTrash,
   toggleChecklistItem,
   toggleNoteCompleted,
@@ -41,6 +43,8 @@ export function useNoteCommands({
   updateNote: (note: IdeaNote) => Promise<boolean>;
   handleMoveToTrash: (note: IdeaNote) => Promise<void>;
   handleRestore: (note: IdeaNote) => Promise<void>;
+  handleArchiveNote: (note: IdeaNote) => Promise<void>;
+  handleRestoreArchivedNote: (note: IdeaNote) => Promise<void>;
   handleDuplicateNote: (note: IdeaNote) => Promise<void>;
   handlePermanentDelete: (noteId: string) => Promise<void>;
   handleClearTrash: () => Promise<void>;
@@ -65,6 +69,17 @@ export function useNoteCommands({
 
   async function handleRestore(note: IdeaNote): Promise<void> {
     await updateNote(restoreNoteFromTrash(note));
+  }
+
+  async function handleArchiveNote(note: IdeaNote): Promise<void> {
+    await updateNote(archiveNote(note));
+  }
+
+  async function handleRestoreArchivedNote(note: IdeaNote): Promise<void> {
+    const restoredNote = restoreArchivedNote(note);
+    const didSave = await updateNote(restoredNote);
+    if (!didSave) return;
+    setViewMode(restoredNote.status);
   }
 
   async function handleDuplicateNote(note: IdeaNote): Promise<void> {
@@ -116,6 +131,8 @@ export function useNoteCommands({
     updateNote,
     handleMoveToTrash,
     handleRestore,
+    handleArchiveNote,
+    handleRestoreArchivedNote,
     handleDuplicateNote,
     handlePermanentDelete,
     handleClearTrash,

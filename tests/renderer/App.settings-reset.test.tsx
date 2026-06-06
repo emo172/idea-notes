@@ -250,7 +250,7 @@ describe("App settings reset", () => {
       "保存失败，本地数据没有写入。请重试。",
     );
     await user.click(within(confirmDialog).getByRole("button", { name: "取消" }));
-    await user.click(screen.getByRole("button", { name: "系统设置" }));
+    await user.click(screen.getByRole("button", { name: "启动行为" }));
     const startupSwitch = screen.getByRole("checkbox", {
       name: /启动行为/,
     }) as HTMLInputElement;

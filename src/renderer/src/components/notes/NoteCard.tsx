@@ -4,8 +4,9 @@
 // 2. 将卡片动作通过回调交给 App 统一处理，组件本身不接触持久化 API。
 import type { ReactElement } from "react";
 import { getCompletion } from "@shared/noteLogic";
-import type { AppLanguage, IdeaNote } from "@shared/types";
+import type { AppLanguage, IdeaNote, IdeaTag } from "@shared/types";
 import type { AppCopy } from "../../i18n";
+import { getTagStyle } from "../../utils/tagDisplay";
 import { NoteCardActions } from "./NoteCardActions";
 import { NoteCardHeader } from "./NoteCardHeader";
 import { NoteCardMeta } from "./NoteCardMeta";
@@ -14,26 +15,34 @@ import { getDeadlineStatus } from "./noteDeadline";
 
 interface NoteCardProps {
   note: IdeaNote;
+  tags: IdeaTag[];
   copy: AppCopy;
   language: AppLanguage;
+  searchQuery: string;
   onOpen: (note: IdeaNote) => void;
   onToggleCompleted: () => Promise<void>;
   onToggleChecklist: (itemId: string, checked: boolean) => Promise<void>;
+  onArchive: (note: IdeaNote) => Promise<void>;
   onTrash: (note: IdeaNote) => Promise<void>;
   onRestore: (note: IdeaNote) => Promise<void>;
+  onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
   onDelete: (note: IdeaNote) => void;
 }
 
 export function NoteCard({
   note,
+  tags,
   copy,
   language,
+  searchQuery,
   onOpen,
   onToggleCompleted,
   onToggleChecklist,
+  onArchive,
   onTrash,
   onRestore,
+  onRestoreArchived,
   onDuplicate,
   onDelete,
 }: NoteCardProps): ReactElement {
@@ -44,8 +53,9 @@ export function NoteCard({
     note.status === "trash" ? "in-trash" : ""
   }`;
   const isCompleted = note.status === "completed";
+  const isArchived = note.status === "archive";
   const isInTrash = note.status === "trash";
-  const canEdit = !isCompleted && !isInTrash;
+  const canEdit = !isCompleted && !isArchived && !isInTrash;
 
   return (
     <article className={cardClassName}>
@@ -55,10 +65,13 @@ export function NoteCard({
         canEdit={canEdit}
         isCompleted={isCompleted}
         isInTrash={isInTrash}
+        searchQuery={searchQuery}
         onOpen={onOpen}
         onToggleCompleted={onToggleCompleted}
+        onArchive={onArchive}
         onTrash={onTrash}
         onRestore={onRestore}
+        onRestoreArchived={onRestoreArchived}
         onDuplicate={onDuplicate}
         onDelete={onDelete}
       />
@@ -74,12 +87,13 @@ export function NoteCard({
         copy={copy}
         canEdit={canEdit}
         completion={completion}
+        searchQuery={searchQuery}
         onToggleChecklist={onToggleChecklist}
       />
       <footer className="note-footer">
         <div className="tags">
           {note.tags.map((tag) => (
-            <span className="tag" key={tag}>
+            <span className="tag" style={getTagStyle(tags, tag)} key={tag}>
               #{tag}
             </span>
           ))}
@@ -88,8 +102,10 @@ export function NoteCard({
           note={note}
           copy={copy}
           onToggleCompleted={onToggleCompleted}
+          onArchive={onArchive}
           onTrash={onTrash}
           onRestore={onRestore}
+          onRestoreArchived={onRestoreArchived}
           onDelete={onDelete}
         />
       </footer>

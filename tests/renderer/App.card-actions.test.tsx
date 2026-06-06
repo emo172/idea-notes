@@ -76,7 +76,7 @@ describe("App card actions", () => {
     await waitFor(() => expect(screen.queryByRole("alert")).toBeNull());
   });
 
-  it("笔记卡片底部只保留完成和删除按钮", async () => {
+  it("非回收站笔记卡片底部展示完成、归档和删除按钮", async () => {
     installApi(getDefaultData(BASE_TIME));
 
     render(<App />);
@@ -88,11 +88,12 @@ describe("App card actions", () => {
     expect(actions).toBeTruthy();
 
     within(actions as HTMLElement).getByRole("button", { name: "完成" });
+    within(actions as HTMLElement).getByRole("button", { name: "归档" });
     within(actions as HTMLElement).getByRole("button", { name: "删除" });
     expect(
       within(actions as HTMLElement).queryByRole("button", { name: "复制" }),
     ).toBeNull();
-    expect((actions as HTMLElement).querySelectorAll("button")).toHaveLength(2);
+    expect((actions as HTMLElement).querySelectorAll("button")).toHaveLength(3);
   });
 
   it("笔记卡片按原型提供编辑按钮和更多操作菜单", async () => {
@@ -163,5 +164,33 @@ describe("App card actions", () => {
     expect(within(menu).queryByRole("menuitem", { name: "编辑" })).toBeNull();
     expect(within(menu).queryByRole("menuitem", { name: "完成" })).toBeNull();
     expect(within(menu).queryByRole("menuitem", { name: "复制" })).toBeNull();
+  });
+
+  it("可以归档进行中笔记，并从归档区恢复到进行中", async () => {
+    const { api, saved } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "归档" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+    expect(saved.at(-1)?.notes[0]?.status).toBe("archive");
+    const nav = screen.getByRole("navigation", { name: "笔记视图" });
+    await user.click(within(nav).getByRole("button", { name: /归档/ }));
+    const archivedCard = (await screen.findByText("重构 Desktop App 导航栏")).closest(
+      "article",
+    ) as HTMLElement;
+    expect(within(archivedCard).getByText(/状态：归档/)).toBeTruthy();
+    expect(within(archivedCard).getByRole("button", { name: "恢复" })).toBeTruthy();
+    expect(within(archivedCard).getByRole("button", { name: "删除" })).toBeTruthy();
+    expect(within(archivedCard).queryByRole("button", { name: "完成" })).toBeNull();
+
+    await user.click(within(archivedCard).getByRole("button", { name: "恢复" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(2));
+    expect(saved.at(-1)?.notes[0]?.status).toBe("active");
   });
 });

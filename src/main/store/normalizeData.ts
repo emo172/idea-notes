@@ -4,17 +4,19 @@
 // 2. 在读取本地 JSON 后生成 renderer 可消费的稳定数据结构。
 import { defaultSettings } from "@shared/defaultData";
 import { sanitizeIdeaNotesData } from "@shared/ideaNotesDataValidation";
-import type { IdeaNotesData } from "@shared/types";
+import { createNextTag, ensureUniqueTagId } from "@shared/noteLogic";
+import type { IdeaNotesData, IdeaTag } from "@shared/types";
 
 const themeModes = new Set(["light", "dark", "system"]);
 const trashRetentions = new Set(["never", "7", "30", "90"]);
 const appLanguages = new Set(["zh-CN", "zh-TW", "en"]);
+const reminderLeadMinutes = new Set([0, 10, 60, 1440]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function normalizeTag(tag: unknown): string | null {
+function normalizeTagName(tag: unknown): string | null {
   if (typeof tag === "string") {
     const name = tag.trim();
     return name || null;
@@ -26,16 +28,41 @@ function normalizeTag(tag: unknown): string | null {
   return null;
 }
 
-function normalizeTags(tags: unknown): string[] {
+function normalizeNoteTags(tags: unknown): string[] {
   if (!Array.isArray(tags)) return [];
   const normalized = tags
-    .map(normalizeTag)
+    .map(normalizeTagName)
     .filter((tag): tag is string => tag !== null);
   return [...new Set(normalized)];
 }
 
+function normalizeGlobalTags(tags: unknown): IdeaTag[] {
+  if (!Array.isArray(tags)) return [];
+  const result: IdeaTag[] = [];
+  const seenNames = new Set<string>();
+  for (const item of tags) {
+    const name = normalizeTagName(item);
+    if (!name || seenNames.has(name)) continue;
+    const fallbackTag = createNextTag(name, result);
+    const color =
+      isRecord(item) && typeof item.color === "string" && item.color.trim()
+        ? item.color
+        : fallbackTag.color;
+    const importedId =
+      isRecord(item) && typeof item.id === "string" && item.id.trim()
+        ? item.id
+        : fallbackTag.id;
+    result.push(ensureUniqueTagId({ id: importedId, name, color }, result));
+    seenNames.add(name);
+  }
+  return result;
+}
+
 function normalizeSettings(settings: unknown): IdeaNotesData["settings"] {
   const legacySettings = isRecord(settings) ? settings : {};
+  const legacyReminders = isRecord(legacySettings.reminders)
+    ? legacySettings.reminders
+    : {};
   return {
     ...legacySettings,
     themeMode:
@@ -57,16 +84,34 @@ function normalizeSettings(settings: unknown): IdeaNotesData["settings"] {
       appLanguages.has(legacySettings.language)
         ? legacySettings.language
         : defaultSettings.language,
+    reminders: {
+      enabled:
+        typeof legacyReminders.enabled === "boolean"
+          ? legacyReminders.enabled
+          : defaultSettings.reminders.enabled,
+      leadMinutes:
+        typeof legacyReminders.leadMinutes === "number" &&
+        reminderLeadMinutes.has(legacyReminders.leadMinutes)
+          ? legacyReminders.leadMinutes
+          : defaultSettings.reminders.leadMinutes,
+    },
   } as IdeaNotesData["settings"];
+}
+
+function normalizeNotifiedReminderKeys(keys: unknown): string[] | undefined {
+  if (!Array.isArray(keys)) return undefined;
+  const normalized = keys.filter((key): key is string => typeof key === "string");
+  return normalized.length > 0 ? [...new Set(normalized)] : undefined;
 }
 
 export function normalizeData(data: IdeaNotesData): IdeaNotesData {
   return sanitizeIdeaNotesData({
     ...data,
-    tags: normalizeTags(data.tags),
+    tags: normalizeGlobalTags(data.tags),
     notes: data.notes.map((note) => ({
       ...note,
-      tags: normalizeTags(note.tags),
+      tags: normalizeNoteTags(note.tags),
+      notifiedReminderKeys: normalizeNotifiedReminderKeys(note.notifiedReminderKeys),
     })),
     settings: normalizeSettings(data.settings),
   });

@@ -29,7 +29,36 @@ describe("主进程 IPC 契约", () => {
     expect(saveHandler).toBeTruthy();
     expect(saveHandler).toContain("assertIdeaNotesData(data)");
     expect(saveHandler).toContain("sanitizeIdeaNotesData(validatedData)");
-    expect(saveHandler).toContain("saveData(sanitizedData)");
+    expect(saveHandler).toContain("const savedData = await saveData(sanitizedData)");
+    expect(saveHandler).toContain("checkRemindersOnce()");
+    expect(saveHandler).toContain("return savedData");
+  });
+
+  it("主进程入口启动截止提醒调度器", () => {
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+
+    expect(mainSource).toContain('from "./reminders/reminderScheduler"');
+    expect(mainSource).toContain("startReminderScheduler()");
+  });
+
+  it("注册数据导出和导入 IPC 并校验消息来源", () => {
+    const ipcSource = readFileSync(resolve("src/main/ipc/registerIpc.ts"), "utf8");
+    const exportHandler = ipcSource.match(
+      /ipcMain\.handle\("notes:export-data"[\s\S]*?\n  \}\);/,
+    )?.[0];
+    const importHandler = ipcSource.match(
+      /ipcMain\.handle\("notes:import-data"[\s\S]*?\n  \}\);/,
+    )?.[0];
+
+    expect(ipcSource).toContain('from "../store/backup"');
+    expect(exportHandler).toBeTruthy();
+    expect(exportHandler).toContain("assertMainWindow");
+    expect(exportHandler).toContain("exportDataFile(window)");
+    expect(importHandler).toBeTruthy();
+    expect(importHandler).toContain("assertMainWindow");
+    expect(importHandler).toContain('mode !== "overwrite" && mode !== "merge"');
+    expect(importHandler).toContain('throw new Error("Invalid import mode")');
+    expect(importHandler).toContain("importDataFile(window, mode)");
   });
 
   it("开机自启动 IPC 保存前校验布尔 payload", () => {

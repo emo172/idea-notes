@@ -5,7 +5,7 @@
 // 2. 锁定编辑器正文行号与正文文字的样式契约。
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultData } from "@shared/defaultData";
@@ -46,6 +46,51 @@ describe("App editor create", () => {
         (segment) => segment.className,
       ),
     ).toEqual(["progress-bar-segment pending", "progress-bar-segment pending"]);
+  });
+
+  it("Ctrl+N 打开新建编辑器，Ctrl+S 保存编辑器草稿", async () => {
+    const { api, saved } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    await user.keyboard("{Control>}n{/Control}");
+
+    await screen.findByRole("dialog", { name: "新建笔记" });
+    await user.type(screen.getByLabelText("标题"), "快捷键新建");
+    await user.type(screen.getByLabelText("正文"), "键盘保存");
+    await user.keyboard("{Control>}s{/Control}");
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    expect(saved.at(-1)?.notes[0]?.title).toBe("快捷键新建");
+    expect(screen.queryByRole("dialog", { name: "新建笔记" })).toBeNull();
+  });
+
+  it("只保留普通新建入口并打开空白草稿", async () => {
+    installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    expect(screen.queryByRole("button", { name: "快速捕获" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "模板" })).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "新建" }));
+    const dialog = screen.getByRole("dialog", { name: "新建笔记" });
+    expect(dialog).toBeTruthy();
+    expect((within(dialog).getByLabelText("标题") as HTMLInputElement).value).toBe("");
+    expect((within(dialog).getByLabelText("正文") as HTMLTextAreaElement).value).toBe(
+      "",
+    );
+    expect(
+      (
+        within(dialog).getByRole("combobox", {
+          name: "优先级",
+        }) as HTMLSelectElement
+      ).value,
+    ).toBe("medium");
   });
 
   it("新增笔记正文输入框默认显示三行编号并随换行扩展", async () => {

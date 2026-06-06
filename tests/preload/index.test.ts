@@ -42,8 +42,10 @@ describe("preload 暴露的桌面能力 API", () => {
 
     expect(Object.keys(api).sort()).toEqual([
       "closeWindow",
+      "exportData",
       "getData",
       "getWindowState",
+      "importData",
       "minimizeWindow",
       "saveData",
       "setStartup",
@@ -65,6 +67,31 @@ describe("preload 暴露的桌面能力 API", () => {
 
     expect(electronMock.invoke).toHaveBeenNthCalledWith(1, "notes:get-data");
     expect(electronMock.invoke).toHaveBeenNthCalledWith(2, "notes:save-data", data);
+  });
+
+  it("将数据导入导出映射到固定 IPC 通道", async () => {
+    const api = await loadPreloadApi();
+    const data = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    electronMock.invoke
+      .mockResolvedValueOnce({ ok: true, filePath: "/tmp/idea-notes.json" })
+      .mockResolvedValueOnce({ ok: true, filePath: "/tmp/idea-notes.json", data });
+
+    await expect(api.exportData()).resolves.toEqual({
+      ok: true,
+      filePath: "/tmp/idea-notes.json",
+    });
+    await expect(api.importData("merge")).resolves.toEqual({
+      ok: true,
+      filePath: "/tmp/idea-notes.json",
+      data,
+    });
+
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(1, "notes:export-data");
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(
+      2,
+      "notes:import-data",
+      "merge",
+    );
   });
 
   it("将窗口和系统能力映射到固定 IPC 通道", async () => {

@@ -123,6 +123,19 @@
   flex: 1;
 }
 
+.tag-manager-item .tag-color-input {
+  flex: 0 0 96px;
+}
+
+.tag-color-swatch {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--tag-color, var(--border));
+}
+
 .tag-manager-list {
   display: flex;
   flex-direction: column;
@@ -166,6 +179,24 @@
   justify-content: space-between;
   color: var(--fg-2);
   font-size: 14px;
+  font-weight: 700;
+}
+
+.settings-backup-row {
+  align-items: flex-start;
+}
+
+.settings-backup-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.settings-backup-feedback {
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -256,6 +287,7 @@
   }
 
   .settings-actions,
+  .settings-backup-actions,
   .tag-add-row,
   .tag-manager-item,
   .setting-row {

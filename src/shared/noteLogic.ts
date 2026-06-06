@@ -8,7 +8,15 @@ export {
   getCompletion,
   toggleChecklistItem,
 } from "./notes/checklistLogic";
+export { archiveNote, restoreArchivedNote } from "./notes/archiveLogic";
 export { filterAndSortNotes } from "./notes/noteFilters";
+export { calculateNoteStats } from "./notes/noteStats";
+export { parseSearchQuery } from "./notes/searchQuery";
+export {
+  buildReminderKey,
+  findDueReminders,
+  markReminderNotified,
+} from "./notes/reminderLogic";
 export { createNote, duplicateNote, saveNote } from "./notes/noteMutations";
 export {
   moveNoteToTrash,
@@ -18,5 +26,12 @@ export {
   restoreNoteFromTrash,
   toggleNoteCompleted,
 } from "./notes/trashLogic";
-export { deleteTag, renameTag } from "./tags/tagLogic";
+export {
+  createNextTag,
+  createTag,
+  deleteTag,
+  ensureUniqueTagId,
+  renameTag,
+  updateTagColor,
+} from "./tags/tagLogic";
 export { updateSettings } from "./settings/settingsLogic";

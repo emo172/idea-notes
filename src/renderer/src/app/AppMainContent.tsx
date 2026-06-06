@@ -2,33 +2,40 @@
 // 作用：
 // 1. 按当前视图渲染标签设置页或笔记工具栏与列表。
 // 2. 让 IdeaNotesApp 只负责状态来源和命令接线，不直接维护主内容 JSX。
+import { useRef } from "react";
 import type { ReactElement } from "react";
 import type {
   AppLanguage,
   IdeaNote,
   IdeaNotesData,
+  IdeaTag,
   NotePriority,
   NoteStatus,
   SortMode,
 } from "@shared/types";
 import { SaveFeedbackAlert } from "../components/feedback/SaveFeedbackAlert";
 import { NotesList } from "../components/notes/NotesList";
+import { StatsPanel } from "../components/overview/StatsPanel";
 import { TagSettingsPanel } from "../components/settings/TagSettingsPanel";
 import { NotesToolbar } from "../components/toolbar/NotesToolbar";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import type { TagInputError } from "../hooks/useTagCommands";
 import type { AppCopy } from "../i18n";
-
-type ViewMode = NoteStatus | "settings" | "tag-settings";
+import type { ViewMode } from "./viewMode";
 
 interface AppMainContentProps {
   viewMode: ViewMode;
   data: IdeaNotesData | null;
   copy: AppCopy;
   currentLanguage: AppLanguage;
+  tags: IdeaTag[];
   tagName: string;
-  tagInputErrorMessage: string | null;
+  tagInputError: TagInputError | null;
   mainSaveFeedback: string | null;
   shouldShowMainSaveError: boolean;
   isSaving: boolean;
+  isEditorOpen: boolean;
+  hasConfirmDialog: boolean;
   searchQuery: string;
   priority: NotePriority | "all";
   sortMode: SortMode;
@@ -42,7 +49,14 @@ interface AppMainContentProps {
   setTagName: (value: string) => void;
   handleAddTag: () => Promise<boolean>;
   handleRenameTag: (from: string, to: string) => Promise<boolean>;
+  handleTagColorChange: (tag: string, color: string) => Promise<boolean>;
   handleDeleteTag: (tag: string) => Promise<void>;
+  openNewNote: () => void;
+  handleSaveNote: () => Promise<void>;
+  setViewMode: (status: NoteStatus) => void;
+  onStatsStatusClick: (status: NoteStatus) => void;
+  onStatsPriorityClick: (priority: NotePriority) => void;
+  onStatsTagClick: (tag: string) => void;
   setSearchQuery: (value: string) => void;
   setPriority: (value: NotePriority | "all") => void;
   setSortMode: (value: SortMode) => void;
@@ -57,8 +71,10 @@ interface AppMainContentProps {
     itemId: string,
     checked: boolean,
   ) => Promise<void>;
+  handleArchiveNote: (note: IdeaNote) => Promise<void>;
   handleMoveToTrash: (note: IdeaNote) => Promise<void>;
   handleRestore: (note: IdeaNote) => Promise<void>;
+  handleRestoreArchivedNote: (note: IdeaNote) => Promise<void>;
   handleDuplicateNote: (note: IdeaNote) => Promise<void>;
   setDeleteTarget: (note: IdeaNote) => void;
 }
@@ -68,11 +84,14 @@ export function AppMainContent({
   data,
   copy,
   currentLanguage,
+  tags,
   tagName,
-  tagInputErrorMessage,
+  tagInputError,
   mainSaveFeedback,
   shouldShowMainSaveError,
   isSaving,
+  isEditorOpen,
+  hasConfirmDialog,
   searchQuery,
   priority,
   sortMode,
@@ -86,7 +105,14 @@ export function AppMainContent({
   setTagName,
   handleAddTag,
   handleRenameTag,
+  handleTagColorChange,
   handleDeleteTag,
+  openNewNote,
+  handleSaveNote,
+  setViewMode,
+  onStatsStatusClick,
+  onStatsPriorityClick,
+  onStatsTagClick,
   setSearchQuery,
   setPriority,
   setSortMode,
@@ -97,11 +123,31 @@ export function AppMainContent({
   openExistingNote,
   handleToggleCompleted,
   handleToggleChecklist,
+  handleArchiveNote,
   handleMoveToTrash,
   handleRestore,
+  handleRestoreArchivedNote,
   handleDuplicateNote,
   setDeleteTarget,
 }: AppMainContentProps): ReactElement {
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const tagInputErrorMessage =
+    tagInputError === "required"
+      ? copy.tagNameRequired
+      : tagInputError === "duplicate"
+        ? copy.tagAlreadyExists
+        : null;
+
+  useKeyboardShortcuts({
+    searchInputRef,
+    isEditorOpen,
+    isSaving,
+    hasConfirmDialog,
+    onOpenNewNote: openNewNote,
+    onSaveEditor: handleSaveNote,
+    onViewModeChange: setViewMode,
+  });
+
   if (viewMode === "tag-settings") {
     return (
       <TagSettingsPanel
@@ -114,7 +160,20 @@ export function AppMainContent({
         setTagName={setTagName}
         onAddTag={handleAddTag}
         onRenameTag={handleRenameTag}
+        onTagColorChange={handleTagColorChange}
         onDeleteTag={handleDeleteTag}
+      />
+    );
+  }
+
+  if (viewMode === "overview") {
+    return (
+      <StatsPanel
+        notes={data?.notes ?? []}
+        copy={copy}
+        onStatusClick={onStatsStatusClick}
+        onPriorityClick={onStatsPriorityClick}
+        onTagClick={onStatsTagClick}
       />
     );
   }
@@ -124,6 +183,7 @@ export function AppMainContent({
       <SaveFeedbackAlert message={shouldShowMainSaveError ? mainSaveFeedback : null} />
       <NotesToolbar
         copy={copy}
+        searchInputRef={searchInputRef}
         searchQuery={searchQuery}
         onSearchQueryChange={setSearchQuery}
         priority={priority}
@@ -140,6 +200,8 @@ export function AppMainContent({
       <NotesList
         copy={copy}
         language={currentLanguage}
+        tags={tags}
+        searchQuery={searchQuery}
         noteViewMode={noteViewMode}
         visibleNotes={visibleNotes}
         hasData={hasData}
@@ -149,8 +211,10 @@ export function AppMainContent({
         onOpenNote={openExistingNote}
         onToggleCompleted={handleToggleCompleted}
         onToggleChecklist={handleToggleChecklist}
+        onArchive={handleArchiveNote}
         onTrash={handleMoveToTrash}
         onRestore={handleRestore}
+        onRestoreArchived={handleRestoreArchivedNote}
         onDuplicate={handleDuplicateNote}
         onDelete={setDeleteTarget}
       />

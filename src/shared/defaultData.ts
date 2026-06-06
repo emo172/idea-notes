@@ -4,6 +4,7 @@
 // 2. 让空数据状态下的桌面应用仍能展示列表、标签、清单和进度条效果。
 // 3. 为测试提供稳定的默认数据入口，减少测试重复构造样板数据。
 import type { IdeaNotesData, IdeaSettings } from "./types";
+import { createTag } from "./tags/tagLogic";
 
 // 默认设置用于首次启动、数据文件缺失或后续重置设置时初始化应用偏好。
 export const defaultSettings: IdeaSettings = {
@@ -11,12 +12,17 @@ export const defaultSettings: IdeaSettings = {
   startup: false,
   trashAutoDelete: "never",
   language: "zh-CN",
+  reminders: {
+    enabled: false,
+    leadMinutes: 10,
+  },
 };
 
 export function getDefaultData(now = Date.now()): IdeaNotesData {
   // 首次启动时提供少量种子数据，让用户能直接看到列表、清单、标签和进度条效果。
+  const tags = ["工作", "灵感", "待办"].map(createTag);
   return {
-    tags: ["工作", "灵感", "待办"],
+    tags,
     settings: { ...defaultSettings },
     notes: [
       {

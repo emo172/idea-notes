@@ -7,17 +7,16 @@ import type {
   AppLanguage,
   IdeaNote,
   IdeaNotesData,
-  NoteDraft,
-  NoteStatus,
+  ImportDataMode,
 } from "@shared/types";
 import { ConfirmDialog } from "../components/dialogs/ConfirmDialog";
 import { EditorDialog } from "../components/editor/EditorDialog";
 import { SaveFeedbackAlert } from "../components/feedback/SaveFeedbackAlert";
 import { SettingsPanel } from "../components/settings/SettingsPanel";
+import type { UseNoteEditorResult } from "../hooks/useNoteEditor";
 import type { AppCopy } from "../i18n";
 import { settingsCopy } from "../i18n";
-
-type ViewMode = NoteStatus | "settings" | "tag-settings";
+import type { ViewMode } from "./viewMode";
 
 interface AppOverlaysProps {
   viewMode: ViewMode;
@@ -27,21 +26,20 @@ interface AppOverlaysProps {
   isSaving: boolean;
   mainSaveFeedback: string | null;
   editorSaveFeedback: string | null;
+  backupFeedback: string | null;
   hasConfirmDialog: boolean;
   isResetSettingsConfirmOpen: boolean;
+  importConfirmMode: ImportDataMode | null;
   setIsResetSettingsConfirmOpen: Dispatch<SetStateAction<boolean>>;
+  setImportConfirmMode: (mode: ImportDataMode | null) => void;
   setSaveFeedback: (feedback: null) => void;
   setViewMode: Dispatch<SetStateAction<ViewMode>>;
   handleSettingsChange: (settings: Partial<IdeaNotesData["settings"]>) => Promise<void>;
   handleStartupChange: (enabled: boolean) => Promise<void>;
+  handleExportData: () => Promise<void>;
+  handleConfirmImportData: () => Promise<void>;
   handleConfirmResetSettings: () => Promise<void>;
-  draft: NoteDraft;
-  setDraft: Dispatch<SetStateAction<NoteDraft>>;
-  isEditorOpen: boolean;
-  setIsEditorOpen: Dispatch<SetStateAction<boolean>>;
-  editingNote?: IdeaNote;
-  toggleDraftTag: (tag: string) => void;
-  handleSaveNote: () => Promise<void>;
+  noteEditor: UseNoteEditorResult;
   deleteTarget: IdeaNote | null;
   setDeleteTarget: Dispatch<SetStateAction<IdeaNote | null>>;
   handlePermanentDelete: (noteId: string) => Promise<void>;
@@ -58,21 +56,20 @@ export function AppOverlays({
   isSaving,
   mainSaveFeedback,
   editorSaveFeedback,
+  backupFeedback,
   hasConfirmDialog,
   isResetSettingsConfirmOpen,
+  importConfirmMode,
   setIsResetSettingsConfirmOpen,
+  setImportConfirmMode,
   setSaveFeedback,
   setViewMode,
   handleSettingsChange,
   handleStartupChange,
+  handleExportData,
+  handleConfirmImportData,
   handleConfirmResetSettings,
-  draft,
-  setDraft,
-  isEditorOpen,
-  setIsEditorOpen,
-  editingNote,
-  toggleDraftTag,
-  handleSaveNote,
+  noteEditor,
   deleteTarget,
   setDeleteTarget,
   handlePermanentDelete,
@@ -88,8 +85,11 @@ export function AppOverlays({
           language={currentLanguage}
           isSaving={isSaving}
           saveError={!isResetSettingsConfirmOpen ? mainSaveFeedback : null}
+          backupFeedback={backupFeedback}
           onSettingsChange={handleSettingsChange}
           onStartupChange={handleStartupChange}
+          onExportData={handleExportData}
+          onRequestImportData={setImportConfirmMode}
           onResetSettings={() => {
             setSaveFeedback(null);
             setIsResetSettingsConfirmOpen(true);
@@ -103,6 +103,27 @@ export function AppOverlays({
         className="dialog-error-alert"
       />
 
+      {importConfirmMode ? (
+        <ConfirmDialog
+          title={
+            importConfirmMode === "overwrite"
+              ? settingsCopy[currentLanguage].importOverwriteConfirm
+              : settingsCopy[currentLanguage].importMergeConfirm
+          }
+          body={
+            importConfirmMode === "overwrite"
+              ? settingsCopy[currentLanguage].importOverwriteConfirmBody
+              : settingsCopy[currentLanguage].importMergeConfirmBody
+          }
+          copy={copy}
+          onCancel={() => setImportConfirmMode(null)}
+          onConfirm={handleConfirmImportData}
+          panelClassName="settings-import-confirm-panel"
+          confirmLabel={copy.confirm}
+          isBusy={isSaving}
+        />
+      ) : null}
+
       {isResetSettingsConfirmOpen && (
         <ConfirmDialog
           title={settingsCopy[currentLanguage].resetConfirm}
@@ -115,19 +136,19 @@ export function AppOverlays({
         />
       )}
 
-      {isEditorOpen ? (
+      {noteEditor.isEditorOpen ? (
         <EditorDialog
-          draft={draft}
+          draft={noteEditor.draft}
           tags={data?.tags ?? []}
           copy={copy}
           language={currentLanguage}
-          noteTimestamps={editingNote}
-          setDraft={setDraft}
-          onToggleTag={toggleDraftTag}
+          noteTimestamps={noteEditor.editingNote}
+          setDraft={noteEditor.setDraft}
+          onToggleTag={noteEditor.toggleDraftTag}
           onCancel={() => {
-            if (!isSaving) setIsEditorOpen(false);
+            if (!isSaving) noteEditor.setIsEditorOpen(false);
           }}
-          onSave={handleSaveNote}
+          onSave={noteEditor.handleSaveNote}
           saveError={editorSaveFeedback}
           isSaving={isSaving}
         />

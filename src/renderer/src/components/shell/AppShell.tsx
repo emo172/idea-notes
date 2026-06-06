@@ -4,8 +4,16 @@
 // 2. 让 App 专注业务状态编排，避免把通用框架 JSX 与保存/编辑逻辑混在一起。
 // 3. 保持原有 className、ARIA 名称和窗口控制回调契约稳定。
 import type { ReactElement, ReactNode } from "react";
-import { CheckCircleIcon, PlusIcon, TagIcon, TrashIcon } from "@phosphor-icons/react";
-import type { DesktopWindowState, NoteStatus } from "@shared/types";
+import {
+  ArchiveBoxIcon,
+  CheckCircleIcon,
+  PlusIcon,
+  PresentationChartIcon,
+  TagIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
+import type { DesktopWindowState, IdeaTag, NoteStatus } from "@shared/types";
+import type { MainViewMode, ViewMode } from "../../app/viewMode";
 import type { AppCopy } from "../../i18n";
 import {
   CloseIcon,
@@ -16,8 +24,7 @@ import {
   SettingsIcon,
 } from "../titlebar/TitlebarIcons";
 import { AppButton } from "../ui/AppButton";
-
-type ViewMode = NoteStatus | "settings" | "tag-settings";
+import { getTagStyle } from "../../utils/tagDisplay";
 
 interface AppShellProps {
   appClassName: string;
@@ -27,7 +34,7 @@ interface AppShellProps {
   pinButtonLabel: string;
   viewMode: ViewMode;
   counts: Record<NoteStatus, number>;
-  tags: string[];
+  tags: IdeaTag[];
   selectedTags: string[];
   mainContent: ReactNode;
   children?: ReactNode;
@@ -37,7 +44,7 @@ interface AppShellProps {
   onToggleMaximizeWindow: () => Promise<void>;
   onCloseWindow: () => void;
   onOpenNewNote: () => void;
-  onViewModeChange: (viewMode: NoteStatus) => void;
+  onViewModeChange: (viewMode: MainViewMode) => void;
   onToggleSelectedTag: (tag: string) => void;
   onOpenTagSettings: () => void;
 }
@@ -45,6 +52,7 @@ interface AppShellProps {
 const statusIcons: Record<NoteStatus, ReactElement> = {
   active: <CheckCircleIcon weight="bold" />,
   completed: <CheckCircleIcon weight="bold" />,
+  archive: <ArchiveBoxIcon weight="bold" />,
   trash: <TrashIcon weight="bold" />,
 };
 
@@ -131,18 +139,28 @@ export function AppShell({
             </AppButton>
           </div>
           <nav className="nav-menu" aria-label={copy.notesNav}>
-            {(["active", "completed", "trash"] as NoteStatus[]).map((status) => (
-              <AppButton
-                className="nav-link"
-                active={viewMode === status}
-                icon={statusIcons[status]}
-                key={status}
-                onClick={() => onViewModeChange(status)}
-              >
-                <span>{copy.statusLabels[status]}</span>
-                <span className="nav-badge">{counts[status]}</span>
-              </AppButton>
-            ))}
+            <AppButton
+              className="nav-link"
+              active={viewMode === "overview"}
+              icon={<PresentationChartIcon weight="bold" />}
+              onClick={() => onViewModeChange("overview")}
+            >
+              <span>{copy.overview}</span>
+            </AppButton>
+            {(["active", "completed", "archive", "trash"] as NoteStatus[]).map(
+              (status) => (
+                <AppButton
+                  className="nav-link"
+                  active={viewMode === status}
+                  icon={statusIcons[status]}
+                  key={status}
+                  onClick={() => onViewModeChange(status)}
+                >
+                  <span>{copy.statusLabels[status]}</span>
+                  <span className="nav-badge">{counts[status]}</span>
+                </AppButton>
+              ),
+            )}
           </nav>
           <section className="tags-section">
             <div className="section-title">{copy.tagFilter}</div>
@@ -150,13 +168,16 @@ export function AppShell({
               {tags.map((tag) => (
                 <button
                   className={
-                    selectedTags.includes(tag) ? "tag-option selected" : "tag-option"
+                    selectedTags.includes(tag.name)
+                      ? "tag-option selected"
+                      : "tag-option"
                   }
+                  style={getTagStyle(tags, tag.name)}
                   type="button"
-                  key={tag}
-                  onClick={() => onToggleSelectedTag(tag)}
+                  key={tag.id}
+                  onClick={() => onToggleSelectedTag(tag.name)}
                 >
-                  #{tag}
+                  #{tag.name}
                 </button>
               ))}
             </div>

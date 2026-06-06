@@ -6,17 +6,26 @@
 // 4. 让本地 JSON 持久化对象和 UI 状态使用同一套 TypeScript 类型。
 // 共享类型是 main、preload、renderer 和 tests 的公共契约，避免 IPC 与界面状态各自漂移。
 export type NotePriority = "high" | "medium" | "low";
-export type NoteStatus = "active" | "completed" | "trash";
+export type NoteStatus = "active" | "completed" | "archive" | "trash";
 export type SortMode = "important" | "newest" | "progress";
 export type ThemeMode = "light" | "dark" | "system";
 export type AppLanguage = "zh-CN" | "zh-TW" | "en";
 export type TrashRetention = "never" | "7" | "30" | "90";
+export type ImportDataMode = "overwrite" | "merge";
+export type ReminderLeadMinutes = 0 | 10 | 60 | 1440;
 
 // 清单项由正文行生成，checked 表示该行任务是否完成。
 export interface ChecklistItem {
   id: string;
   text: string;
   checked: boolean;
+}
+
+// 全局标签对象承载显示名和颜色；笔记上的 tags 第一阶段仍用标签名引用。
+export interface IdeaTag {
+  id: string;
+  name: string;
+  color: string;
 }
 
 // 单条笔记的完整持久化模型，覆盖列表展示、编辑器、筛选排序和回收站状态。
@@ -32,6 +41,7 @@ export interface IdeaNote {
   createdAt: number;
   updatedAt: number;
   trashedAt?: number;
+  notifiedReminderKeys?: string[];
 }
 
 // 用户偏好设置随主数据一起写入本地 JSON 文件。
@@ -40,12 +50,16 @@ export interface IdeaSettings {
   startup: boolean;
   trashAutoDelete: TrashRetention;
   language: AppLanguage;
+  reminders: {
+    enabled: boolean;
+    leadMinutes: ReminderLeadMinutes;
+  };
 }
 
 // 应用持久化根对象，主进程读写磁盘时只处理这一种结构。
 export interface IdeaNotesData {
   notes: IdeaNote[];
-  tags: string[];
+  tags: IdeaTag[];
   settings: IdeaSettings;
 }
 
@@ -81,10 +95,21 @@ export interface DesktopWindowState {
   isMaximized: boolean;
 }
 
+// 文件导入导出结果由主进程生成，renderer 只按 ok/reason 更新反馈和数据状态。
+export interface DataFileResult {
+  ok: boolean;
+  filePath?: string;
+  reason?: "cancelled" | "invalid" | "failed";
+}
+
 // preload 暴露给渲染层的唯一桌面能力入口，禁止直接暴露 ipcRenderer。
 export interface IdeaNotesApi {
   getData: () => Promise<IdeaNotesData>;
   saveData: (data: IdeaNotesData) => Promise<IdeaNotesData>;
+  exportData: () => Promise<DataFileResult>;
+  importData: (
+    mode: ImportDataMode,
+  ) => Promise<DataFileResult & { data?: IdeaNotesData }>;
   getWindowState: () => Promise<DesktopWindowState>;
   minimizeWindow: () => Promise<DesktopWindowState>;
   toggleMaximizeWindow: () => Promise<DesktopWindowState>;

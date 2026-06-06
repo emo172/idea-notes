@@ -40,7 +40,7 @@ describe("App settings appearance", () => {
     vi.restoreAllMocks();
   });
 
-  it("设置中心使用外观和系统页签且不显示背景颜色设置", async () => {
+  it("设置中心按功能拆成四个页面且默认显示界面设置", async () => {
     expect(defaultSettings).not.toHaveProperty("backgroundColor");
     expect(getDefaultData(BASE_TIME).settings).not.toHaveProperty("backgroundColor");
     installApi(getDefaultData(BASE_TIME));
@@ -49,16 +49,32 @@ describe("App settings appearance", () => {
     render(<App />);
 
     await user.click(await screen.findByRole("button", { name: "设置" }));
-    expect(screen.getByRole("heading", { name: "外观设置" })).toBeTruthy();
+    for (const tabName of ["界面设置", "启动行为", "提醒设置", "数据管理"]) {
+      expect(screen.getByRole("button", { name: tabName })).toBeTruthy();
+    }
+    expect(screen.queryByRole("button", { name: "系统设置" })).toBeNull();
+    expect(screen.getByRole("heading", { name: "界面设置" })).toBeTruthy();
     expect(screen.getByText("设置界面的默认明暗显示方式")).toBeTruthy();
+    expect(screen.getByText("切换应用界面的显示语言")).toBeTruthy();
     expect(screen.queryByText("背景颜色")).toBeNull();
     expect(screen.queryByText("统一调整笔记页、设置页和面板背景")).toBeNull();
     expect(document.querySelector('.settings-card input[type="color"]')).toBeNull();
 
-    await user.click(screen.getByRole("button", { name: "系统设置" }));
-    expect(screen.getByRole("heading", { name: "系统设置" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "启动行为" }));
+    expect(screen.getByRole("heading", { name: "启动行为" })).toBeTruthy();
     expect(screen.getByText("系统登录后自动启动 Idea Notes")).toBeTruthy();
+    expect(screen.queryByText("到期后自动清理回收站中的笔记")).toBeNull();
+
+    await user.click(screen.getByRole("button", { name: "提醒设置" }));
+    expect(screen.getByRole("heading", { name: "提醒设置" })).toBeTruthy();
+    expect(screen.getByText("到达提醒时间后发送桌面通知")).toBeTruthy();
+
+    await user.click(screen.getByRole("button", { name: "数据管理" }));
+    expect(screen.getByRole("heading", { name: "数据管理" })).toBeTruthy();
     expect(screen.getByText("到期后自动清理回收站中的笔记")).toBeTruthy();
+    expect(
+      screen.getByText("导出当前数据，或从灵感笔记 JSON 文件恢复数据"),
+    ).toBeTruthy();
   });
 
   it("设置页保存失败提示显示在设置内容区内", async () => {

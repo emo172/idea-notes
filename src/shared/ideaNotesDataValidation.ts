@@ -6,10 +6,11 @@
 import type { IdeaNotesData } from "./types";
 
 const notePriorities = new Set(["high", "medium", "low"]);
-const noteStatuses = new Set(["active", "completed", "trash"]);
+const noteStatuses = new Set(["active", "completed", "archive", "trash"]);
 const themeModes = new Set(["light", "dark", "system"]);
 const trashRetentions = new Set(["never", "7", "30", "90"]);
 const appLanguages = new Set(["zh-CN", "zh-TW", "en"]);
+const reminderLeadMinutes = new Set([0, 10, 60, 1440]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -28,6 +29,15 @@ function isDenseArrayOf<T>(
 
 function isStringArray(value: unknown): value is string[] {
   return isDenseArrayOf(value, (item) => typeof item === "string");
+}
+
+function isIdeaTag(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.id === "string" &&
+    typeof value.name === "string" &&
+    typeof value.color === "string"
+  );
 }
 
 function isFiniteNumber(value: unknown): value is number {
@@ -51,6 +61,10 @@ function isChecklistItem(value: unknown): boolean {
   );
 }
 
+function isOptionalStringArray(value: unknown): value is string[] | undefined {
+  return value === undefined || isStringArray(value);
+}
+
 function isIdeaNote(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -66,7 +80,17 @@ function isIdeaNote(value: unknown): boolean {
     isOptionalString(value.dueAt) &&
     isFiniteNumber(value.createdAt) &&
     isFiniteNumber(value.updatedAt) &&
-    isOptionalFiniteNumber(value.trashedAt)
+    isOptionalFiniteNumber(value.trashedAt) &&
+    isOptionalStringArray(value.notifiedReminderKeys)
+  );
+}
+
+function isReminderSettings(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    typeof value.enabled === "boolean" &&
+    typeof value.leadMinutes === "number" &&
+    reminderLeadMinutes.has(value.leadMinutes)
   );
 }
 
@@ -79,7 +103,8 @@ function isIdeaSettings(value: unknown): boolean {
     typeof value.trashAutoDelete === "string" &&
     trashRetentions.has(value.trashAutoDelete) &&
     typeof value.language === "string" &&
-    appLanguages.has(value.language)
+    appLanguages.has(value.language) &&
+    isReminderSettings(value.reminders)
   );
 }
 
@@ -87,7 +112,7 @@ export function validateIdeaNotesData(data: unknown): data is IdeaNotesData {
   return (
     isRecord(data) &&
     isDenseArrayOf(data.notes, isIdeaNote) &&
-    isStringArray(data.tags) &&
+    isDenseArrayOf(data.tags, isIdeaTag) &&
     isIdeaSettings(data.settings)
   );
 }

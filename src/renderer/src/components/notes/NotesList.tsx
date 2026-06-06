@@ -4,7 +4,7 @@
 // 2. 保持 notes-list 区域 DOM、ARIA 与卡片回调语义稳定。
 import type { ReactElement } from "react";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
-import type { AppLanguage, IdeaNote, NoteStatus } from "@shared/types";
+import type { AppLanguage, IdeaNote, IdeaTag, NoteStatus } from "@shared/types";
 import { AppButton } from "../ui/AppButton";
 import type { AppCopy } from "../../i18n";
 import { NoteCard } from "./NoteCard";
@@ -12,6 +12,8 @@ import { NoteCard } from "./NoteCard";
 interface NotesListProps {
   copy: AppCopy;
   language: AppLanguage;
+  tags: IdeaTag[];
+  searchQuery: string;
   noteViewMode: NoteStatus;
   visibleNotes: IdeaNote[];
   hasData: boolean;
@@ -25,8 +27,10 @@ interface NotesListProps {
     itemId: string,
     checked: boolean,
   ) => Promise<void>;
+  onArchive: (note: IdeaNote) => Promise<void>;
   onTrash: (note: IdeaNote) => Promise<void>;
   onRestore: (note: IdeaNote) => Promise<void>;
+  onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
   onDelete: (note: IdeaNote) => void;
 }
@@ -34,6 +38,8 @@ interface NotesListProps {
 export function NotesList({
   copy,
   language,
+  tags,
+  searchQuery,
   noteViewMode,
   visibleNotes,
   hasData,
@@ -43,8 +49,10 @@ export function NotesList({
   onOpenNote,
   onToggleCompleted,
   onToggleChecklist,
+  onArchive,
   onTrash,
   onRestore,
+  onRestoreArchived,
   onDuplicate,
   onDelete,
 }: NotesListProps): ReactElement {
@@ -68,6 +76,8 @@ export function NotesList({
             <NoteCard
               key={note.id}
               note={note}
+              tags={tags}
+              searchQuery={searchQuery}
               copy={copy}
               language={language}
               onOpen={onOpenNote}
@@ -75,8 +85,10 @@ export function NotesList({
               onToggleChecklist={(itemId, checked) =>
                 onToggleChecklist(note, itemId, checked)
               }
+              onArchive={onArchive}
               onTrash={onTrash}
               onRestore={onRestore}
+              onRestoreArchived={onRestoreArchived}
               onDuplicate={onDuplicate}
               onDelete={onDelete}
             />

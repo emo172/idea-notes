@@ -4,6 +4,7 @@
 // 2. 按重要性、更新时间或完成进度排序。
 import type { IdeaNote, NoteFilters } from "../types";
 import { getCompletion } from "./checklistLogic";
+import { parseSearchQuery } from "./searchQuery";
 
 const priorityRank = {
   high: 0,
@@ -11,11 +12,19 @@ const priorityRank = {
   low: 2,
 } as const;
 
-// 搜索只匹配标题和正文，标签筛选由 selectedTags 单独处理，避免筛选语义混乱。
+function getDueSearchStatus(note: IdeaNote): "overdue" | "pending" | "none" {
+  if (!note.dueAt) return "none";
+  const dueTime = Date.parse(note.dueAt);
+  if (Number.isNaN(dueTime)) return "none";
+  return dueTime < Date.now() ? "overdue" : "pending";
+}
+
 function includesSearchText(note: IdeaNote, query: string): boolean {
-  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedQuery = query.toLowerCase();
   if (!normalizedQuery) return true;
-  return `${note.title}\n${note.body}`.toLowerCase().includes(normalizedQuery);
+  return `${note.title}\n${note.body}\n${note.tags.join("\n")}`
+    .toLowerCase()
+    .includes(normalizedQuery);
 }
 
 export function filterAndSortNotes(
@@ -23,11 +32,22 @@ export function filterAndSortNotes(
   filters: NoteFilters,
 ): IdeaNote[] {
   // 先过滤视图状态，再叠加优先级、标签交集和文本搜索，最后按用户选择排序。
+  const parsedQuery = parseSearchQuery(filters.searchQuery);
   return notes
     .filter((note) => note.status === filters.status)
     .filter((note) => filters.priority === "all" || note.priority === filters.priority)
     .filter((note) => filters.selectedTags.every((tag) => note.tags.includes(tag)))
-    .filter((note) => includesSearchText(note, filters.searchQuery))
+    .filter((note) => parsedQuery.tags.every((tag) => note.tags.includes(tag)))
+    .filter(
+      (note) =>
+        parsedQuery.priorities.length === 0 ||
+        parsedQuery.priorities.includes(note.priority),
+    )
+    .filter(
+      (note) =>
+        parsedQuery.due === null || getDueSearchStatus(note) === parsedQuery.due,
+    )
+    .filter((note) => includesSearchText(note, parsedQuery.text))
     .sort((left, right) => {
       if (filters.sortMode === "newest") return right.updatedAt - left.updatedAt;
       if (filters.sortMode === "progress")
