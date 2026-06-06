@@ -5,13 +5,15 @@
 // 3. 不暴露 ipcRenderer 本体，避免渲染层发送任意 IPC 消息。
 // 4. 隔离 Electron 主进程能力和 React UI，维持清晰安全边界。
 import { contextBridge, ipcRenderer } from "electron";
-import type { IdeaNotesApi, IdeaNotesData } from "@shared/types";
+import type { IdeaNotesApi, IdeaNotesData, ImportDataMode } from "@shared/types";
 
 // preload 只暴露固定函数，不暴露 ipcRenderer 本体，避免 renderer 发送任意 IPC 消息。
 const api: IdeaNotesApi = {
   // 笔记数据读写统一走主进程，renderer 不直接访问文件系统。
   getData: () => ipcRenderer.invoke("notes:get-data"),
   saveData: (data: IdeaNotesData) => ipcRenderer.invoke("notes:save-data", data),
+  exportData: () => ipcRenderer.invoke("notes:export-data"),
+  importData: (mode: ImportDataMode) => ipcRenderer.invoke("notes:import-data", mode),
   // 窗口控制动作全部封装为明确 API，便于主进程校验来源。
   getWindowState: () => ipcRenderer.invoke("window:get-state"),
   minimizeWindow: () => ipcRenderer.invoke("window:minimize"),

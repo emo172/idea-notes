@@ -4,13 +4,16 @@
 // 2. 校验消息来源，确保只有当前主窗口可以调用桌面能力。
 // 3. 保持 renderer 只能通过 preload 暴露的固定 API 访问桌面能力。
 import { app, BrowserWindow, ipcMain } from "electron";
+import { checkRemindersOnce } from "../reminders/reminderScheduler";
 import { readData, saveData } from "../store";
+import { exportDataFile, importDataFile } from "../store/backup";
 import { setStartup } from "../startup/loginItems";
 import { getWindowState } from "../window/createMainWindow";
 import {
   assertIdeaNotesData,
   sanitizeIdeaNotesData,
 } from "@shared/ideaNotesDataValidation";
+import type { ImportDataMode } from "@shared/types";
 
 // 所有 IPC handler 都先确认消息来自当前主窗口，避免其他 WebContents 伪造调用。
 function assertMainWindow(
@@ -33,7 +36,30 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     assertMainWindow(BrowserWindow.fromWebContents(event.sender), getMainWindow());
     const validatedData = assertIdeaNotesData(data);
     const sanitizedData = sanitizeIdeaNotesData(validatedData);
-    return saveData(sanitizedData);
+    const savedData = await saveData(sanitizedData);
+    void checkRemindersOnce().catch(() => {
+      // 保存后的即时提醒检查失败时不阻断用户保存结果。
+    });
+    return savedData;
+  });
+
+  ipcMain.handle("notes:export-data", async (event) => {
+    const window = assertMainWindow(
+      BrowserWindow.fromWebContents(event.sender),
+      getMainWindow(),
+    );
+    return exportDataFile(window);
+  });
+
+  ipcMain.handle("notes:import-data", async (event, mode: ImportDataMode) => {
+    const window = assertMainWindow(
+      BrowserWindow.fromWebContents(event.sender),
+      getMainWindow(),
+    );
+    if (mode !== "overwrite" && mode !== "merge") {
+      throw new Error("Invalid import mode");
+    }
+    return importDataFile(window, mode);
   });
 
   ipcMain.handle("window:get-state", (event) => {

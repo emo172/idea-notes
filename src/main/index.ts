@@ -6,6 +6,7 @@
 import { app, BrowserWindow } from "electron";
 import { registerIpc } from "./ipc/registerIpc";
 import { configureLinuxDevelopmentStartup } from "./platform/linuxStartup";
+import { startReminderScheduler } from "./reminders/reminderScheduler";
 import { createMainWindow } from "./window/createMainWindow";
 
 configureLinuxDevelopmentStartup(app);
@@ -24,6 +25,7 @@ app.whenReady().then(() => {
   // 不显示默认菜单，让应用保持原型中的沉浸式自定义标题栏体验。
   app.applicationMenu = null;
   openMainWindow();
+  startReminderScheduler();
 
   // macOS 点击 Dock 图标时，如果没有窗口则重新创建窗口。
   app.on("activate", () => {
