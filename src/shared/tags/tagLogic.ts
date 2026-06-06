@@ -4,6 +4,23 @@
 // 2. 删除全局标签并清理笔记里的孤儿标签引用。
 import type { IdeaNotesData } from "../types";
 
+export const tagColorPalette = [
+  "#2563eb",
+  "#7c3aed",
+  "#f97316",
+  "#10b981",
+  "#dc2626",
+  "#0f766e",
+] as const;
+
+export function createTag(name: string, index: number): IdeaNotesData["tags"][number] {
+  return {
+    id: `tag-${index + 1}`,
+    name,
+    color: tagColorPalette[index % tagColorPalette.length],
+  };
+}
+
 export function renameTag(
   data: IdeaNotesData,
   from: string,
@@ -11,10 +28,10 @@ export function renameTag(
 ): IdeaNotesData {
   // 标签改名必须同步全局标签库和每条笔记上的标签引用。
   const nextTag = to.trim();
-  if (!nextTag || data.tags.includes(nextTag)) return data;
+  if (!nextTag || data.tags.some((tag) => tag.name === nextTag)) return data;
   return {
     ...data,
-    tags: data.tags.map((tag) => (tag === from ? nextTag : tag)),
+    tags: data.tags.map((tag) => (tag.name === from ? { ...tag, name: nextTag } : tag)),
     notes: data.notes.map((note) => ({
       ...note,
       tags: note.tags.map((tag) => (tag === from ? nextTag : tag)),
@@ -26,10 +43,22 @@ export function deleteTag(data: IdeaNotesData, tag: string): IdeaNotesData {
   // 删除标签时同时清理笔记里的引用，避免出现无法筛选的孤儿标签。
   return {
     ...data,
-    tags: data.tags.filter((item) => item !== tag),
+    tags: data.tags.filter((item) => item.name !== tag),
     notes: data.notes.map((note) => ({
       ...note,
       tags: note.tags.filter((item) => item !== tag),
     })),
+  };
+}
+
+export function updateTagColor(
+  data: IdeaNotesData,
+  tagName: string,
+  color: string,
+): IdeaNotesData {
+  if (!data.tags.some((tag) => tag.name === tagName)) return data;
+  return {
+    ...data,
+    tags: data.tags.map((tag) => (tag.name === tagName ? { ...tag, color } : tag)),
   };
 }

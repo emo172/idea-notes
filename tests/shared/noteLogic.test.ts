@@ -4,25 +4,33 @@
 // 2. 验证列表筛选、标签交集、优先级和搜索排序规则。
 // 3. 验证标签改名/删除会同步到每条笔记。
 // 4. 验证回收站、恢复和彻底删除不会影响非目标笔记。
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { defaultSettings } from "@shared/defaultData";
 import {
+  archiveNote,
   buildChecklistItems,
+  calculateNoteStats,
+  createTag,
   createNote,
   deleteTag,
   duplicateNote,
   filterAndSortNotes,
+  findDueReminders,
   getCompletion,
+  markReminderNotified,
   moveNoteToTrash,
   permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
   purgeExpiredTrash,
+  parseSearchQuery,
   renameTag,
   restoreNoteFromTrash,
+  restoreArchivedNote,
   toggleChecklistItem,
   toggleNoteCompleted,
+  updateTagColor,
 } from "@shared/noteLogic";
-import type { IdeaNote, IdeaNotesData, IdeaSettings } from "@shared/types";
+import type { IdeaNote, IdeaNotesData, IdeaSettings, IdeaTag } from "@shared/types";
 
 const baseTime = Date.parse("2026-05-29T08:00:00.000Z");
 
@@ -42,7 +50,20 @@ function note(overrides: Partial<IdeaNote>): IdeaNote {
   };
 }
 
+function tag(overrides: Partial<IdeaTag>): IdeaTag {
+  return {
+    id: "tag-base",
+    name: "基础标签",
+    color: "#2563eb",
+    ...overrides,
+  };
+}
+
 describe("noteLogic", () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   it("从多行正文创建笔记并生成清单项", () => {
     // 验证正文按行生成清单项，这是编辑器保存后的核心数据转换。
     const created = createNote(
@@ -123,6 +144,193 @@ describe("noteLogic", () => {
     expect(result.map((item) => item.id)).toEqual(["n1"]);
   });
 
+  it("解析搜索语法并用标签、优先级和截止状态收窄结果", () => {
+    vi.spyOn(Date, "now").mockReturnValue(baseTime);
+    const notes = [
+      note({
+        id: "n1",
+        title: "桌面窗口实现",
+        body: "Electron 主进程",
+        priority: "high",
+        tags: ["工作", "待办"],
+        dueAt: "2026-05-28T18:00",
+        updatedAt: baseTime + 30,
+      }),
+      note({
+        id: "n2",
+        title: "阅读计划",
+        body: "整理书单",
+        priority: "medium",
+        tags: ["阅读"],
+        dueAt: "2026-05-30T18:00",
+        updatedAt: baseTime + 50,
+      }),
+      note({
+        id: "n3",
+        title: "工作复盘",
+        body: "窗口体验回顾",
+        priority: "low",
+        tags: ["工作"],
+        updatedAt: baseTime + 80,
+      }),
+    ];
+
+    const parsed = parseSearchQuery(" 窗口 tag:工作 priority:high due:overdue ");
+    const result = filterAndSortNotes(notes, {
+      status: "active",
+      selectedTags: [],
+      priority: "all",
+      searchQuery: "窗口 tag:工作 priority:high due:overdue",
+      sortMode: "newest",
+    });
+
+    expect(parsed).toEqual({
+      text: "窗口",
+      tags: ["工作"],
+      priorities: ["high"],
+      due: "overdue",
+    });
+    expect(result.map((item) => item.id)).toEqual(["n1"]);
+  });
+
+  it("普通搜索同时匹配标题、正文和笔记标签名", () => {
+    const notes = [
+      note({ id: "n1", title: "桌面窗口实现", body: "Electron", tags: ["工作"] }),
+      note({ id: "n2", title: "阅读计划", body: "整理书单", tags: ["阅读"] }),
+    ];
+
+    const result = filterAndSortNotes(notes, {
+      status: "active",
+      selectedTags: [],
+      priority: "all",
+      searchQuery: "阅读",
+      sortMode: "newest",
+    });
+
+    expect(result.map((item) => item.id)).toEqual(["n2"]);
+  });
+
+  it("按全局提醒设置找出应提醒笔记并跳过关闭、重复和非进行中状态", () => {
+    const dueAt = "2026-05-29T09:00:00";
+    const reminderKey = `due-target:${dueAt}:10`;
+    const data: IdeaNotesData = {
+      tags: [],
+      settings: {
+        ...defaultSettings,
+        reminders: { enabled: true, leadMinutes: 10 },
+      },
+      notes: [
+        note({
+          id: "due-target",
+          title: "即将截止",
+          dueAt,
+          priority: "high",
+        }),
+        note({
+          id: "already-notified",
+          title: "已经提醒",
+          dueAt,
+          notifiedReminderKeys: [`already-notified:${dueAt}:10`],
+        }),
+        note({
+          id: "completed-note",
+          title: "已完成不提醒",
+          status: "completed",
+          dueAt,
+        }),
+        note({
+          id: "archive-note",
+          title: "归档不提醒",
+          status: "archive",
+          dueAt,
+        }),
+        note({
+          id: "trash-note",
+          title: "回收站不提醒",
+          status: "trash",
+          dueAt,
+        }),
+        note({
+          id: "future-note",
+          title: "还没到提醒时间",
+          dueAt: "2026-05-29T10:00:00",
+        }),
+      ],
+    };
+
+    const reminders = findDueReminders(data, Date.parse("2026-05-29T08:50:00"));
+    const disabled = findDueReminders(
+      {
+        ...data,
+        settings: {
+          ...data.settings,
+          reminders: { enabled: false, leadMinutes: 10 },
+        },
+      },
+      Date.parse("2026-05-29T08:50:00"),
+    );
+    const marked = markReminderNotified(data, reminderKey);
+
+    expect(reminders).toEqual([{ note: data.notes[0], key: reminderKey }]);
+    expect(disabled).toEqual([]);
+    expect(
+      marked.notes.find((item) => item.id === "due-target")?.notifiedReminderKeys,
+    ).toEqual([reminderKey]);
+  });
+
+  it("统计笔记状态、优先级、标签 Top N 和逾期数量", () => {
+    vi.spyOn(Date, "now").mockReturnValue(baseTime);
+    const stats = calculateNoteStats([
+      note({
+        id: "active-high-overdue",
+        status: "active",
+        priority: "high",
+        tags: ["工作", "待办"],
+        dueAt: "2026-05-28T18:00",
+      }),
+      note({
+        id: "completed-medium",
+        status: "completed",
+        priority: "medium",
+        tags: ["工作"],
+      }),
+      note({
+        id: "archive-low",
+        status: "archive",
+        priority: "low",
+        tags: ["归档"],
+      }),
+      note({
+        id: "trash-high",
+        status: "trash",
+        priority: "high",
+        tags: ["工作"],
+        dueAt: "2026-05-28T18:00",
+      }),
+    ]);
+
+    expect(stats.total).toBe(3);
+    expect(stats.completionRate).toBeCloseTo(1 / 3);
+    expect(stats.overdue).toBe(1);
+    expect(stats.highPriority).toBe(1);
+    expect(stats.statusCounts).toEqual({
+      active: 1,
+      completed: 1,
+      archive: 1,
+      trash: 1,
+    });
+    expect(stats.priorityCounts).toEqual({
+      high: 1,
+      medium: 1,
+      low: 1,
+    });
+    expect(stats.topTags).toEqual([
+      { tag: "工作", count: 2 },
+      { tag: "待办", count: 1 },
+      { tag: "归档", count: 1 },
+    ]);
+  });
+
   it("默认生成 ID 时同一毫秒创建和复制笔记也不碰撞", () => {
     const draft = {
       title: "同毫秒新建",
@@ -147,7 +355,11 @@ describe("noteLogic", () => {
   it("重命名与删除标签同步到笔记", () => {
     // 标签管理必须同步全局标签和笔记引用，否则筛选入口会与数据不一致。
     const data: IdeaNotesData = {
-      tags: ["工作", "灵感", "待办"],
+      tags: [
+        tag({ id: "tag-work", name: "工作", color: "#2563eb" }),
+        tag({ id: "tag-idea", name: "灵感", color: "#7c3aed" }),
+        tag({ id: "tag-todo", name: "待办", color: "#f97316" }),
+      ],
       settings: { ...defaultSettings },
       notes: [
         note({ id: "n1", tags: ["工作", "灵感"] }),
@@ -156,20 +368,28 @@ describe("noteLogic", () => {
     };
 
     const renamed = renameTag(data, "工作", "项目");
-    expect(renamed.tags).toEqual(["项目", "灵感", "待办"]);
+    expect(renamed.tags.map((item) => item.name)).toEqual(["项目", "灵感", "待办"]);
+    expect(renamed.tags[0]).toMatchObject({
+      id: "tag-work",
+      color: "#2563eb",
+    });
     expect(renamed.notes.find((item) => item.id === "n1")?.tags).toEqual([
       "项目",
       "灵感",
     ]);
 
     const removed = deleteTag(renamed, "灵感");
-    expect(removed.tags).toEqual(["项目", "待办"]);
+    expect(removed.tags.map((item) => item.name)).toEqual(["项目", "待办"]);
     expect(removed.notes.find((item) => item.id === "n1")?.tags).toEqual(["项目"]);
   });
 
   it("标签重命名在 shared 层裁剪空白并拒绝空值和重复名", () => {
     const data: IdeaNotesData = {
-      tags: ["工作", "灵感", "待办"],
+      tags: [
+        tag({ id: "tag-work", name: "工作" }),
+        tag({ id: "tag-idea", name: "灵感" }),
+        tag({ id: "tag-todo", name: "待办" }),
+      ],
       settings: { ...defaultSettings },
       notes: [
         note({ id: "n1", tags: ["工作", "灵感"] }),
@@ -178,7 +398,7 @@ describe("noteLogic", () => {
     };
 
     const renamed = renameTag(data, "工作", " 项目 ");
-    expect(renamed.tags).toEqual(["项目", "灵感", "待办"]);
+    expect(renamed.tags.map((item) => item.name)).toEqual(["项目", "灵感", "待办"]);
     expect(renamed.notes.find((item) => item.id === "n1")?.tags).toEqual([
       "项目",
       "灵感",
@@ -187,6 +407,31 @@ describe("noteLogic", () => {
     expect(renameTag(data, "工作", " ")).toBe(data);
     expect(renameTag(data, "工作", "灵感")).toBe(data);
     expect(renameTag(data, "工作", " 工作 ")).toBe(data);
+  });
+
+  it("标签创建和颜色更新只影响全局标签对象", () => {
+    const data: IdeaNotesData = {
+      tags: [tag({ id: "tag-work", name: "工作", color: "#2563eb" })],
+      settings: { ...defaultSettings },
+      notes: [note({ id: "n1", tags: ["工作"] })],
+    };
+
+    const created = createTag("阅读", 1);
+    const recolored = updateTagColor(data, "工作", "#10b981");
+    const missing = updateTagColor(data, "不存在", "#111111");
+
+    expect(created).toMatchObject({
+      id: "tag-2",
+      name: "阅读",
+      color: "#7c3aed",
+    });
+    expect(recolored.tags[0]).toEqual({
+      id: "tag-work",
+      name: "工作",
+      color: "#10b981",
+    });
+    expect(recolored.notes[0]?.tags).toEqual(["工作"]);
+    expect(missing).toBe(data);
   });
 
   it("回收站流程只影响目标状态并支持彻底删除", () => {
@@ -204,6 +449,38 @@ describe("noteLogic", () => {
 
     const remaining = permanentlyDeleteNote([trashed, other], "trash-target");
     expect(remaining.map((item) => item.id)).toEqual(["other"]);
+  });
+
+  it("归档和恢复归档笔记只更新状态、更新时间并清理回收时间", () => {
+    const completed = note({
+      id: "archive-target",
+      status: "completed",
+      trashedAt: baseTime - 100,
+    });
+
+    const archived = archiveNote(completed, baseTime + 10);
+    expect(archived.status).toBe("archive");
+    expect(archived.updatedAt).toBe(baseTime + 10);
+    expect(archived.trashedAt).toBeUndefined();
+
+    const restored = restoreArchivedNote(archived, baseTime + 20);
+    expect(restored.status).toBe("active");
+    expect(restored.updatedAt).toBe(baseTime + 20);
+    expect(restored.trashedAt).toBeUndefined();
+  });
+
+  it("归档笔记不会被 shared 完成态切换函数改回进行中或已完成", () => {
+    const archived = note({
+      id: "archive-complete-guard",
+      status: "archive",
+      updatedAt: baseTime,
+    });
+
+    const result = toggleNoteCompleted(archived, baseTime + 10);
+
+    expect(result).toBe(archived);
+    expect(result.status).toBe("archive");
+    expect(result.updatedAt).toBe(baseTime);
   });
 
   it("清空回收站只删除全部回收站笔记", () => {

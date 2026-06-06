@@ -27,8 +27,8 @@ export function purgeExpiredTrash(
 }
 
 export function toggleNoteCompleted(note: IdeaNote, now = Date.now()): IdeaNote {
-  // 完成态和进行中互相切换；回收站笔记不会在 UI 中触发这个动作。
-  if (note.status === "trash") return note;
+  // 完成态和进行中互相切换；归档和回收站笔记不会在 UI 中触发这个动作。
+  if (note.status === "trash" || note.status === "archive") return note;
   return {
     ...note,
     status: note.status === "completed" ? "active" : "completed",

@@ -38,6 +38,50 @@ describe("validateIdeaNotesData", () => {
     expect(validateIdeaNotesData(validDataWithExtraFields())).toBe(true);
   });
 
+  it("接受带颜色的全局标签对象", () => {
+    const data = getDefaultData(baseTime);
+
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        tags: [{ id: "tag-work", name: "工作", color: "#2563eb" }],
+      }),
+    ).toBe(true);
+  });
+
+  it("接受归档状态笔记", () => {
+    const data = getDefaultData(baseTime);
+
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        notes: [{ ...data.notes[0], status: "archive" }],
+      }),
+    ).toBe(true);
+  });
+
+  it("接受提醒设置和笔记已提醒 key", () => {
+    const data = getDefaultData(baseTime);
+
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          reminders: { enabled: true, leadMinutes: 60 },
+        },
+        notes: [
+          {
+            ...data.notes[0],
+            notifiedReminderKeys: [
+              `${data.notes[0].id}:${data.notes[0].dueAt ?? ""}:60`,
+            ],
+          },
+        ],
+      }),
+    ).toBe(true);
+  });
+
   it("清理已删除的背景设置字段但保留其它旧字段", () => {
     const data = validDataWithExtraFields();
     if (!validateIdeaNotesData(data)) throw new Error("测试数据应通过校验");
@@ -82,6 +126,8 @@ describe("validateIdeaNotesData", () => {
     { field: "startup", value: "yes" },
     { field: "trashAutoDelete", value: "14" },
     { field: "language", value: "fr" },
+    { field: "reminders", value: { enabled: true, leadMinutes: 30 } },
+    { field: "reminders", value: { enabled: "yes", leadMinutes: 10 } },
   ])("拒绝非法设置字段 $field", ({ field, value }) => {
     const data = getDefaultData(baseTime);
     expect(
@@ -96,6 +142,7 @@ describe("validateIdeaNotesData", () => {
     { field: "createdAt", value: "now" },
     { field: "updatedAt", value: Number.NaN },
     { field: "trashedAt", value: "yesterday" },
+    { field: "notifiedReminderKeys", value: ["ok", 1] },
   ])("拒绝非法时间戳字段 $field", ({ field, value }) => {
     const data = getDefaultData(baseTime);
     expect(
@@ -104,6 +151,17 @@ describe("validateIdeaNotesData", () => {
         notes: [{ ...data.notes[0], [field]: value }],
       }),
     ).toBe(false);
+  });
+
+  it.each([
+    { name: "缺少 id", tag: { name: "工作", color: "#2563eb" } },
+    { name: "缺少 name", tag: { id: "tag-work", color: "#2563eb" } },
+    { name: "缺少 color", tag: { id: "tag-work", name: "工作" } },
+    { name: "非法 color", tag: { id: "tag-work", name: "工作", color: 123 } },
+  ])("拒绝非法标签对象：$name", ({ tag }) => {
+    const data = getDefaultData(baseTime);
+
+    expect(validateIdeaNotesData({ ...data, tags: [tag] })).toBe(false);
   });
 
   it.each([

@@ -83,7 +83,10 @@ describe("主进程本地存储", () => {
     const { saveData } = await importStore();
     const data = {
       ...getDefaultData(Date.parse("2026-05-29T08:00:00.000Z")),
-      tags: ["项目", "阅读"],
+      tags: [
+        { id: "tag-project", name: "项目", color: "#2563eb" },
+        { id: "tag-reading", name: "阅读", color: "#7c3aed" },
+      ],
     };
 
     const result = await saveData(data);
@@ -164,14 +167,11 @@ describe("主进程本地存储", () => {
     );
   });
 
-  it("读取旧标签对象数据时迁移为字符串标签并补齐设置", async () => {
+  it("读取旧字符串标签数据时迁移为带颜色的标签对象并补齐设置", async () => {
     const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
     const legacyData = {
       ...defaultData,
-      tags: [
-        { name: "工作", color: "#2563eb", group: "默认" },
-        { name: "灵感", color: "#7c3aed", group: "默认" },
-      ],
+      tags: ["工作", "灵感", "工作", "待办"],
       notes: defaultData.notes.map((note) =>
         note.id === "seed-navigation"
           ? {
@@ -199,7 +199,11 @@ describe("主进程本地存储", () => {
       await readFile(join(userDataDir, dataFileName), "utf8"),
     );
 
-    expect(data.tags).toEqual(["工作", "灵感"]);
+    expect(data.tags).toEqual([
+      { id: "tag-1", name: "工作", color: "#2563eb" },
+      { id: "tag-2", name: "灵感", color: "#7c3aed" },
+      { id: "tag-3", name: "待办", color: "#f97316" },
+    ]);
     expect(data.notes[0].tags).toEqual(["工作", "待办"]);
     expect(data.settings).not.toHaveProperty("backgroundColor");
     expect(persisted).toEqual(data);
