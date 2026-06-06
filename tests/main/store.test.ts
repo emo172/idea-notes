@@ -209,6 +209,32 @@ describe("主进程本地存储", () => {
     expect(persisted).toEqual(data);
   });
 
+  it("读取混合旧标签数据时为迁移标签生成不碰撞的 ID", async () => {
+    const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    const legacyData = {
+      ...defaultData,
+      tags: [
+        { id: "tag-2", name: "工作", color: "#2563eb" },
+        "灵感",
+        { id: "tag-2", name: "待办", color: "#f97316" },
+      ],
+    };
+    await writeFile(
+      join(userDataDir, dataFileName),
+      JSON.stringify(legacyData, null, 2),
+      "utf8",
+    );
+    const { readData } = await importStore();
+
+    const data = await readData();
+
+    expect(data.tags).toEqual([
+      { id: "tag-2", name: "工作", color: "#2563eb" },
+      { id: "tag-3", name: "灵感", color: "#7c3aed" },
+      { id: "tag-4", name: "待办", color: "#f97316" },
+    ]);
+  });
+
   it("读取旧背景颜色设置时清理该字段并写回磁盘", async () => {
     const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
     const legacyData = {

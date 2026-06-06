@@ -4,7 +4,7 @@
 // 2. 在读取本地 JSON 后生成 renderer 可消费的稳定数据结构。
 import { defaultSettings } from "@shared/defaultData";
 import { sanitizeIdeaNotesData } from "@shared/ideaNotesDataValidation";
-import { createTag } from "@shared/noteLogic";
+import { createNextTag, ensureUniqueTagId } from "@shared/noteLogic";
 import type { IdeaNotesData, IdeaTag } from "@shared/types";
 
 const themeModes = new Set(["light", "dark", "system"]);
@@ -43,16 +43,16 @@ function normalizeGlobalTags(tags: unknown): IdeaTag[] {
   for (const item of tags) {
     const name = normalizeTagName(item);
     if (!name || seenNames.has(name)) continue;
-    const fallbackTag = createTag(name, result.length);
+    const fallbackTag = createNextTag(name, result);
     const color =
       isRecord(item) && typeof item.color === "string" && item.color.trim()
         ? item.color
         : fallbackTag.color;
-    const id =
+    const importedId =
       isRecord(item) && typeof item.id === "string" && item.id.trim()
         ? item.id
         : fallbackTag.id;
-    result.push({ id, name, color });
+    result.push(ensureUniqueTagId({ id: importedId, name, color }, result));
     seenNames.add(name);
   }
   return result;

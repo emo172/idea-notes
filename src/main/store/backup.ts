@@ -10,6 +10,7 @@ import { writeJsonFile } from "./writeJsonFile";
 import { readData, saveData } from "../store";
 import { normalizeData } from "./normalizeData";
 import { validateIdeaNotesData } from "@shared/ideaNotesDataValidation";
+import { ensureUniqueTagId } from "@shared/noteLogic";
 import type { DataFileResult, IdeaNotesData, ImportDataMode } from "@shared/types";
 
 type ImportDataResult = DataFileResult & { data?: IdeaNotesData };
@@ -31,10 +32,14 @@ function mergeData(
   const importedNewTags = importedData.tags.filter(
     (tag) => !localTagNames.has(tag.name),
   );
+  const mergedTags = [...localData.tags];
+  for (const tag of importedNewTags) {
+    mergedTags.push(ensureUniqueTagId(tag, mergedTags));
+  }
 
   return {
     notes: [...localData.notes, ...importedNewNotes],
-    tags: [...localData.tags, ...importedNewTags],
+    tags: mergedTags,
     settings: localData.settings,
   };
 }

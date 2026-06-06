@@ -26,5 +26,12 @@ export {
   restoreNoteFromTrash,
   toggleNoteCompleted,
 } from "./notes/trashLogic";
-export { createTag, deleteTag, renameTag, updateTagColor } from "./tags/tagLogic";
+export {
+  createNextTag,
+  createTag,
+  deleteTag,
+  ensureUniqueTagId,
+  renameTag,
+  updateTagColor,
+} from "./tags/tagLogic";
 export { updateSettings } from "./settings/settingsLogic";

@@ -4,7 +4,7 @@
 // 2. 同步当前筛选标签，避免删除或重命名后保留失效筛选。
 import { useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
-import { createTag, deleteTag, renameTag, updateTagColor } from "@shared/noteLogic";
+import { createNextTag, deleteTag, renameTag, updateTagColor } from "@shared/noteLogic";
 import type { IdeaNotesData } from "@shared/types";
 import type { SaveErrorTarget } from "./useIdeaNotesData";
 
@@ -60,7 +60,7 @@ export function useTagCommands({
     setTagInputError(null);
     const didSave = await persist({
       ...data,
-      tags: [...data.tags, createTag(nextTag, data.tags.length)],
+      tags: [...data.tags, createNextTag(nextTag, data.tags)],
     });
     if (!didSave) return false;
     setRawTagName("");

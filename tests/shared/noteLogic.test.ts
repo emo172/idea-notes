@@ -10,10 +10,12 @@ import {
   archiveNote,
   buildChecklistItems,
   calculateNoteStats,
+  createNextTag,
   createTag,
   createNote,
   deleteTag,
   duplicateNote,
+  ensureUniqueTagId,
   filterAndSortNotes,
   findDueReminders,
   getCompletion,
@@ -432,6 +434,30 @@ describe("noteLogic", () => {
     });
     expect(recolored.notes[0]?.tags).toEqual(["工作"]);
     expect(missing).toBe(data);
+  });
+
+  it("基于现有标签最大序号创建唯一标签 ID", () => {
+    const existingTags = [
+      tag({ id: "tag-1", name: "工作" }),
+      tag({ id: "tag-3", name: "待办" }),
+    ];
+
+    const created = createNextTag("阅读", existingTags);
+    const deduplicated = ensureUniqueTagId(
+      tag({ id: "tag-3", name: "导入", color: "#10b981" }),
+      existingTags,
+    );
+
+    expect(created).toEqual({
+      id: "tag-4",
+      name: "阅读",
+      color: "#f97316",
+    });
+    expect(deduplicated).toEqual({
+      id: "tag-4",
+      name: "导入",
+      color: "#10b981",
+    });
   });
 
   it("回收站流程只影响目标状态并支持彻底删除", () => {

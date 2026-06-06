@@ -195,6 +195,8 @@ describe("App tags", () => {
     const workColorInput = screen.getByLabelText("标签颜色 工作");
     await user.clear(workColorInput);
     await user.type(workColorInput, "#10b981");
+
+    expect(api.saveData).not.toHaveBeenCalled();
     await user.tab();
 
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());

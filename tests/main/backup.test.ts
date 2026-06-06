@@ -184,11 +184,43 @@ describe("主进程数据备份导入导出", () => {
     expect(result.filePath).toBe(importPath);
     expect(result.data?.settings).toEqual(localData.settings);
     expect(result.data?.tags.map((tag) => tag.name)).toEqual(["工作", "本地", "导入"]);
+    expect(result.data?.tags.map((tag) => tag.id)).toEqual([
+      "tag-work",
+      "tag-local",
+      "tag-imported",
+    ]);
     expect(result.data?.notes.map((note) => note.id)).toEqual([
       ...localData.notes.map((note) => note.id),
       "new-imported-note",
     ]);
     expect(persisted).toEqual(result.data);
+  });
+
+  it("合并导入时为追加标签重建冲突 ID 并保留名称和颜色", async () => {
+    const localData = getDefaultData(baseTime);
+    localData.tags = [{ id: "tag-1", name: "工作", color: "#2563eb" }];
+    const importedData = getDefaultData(baseTime + 1_000);
+    importedData.tags = [
+      { id: "tag-1", name: "阅读", color: "#10b981" },
+      { id: "tag-1", name: "项目", color: "#f97316" },
+    ];
+    const importPath = join(userDataDir, "merge-conflict.json");
+    await writeStoredData(localData);
+    await writeFile(importPath, JSON.stringify(importedData, null, 2), "utf8");
+    electronMock.showOpenDialog.mockResolvedValue({
+      canceled: false,
+      filePaths: [importPath],
+    });
+    const { importDataFile } = await importBackup();
+
+    const result = await importDataFile(null, "merge");
+
+    expect(result.ok).toBe(true);
+    expect(result.data?.tags).toEqual([
+      { id: "tag-1", name: "工作", color: "#2563eb" },
+      { id: "tag-2", name: "阅读", color: "#10b981" },
+      { id: "tag-3", name: "项目", color: "#f97316" },
+    ]);
   });
 
   it("导入非法 JSON 时不改变现有本地数据", async () => {

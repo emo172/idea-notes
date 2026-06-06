@@ -2,7 +2,7 @@
 // 作用：
 // 1. 重命名全局标签并同步每条笔记的标签引用。
 // 2. 删除全局标签并清理笔记里的孤儿标签引用。
-import type { IdeaNotesData } from "../types";
+import type { IdeaNotesData, IdeaTag } from "../types";
 
 export const tagColorPalette = [
   "#2563eb",
@@ -18,6 +18,39 @@ export function createTag(name: string, index: number): IdeaNotesData["tags"][nu
     id: `tag-${index + 1}`,
     name,
     color: tagColorPalette[index % tagColorPalette.length],
+  };
+}
+
+const tagIdPattern = /^tag-(\d+)$/;
+
+function getTagIdSequence(id: string): number | null {
+  const match = tagIdPattern.exec(id);
+  if (!match) return null;
+  const sequence = Number.parseInt(match[1], 10);
+  return Number.isSafeInteger(sequence) && sequence > 0 ? sequence : null;
+}
+
+function getNextTagSequence(tags: IdeaTag[]): number {
+  return tags.reduce((nextSequence, tag) => {
+    const sequence = getTagIdSequence(tag.id);
+    return sequence !== null && sequence >= nextSequence ? sequence + 1 : nextSequence;
+  }, 1);
+}
+
+export function createNextTag(name: string, tags: IdeaTag[]): IdeaTag {
+  return {
+    id: `tag-${getNextTagSequence(tags)}`,
+    name,
+    color: tagColorPalette[tags.length % tagColorPalette.length],
+  };
+}
+
+export function ensureUniqueTagId(tag: IdeaTag, tags: IdeaTag[]): IdeaTag {
+  const usedIds = new Set(tags.map((item) => item.id));
+  if (!usedIds.has(tag.id)) return tag;
+  return {
+    ...tag,
+    id: `tag-${getNextTagSequence(tags)}`,
   };
 }
 
