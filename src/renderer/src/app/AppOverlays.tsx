@@ -9,13 +9,11 @@ import type {
   IdeaNotesData,
   ImportDataMode,
 } from "@shared/types";
-import { ConfirmDialog } from "../components/dialogs/ConfirmDialog";
-import { EditorDialog } from "../components/editor/EditorDialog";
-import { SaveFeedbackAlert } from "../components/feedback/SaveFeedbackAlert";
-import { SettingsPanel } from "../components/settings/SettingsPanel";
 import type { UseNoteEditorResult } from "../hooks/useNoteEditor";
 import type { AppCopy } from "../i18n";
-import { settingsCopy } from "../i18n";
+import { ConfirmOverlays } from "./ConfirmOverlays";
+import { EditorOverlay } from "./EditorOverlay";
+import { SettingsOverlay } from "./SettingsOverlay";
 import type { ViewMode } from "./viewMode";
 
 interface AppOverlaysProps {
@@ -79,101 +77,51 @@ export function AppOverlays({
 }: AppOverlaysProps): ReactElement {
   return (
     <>
-      {viewMode === "settings" ? (
-        <SettingsPanel
-          data={data}
-          language={currentLanguage}
-          isSaving={isSaving}
-          saveError={!isResetSettingsConfirmOpen ? mainSaveFeedback : null}
-          backupFeedback={backupFeedback}
-          onSettingsChange={handleSettingsChange}
-          onStartupChange={handleStartupChange}
-          onExportData={handleExportData}
-          onRequestImportData={setImportConfirmMode}
-          onResetSettings={() => {
-            setSaveFeedback(null);
-            setIsResetSettingsConfirmOpen(true);
-          }}
-          onBack={() => setViewMode("active")}
-        />
-      ) : null}
-
-      <SaveFeedbackAlert
-        message={hasConfirmDialog ? mainSaveFeedback : null}
-        className="dialog-error-alert"
+      <SettingsOverlay
+        viewMode={viewMode}
+        data={data}
+        currentLanguage={currentLanguage}
+        isSaving={isSaving}
+        mainSaveFeedback={mainSaveFeedback}
+        backupFeedback={backupFeedback}
+        isResetSettingsConfirmOpen={isResetSettingsConfirmOpen}
+        setIsResetSettingsConfirmOpen={setIsResetSettingsConfirmOpen}
+        setImportConfirmMode={setImportConfirmMode}
+        setSaveFeedback={setSaveFeedback}
+        setViewMode={setViewMode}
+        handleSettingsChange={handleSettingsChange}
+        handleStartupChange={handleStartupChange}
+        handleExportData={handleExportData}
       />
 
-      {importConfirmMode ? (
-        <ConfirmDialog
-          title={
-            importConfirmMode === "overwrite"
-              ? settingsCopy[currentLanguage].importOverwriteConfirm
-              : settingsCopy[currentLanguage].importMergeConfirm
-          }
-          body={
-            importConfirmMode === "overwrite"
-              ? settingsCopy[currentLanguage].importOverwriteConfirmBody
-              : settingsCopy[currentLanguage].importMergeConfirmBody
-          }
-          copy={copy}
-          onCancel={() => setImportConfirmMode(null)}
-          onConfirm={handleConfirmImportData}
-          panelClassName="settings-import-confirm-panel"
-          confirmLabel={copy.confirm}
-          isBusy={isSaving}
-        />
-      ) : null}
+      <ConfirmOverlays
+        currentLanguage={currentLanguage}
+        copy={copy}
+        isSaving={isSaving}
+        mainSaveFeedback={mainSaveFeedback}
+        hasConfirmDialog={hasConfirmDialog}
+        isResetSettingsConfirmOpen={isResetSettingsConfirmOpen}
+        importConfirmMode={importConfirmMode}
+        setIsResetSettingsConfirmOpen={setIsResetSettingsConfirmOpen}
+        setImportConfirmMode={setImportConfirmMode}
+        handleConfirmImportData={handleConfirmImportData}
+        handleConfirmResetSettings={handleConfirmResetSettings}
+        deleteTarget={deleteTarget}
+        setDeleteTarget={setDeleteTarget}
+        handlePermanentDelete={handlePermanentDelete}
+        isClearTrashConfirmOpen={isClearTrashConfirmOpen}
+        setIsClearTrashConfirmOpen={setIsClearTrashConfirmOpen}
+        handleClearTrash={handleClearTrash}
+      />
 
-      {isResetSettingsConfirmOpen && (
-        <ConfirmDialog
-          title={settingsCopy[currentLanguage].resetConfirm}
-          copy={copy}
-          onCancel={() => setIsResetSettingsConfirmOpen(false)}
-          onConfirm={handleConfirmResetSettings}
-          panelClassName="settings-reset-confirm-panel"
-          confirmLabel={copy.confirm}
-          isBusy={isSaving}
-        />
-      )}
-
-      {noteEditor.isEditorOpen ? (
-        <EditorDialog
-          draft={noteEditor.draft}
-          tags={data?.tags ?? []}
-          copy={copy}
-          language={currentLanguage}
-          noteTimestamps={noteEditor.editingNote}
-          setDraft={noteEditor.setDraft}
-          onToggleTag={noteEditor.toggleDraftTag}
-          onCancel={() => {
-            if (!isSaving) noteEditor.setIsEditorOpen(false);
-          }}
-          onSave={noteEditor.handleSaveNote}
-          saveError={editorSaveFeedback}
-          isSaving={isSaving}
-        />
-      ) : null}
-
-      {deleteTarget ? (
-        <ConfirmDialog
-          noteTitle={deleteTarget.title}
-          copy={copy}
-          onCancel={() => setDeleteTarget(null)}
-          onConfirm={() => handlePermanentDelete(deleteTarget.id)}
-          isBusy={isSaving}
-        />
-      ) : null}
-
-      {isClearTrashConfirmOpen && (
-        <ConfirmDialog
-          title={copy.clearTrashConfirmTitle}
-          body={copy.clearTrashConfirmBody}
-          copy={copy}
-          onCancel={() => setIsClearTrashConfirmOpen(false)}
-          onConfirm={handleClearTrash}
-          isBusy={isSaving}
-        />
-      )}
+      <EditorOverlay
+        data={data}
+        currentLanguage={currentLanguage}
+        copy={copy}
+        isSaving={isSaving}
+        editorSaveFeedback={editorSaveFeedback}
+        noteEditor={noteEditor}
+      />
     </>
   );
 }
