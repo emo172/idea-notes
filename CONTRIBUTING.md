@@ -21,20 +21,28 @@
 
 ## 验证矩阵
 
-| 修改范围                                 | 推荐命令                                                                       |
-| ---------------------------------------- | ------------------------------------------------------------------------------ |
-| `src/shared/`                            | `npm test -- tests/shared`                                                     |
-| `src/main/store.ts` 或 `src/main/store/` | `npm test -- tests/main/store.test.ts`                                         |
-| `src/main/window/`                       | `npm test -- tests/main/window-config.test.ts`                                 |
-| `src/main/ipc/`                          | `npm test -- tests/main/ipc-contract.test.ts`                                  |
-| `src/main/platform/`                     | `npm test -- tests/main/linux-startup.test.ts`                                 |
-| `src/preload/index.ts` 或 `IdeaNotesApi` | `npm test -- tests/preload`                                                    |
-| renderer 组件、hook、样式、i18n          | `npm test -- tests/renderer`                                                   |
-| TypeScript、TSX、配置脚本                | `npm run lint`                                                                 |
-| 源码、测试、配置、版本化文档             | `npm run format:check`                                                         |
-| CI、脚本、测试扫描边界                   | `npm test -- tests/main/smoke-script.test.ts tests/main/vitest-config.test.ts` |
-| 构建产物 smoke                           | `npm run build && npm run smoke`                                               |
-| 合并前完整验证                           | `npm run ci`                                                                   |
+| 修改范围                                                                                  | 推荐命令                                                                                                                      |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `src/shared/`                                                                             | `npm test -- tests/shared`                                                                                                    |
+| `src/main/store.ts`、`src/main/store/normalizeData.ts`、`src/main/store/writeJsonFile.ts` | `npm test -- tests/main/store.read-write.test.ts tests/main/store.trash-retention.test.ts tests/main/store.migration.test.ts` |
+| `src/main/store/backup.ts`                                                                | `npm test -- tests/main/backup.test.ts`                                                                                       |
+| `src/main/reminders/`                                                                     | `npm test -- tests/main/reminder-scheduler.test.ts`                                                                           |
+| `src/main/window/`                                                                        | `npm test -- tests/main/window-config.test.ts`                                                                                |
+| `src/main/ipc/`                                                                           | `npm test -- tests/main/ipc-contract.test.ts`                                                                                 |
+| `src/main/platform/`                                                                      | `npm test -- tests/main/linux-startup.test.ts`                                                                                |
+| `src/preload/index.ts` 或 `IdeaNotesApi`                                                  | `npm test -- tests/preload`                                                                                                   |
+| 下拉菜单组件                                                                              | `npm test -- tests/renderer/DropdownMenu.test.tsx`                                                                            |
+| renderer 组件、hook、样式、i18n                                                           | `npm test -- tests/renderer`                                                                                                  |
+| 桌面窄窗口、弹层遮挡、真实 UI 视觉风险                                                    | `npm test -- tests/renderer`，并手动检查 720px 宽 Electron 桌面窗口                                                           |
+| TypeScript、TSX、配置脚本                                                                 | `npm run lint`                                                                                                                |
+| 源码、测试、配置、版本化文档                                                              | `npm run format:check`                                                                                                        |
+| CI、脚本、测试扫描边界                                                                    | `npm test -- tests/main/smoke-script.test.ts tests/main/vitest-config.test.ts`                                                |
+| 构建产物 smoke                                                                            | `npm run build && npm run smoke`                                                                                              |
+| 合并前完整验证                                                                            | `npm run ci`                                                                                                                  |
+
+## 响应式边界
+
+当前响应式目标是 Electron 桌面窗口的 720px 窄宽度，不承诺移动端浏览器布局。
 
 ## PR 要求
 
@@ -42,6 +50,7 @@
 - PR 描述必须说明改动范围、风险和验证命令。
 - UI 或样式改动需要提供截图，或明确说明当前只做 CSS 契约测试、没有真实桌面截图。
 - 改动 IPC、数据结构、依赖、构建脚本或打包配置时，必须在 PR 中单独说明影响。
+- 涉及通知、数据导入导出或回收站恢复语义时，必须说明数据兼容性、失败/取消路径和用户可见影响。
 - 测试失败不能用删除断言或弱化测试规避；先复现根因，再修复。
 
 ## 当前 smoke 边界
