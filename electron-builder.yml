@@ -14,6 +14,7 @@ directories:
 files:
   # 只打包构建产物和 package.json，不把源码、测试和文档放入应用包。
   - out/**/*
+  - build/icons/icon.png
   - package.json
 # 使用 asar 将应用资源归档，减少发布产物中的散乱文件。
 asar: true
@@ -23,9 +24,17 @@ linux:
   target:
     # AppImage 适合 Linux 桌面安装包分发，且不要求维护者邮箱等发布元数据。
     - AppImage
+    # deb 适合 Debian/Ubuntu 系统安装，安装后会注册系统应用菜单入口。
+    - deb
   category: Office
+  synopsis: 灵感笔记桌面软件
+  description: 本地管理灵感、笔记、标签和清单
+  maintainer: idea-notes maintainers
   desktop:
     entry:
+      Name: 灵感笔记
+      Comment: 本地管理灵感、笔记、标签和清单
+      Categories: Office;Productivity;
       StartupWMClass: idea-notes
 win:
   # Windows 使用 NSIS 安装器，便于用户选择安装目录。
@@ -33,6 +42,9 @@ win:
 nsis:
   oneClick: false
   allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: 灵感笔记
 mac:
   target:
     # macOS 使用 dmg，正式发布前仍需签名和公证。

@@ -51,7 +51,7 @@ npm run dev
 | `npm run package`                                   | 先构建，再生成 `release/` 目录包                     |
 | `npm run package:mac`                               | 生成 macOS `dmg` 安装包                              |
 | `npm run package:win`                               | 生成 Windows `nsis` 安装包                           |
-| `npm run package:linux`                             | 生成 Linux `AppImage` 安装包                         |
+| `npm run package:linux`                             | 生成 Linux `AppImage` 和 `deb` 安装包                |
 | `npm run package:all`                               | 按当前构建环境支持情况生成多平台安装包               |
 
 ## 详细项目目录结构
@@ -280,6 +280,7 @@ GitHub Actions 位于 `.github/workflows/ci.yml`，在 `pull_request` 和推送�
 - `npm run dev` 已设置 `NO_SANDBOX=1`，用于规避部分 Linux Electron sandbox 权限问题。
 - 如果 dev server 已显示 `Local: http://localhost:5174/`，但 Electron 随后出现 GPU/network service 报错，通常是本地 Electron 环境问题；请记录输出，不要把它当成测试通过。
 - `npm run build` 只生成 `out/`；打包目录包使用 `npm run package`，输出在 `release/`。
+- Linux 用户可下载 `deb` 安装包完成本地安装，安装后通过系统应用菜单中的“灵感笔记”图标启动；`AppImage` 仍保留为免安装运行包。
 - `npm run smoke` 依赖已存在的 `out/` 构建产物；本地单独运行前请先执行 `npm run build`。`npm run ci` 会自动按正确顺序执行。
 - 当前 CI smoke 是无新依赖的构建产物检查，不启动真实 Electron 窗口；若后续引入 Playwright 或 Xvfb，需要单独更新脚本和文档。
 

@@ -47,6 +47,7 @@ describe("安装包打包配置", () => {
     for (const targetConfig of [
       "linux:",
       "- AppImage",
+      "- deb",
       "win:",
       "target: nsis",
       "mac:",
@@ -54,7 +55,21 @@ describe("安装包打包配置", () => {
     ]) {
       expect(builderConfig).toContain(targetConfig);
     }
-    expect(builderConfig).not.toContain("- deb");
+  });
+
+  it("配置安装后的系统图标入口", () => {
+    const builderConfig = readFileSync(resolve("electron-builder.yml"), "utf8");
+
+    for (const shortcutConfig of [
+      "createDesktopShortcut: true",
+      "createStartMenuShortcut: true",
+      "shortcutName: 灵感笔记",
+      "Name: 灵感笔记",
+      "Comment: 本地管理灵感、笔记、标签和清单",
+      "Categories: Office;Productivity;",
+    ]) {
+      expect(builderConfig).toContain(shortcutConfig);
+    }
   });
 
   it("使用 build/icons 目录中的桌面应用图标", () => {
@@ -76,5 +91,12 @@ describe("安装包打包配置", () => {
     expect(existsSync(resolve("build/icons/icon.png"))).toBe(true);
     expect(installDevDesktopSource).toContain("StartupWMClass=idea-notes");
     expect(installDevDesktopSource).toContain("Icon=${ICON_PATH}");
+  });
+
+  it("把运行时窗口图标打入应用包", () => {
+    const builderConfig = readFileSync(resolve("electron-builder.yml"), "utf8");
+
+    expect(builderConfig).toContain("build/icons/icon.png");
+    expect(builderConfig).toContain("- build/icons/icon.png");
   });
 });
