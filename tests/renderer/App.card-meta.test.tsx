@@ -1,8 +1,8 @@
 /** @vitest-environment jsdom */
-// React 渲染层笔记卡片渲染测试。
+// React 渲染层卡片 meta 展示测试。
 // 作用：
-// 1. 覆盖卡片内容、meta、进度、截止状态和按钮文案。
-// 2. 锁定卡片结构与原型要求一致。
+// 1. 覆盖卡片动作文案、完成进度、优先级位置和分段进度条。
+// 2. 验证状态和截止时间 meta 标签使用图标展示。
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -10,7 +10,7 @@ import { getDefaultData } from "@shared/defaultData";
 import App from "../../src/renderer/src/app/IdeaNotesApp";
 import { BASE_TIME, installApi } from "./testUtils";
 
-describe("App card rendering", () => {
+describe("App card meta", () => {
   beforeEach(() => {
     document.body.innerHTML = "";
   });
@@ -96,60 +96,6 @@ describe("App card rendering", () => {
     },
   );
 
-  it("笔记卡片按原型避免正文和清单重复", async () => {
-    installApi(getDefaultData(BASE_TIME));
-
-    render(<App />);
-
-    const checklistTitle = await screen.findByText("重构 Desktop App 导航栏");
-    const checklistCard = checklistTitle.closest("article");
-    expect(checklistCard).toBeTruthy();
-    expect(
-      (checklistCard as HTMLElement).querySelector(".note-body-preview"),
-    ).toBeNull();
-    expect(
-      within(checklistCard as HTMLElement).getByText("实现可拖拽的 Titlebar"),
-    ).toBeTruthy();
-
-    const bodyTitle = screen.getByText("产品命名灵感");
-    const bodyCard = bodyTitle.closest("article");
-    expect(bodyCard).toBeTruthy();
-    const bodyPreview = (bodyCard as HTMLElement).querySelector(".note-body-preview");
-    expect(bodyPreview?.textContent).toContain("Idea Notes");
-  });
-
-  it("搜索命中时高亮标题和正文预览且不会执行用户 HTML", async () => {
-    const data = getDefaultData(BASE_TIME);
-    data.notes = [
-      {
-        ...data.notes[1],
-        id: "highlight-body-note",
-        title: "Idea 命名灵感",
-        body: "Idea Notes <script>alert(1)</script>",
-        tags: ["灵感"],
-        checklist: [],
-      },
-    ];
-    installApi(data);
-    const user = userEvent.setup();
-
-    render(<App />);
-
-    await screen.findByText("Idea 命名灵感");
-    await user.type(screen.getByLabelText("搜索"), "Idea");
-
-    const card = screen.getByText("命名灵感").closest("article") as HTMLElement;
-    const highlights = within(card).getAllByText("Idea");
-    const bodyPreview = card.querySelector(".note-body-preview") as HTMLElement;
-
-    expect(highlights).toHaveLength(2);
-    expect(
-      highlights.every((item) => item.classList.contains("search-highlight")),
-    ).toBe(true);
-    expect(bodyPreview.textContent).toContain("Idea Notes <script>alert(1)</script>");
-    expect(bodyPreview.querySelector("script")).toBeNull();
-  });
-
   it("笔记卡片按原型展示完成进度、分段进度条、正文背景和优先级位置", async () => {
     installApi(getDefaultData(BASE_TIME));
 
@@ -187,85 +133,6 @@ describe("App card rendering", () => {
     expect(
       bodyCard.querySelector(".note-content-preview .note-body-preview"),
     ).toBeTruthy();
-  });
-
-  it("笔记卡片根据当前时间展示已截止和未截止状态", async () => {
-    const now = BASE_TIME;
-    const data = getDefaultData(now);
-    data.notes = [
-      {
-        ...data.notes[0],
-        id: "deadline-overdue-note",
-        title: "已经超过截止时间",
-        dueAt: "2026-05-28T18:00",
-      },
-      {
-        ...data.notes[1],
-        id: "deadline-pending-note",
-        title: "还没到截止时间",
-        dueAt: "2026-05-30T18:00",
-      },
-      {
-        ...data.notes[1],
-        id: "deadline-empty-note",
-        title: "未设置截止时间的笔记",
-        dueAt: undefined,
-      },
-    ];
-    vi.spyOn(Date, "now").mockReturnValue(now);
-    installApi(data);
-
-    render(<App />);
-
-    const overdueTitle = await screen.findByText("已经超过截止时间");
-    const overdueCard = overdueTitle.closest("article") as HTMLElement;
-    const pendingCard = screen
-      .getByText("还没到截止时间")
-      .closest("article") as HTMLElement;
-    const emptyCard = screen
-      .getByText("未设置截止时间的笔记")
-      .closest("article") as HTMLElement;
-
-    expect(overdueCard.classList.contains("deadline-overdue")).toBe(true);
-    expect(overdueCard.querySelector(".deadline-status.overdue")?.textContent).toBe(
-      "已截止",
-    );
-    expect(pendingCard.classList.contains("deadline-pending")).toBe(true);
-    expect(pendingCard.querySelector(".deadline-status.pending")?.textContent).toBe(
-      "未截止",
-    );
-    expect(emptyCard.querySelector(".deadline-status")).toBeNull();
-  });
-
-  it("无截止时间的笔记卡片显示空截止文案且不回退到更新时间", async () => {
-    const updatedAt = Date.parse("2026-05-25T10:30:00.000Z");
-    const data = getDefaultData(BASE_TIME);
-    data.notes = [
-      {
-        ...data.notes[1],
-        id: "note-without-due-date",
-        title: "没有截止时间的卡片",
-        dueAt: undefined,
-        updatedAt,
-      },
-    ];
-    const formattedUpdatedAt = new Intl.DateTimeFormat("zh-CN", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    }).format(new Date(updatedAt));
-    installApi(data);
-
-    render(<App />);
-
-    const title = await screen.findByText("没有截止时间的卡片");
-    const card = title.closest("article") as HTMLElement;
-    const meta = card.querySelector(".note-meta") as HTMLElement;
-
-    expect(meta.textContent).toContain("截止时间：未设置截止时间");
-    expect(meta.textContent).not.toContain(`截止时间：${formattedUpdatedAt}`);
   });
 
   it("笔记卡片状态和截止时间标签显示图标", async () => {

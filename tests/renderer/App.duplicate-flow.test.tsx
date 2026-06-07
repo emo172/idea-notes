@@ -30,8 +30,16 @@ describe("App duplicate flow", () => {
     await user.click(screen.getByRole("menuitem", { name: "复制" }));
 
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
+    const copiedNote = saved.at(-1)?.notes[0];
     expect(saved.at(-1)?.notes[0]?.title).toBe("重构 Desktop App 导航栏 副本");
     expect(saved.at(-1)?.notes[1]?.title).toBe("重构 Desktop App 导航栏");
+    expect(copiedNote?.checklist[0]?.id).toBe(`${copiedNote?.id}-item-1`);
+    expect(copiedNote?.checklist.map((item) => item.checked)).toEqual([
+      true,
+      true,
+      false,
+      false,
+    ]);
   });
 
   it.each([

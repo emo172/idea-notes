@@ -1,0 +1,82 @@
+/*
+ * 标签管理样式模块。
+ * 管理主内容区标签设置面板、新增标签表单、颜色预览和标签管理列表。
+ */
+.notes-tag-settings {
+  max-width: 760px;
+  width: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  overflow: auto;
+}
+
+.notes-tag-settings-head h2,
+.notes-tag-settings-head p {
+  margin: 0;
+}
+
+.notes-tag-settings-head p {
+  margin-top: 6px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.tag-add-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.tag-add-row input {
+  flex: 1;
+}
+
+.tag-manager-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tag-manager-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-top: 1px solid var(--border-soft);
+}
+
+.tag-manager-item input {
+  flex: 1;
+}
+
+.tag-manager-item .tag-color-input {
+  flex: 0 0 96px;
+}
+
+.tag-color-swatch {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--tag-color, var(--border));
+}
+
+.tag-manager-item div {
+  display: flex;
+  gap: 6px;
+}
+
+@media (max-width: 760px) {
+  .tag-add-row,
+  .tag-manager-item {
+    flex-wrap: wrap;
+  }
+}

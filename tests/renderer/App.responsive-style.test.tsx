@@ -8,6 +8,14 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { RENDERER_SRC, readCssRuleBlock, readRendererStyles } from "./testUtils";
 
+function readStyleFile(file: string): string {
+  return readFileSync(resolve(RENDERER_SRC, "styles", file), "utf8");
+}
+
+function readStyleFiles(files: string[]): string {
+  return files.map((file) => readStyleFile(file)).join("\n");
+}
+
 describe("App responsive style contracts", () => {
   it("720-960 窄屏不被基础宽度和工具栏固定布局阻断", () => {
     const baseStyles = readFileSync(resolve(RENDERER_SRC, "styles/base.css"), "utf8");
@@ -38,10 +46,7 @@ describe("App responsive style contracts", () => {
   });
 
   it("编辑器在 720px 窄屏附近切换为单栏布局", () => {
-    const editorStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/editor.css"),
-      "utf8",
-    );
+    const editorStyles = readStyleFiles(["editor-layout.css", "editor-side.css"]);
 
     expect(editorStyles).toContain("@media (max-width: 760px)");
     expect(editorStyles).toMatch(
@@ -59,10 +64,7 @@ describe("App responsive style contracts", () => {
   });
 
   it("设置页在 720px 窄屏附近避免固定侧栏挤压内容", () => {
-    const settingsStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/settings.css"),
-      "utf8",
-    );
+    const settingsStyles = readStyleFiles(["settings-view.css", "settings-tabs.css"]);
 
     expect(settingsStyles).toContain("@media (max-width: 760px)");
     expect(settingsStyles).toMatch(
@@ -80,7 +82,9 @@ describe("App responsive style contracts", () => {
   });
 
   it("长标题、长标签和长按钮文案不会撑破容器", () => {
-    const styles = readRendererStyles();
+    const styles = [readRendererStyles(), readStyleFile("note-card-tags.css")].join(
+      "\n",
+    );
     const noteTitleBlock = readCssRuleBlock(styles, ".note-title");
     const tagOptionBlock = readCssRuleBlock(styles, ".tag-option");
     const tagBlock = readCssRuleBlock(styles, ".tag");

@@ -3,7 +3,8 @@
 // 1. 为主进程 IPC 保存入口提供运行时 payload 校验。
 // 2. 锁定持久化根对象、笔记、清单和设置的必需字段。
 // 3. 允许对象携带额外字段，兼容旧本地数据中的残留字段。
-import type { IdeaNotesData } from "./types";
+import { normalizeTagColor } from "./tags/tagColor";
+import type { IdeaNote, IdeaNotesData } from "./types";
 
 const notePriorities = new Set(["high", "medium", "low"]);
 const noteStatuses = new Set(["active", "completed", "archive", "trash"]);
@@ -36,7 +37,8 @@ function isIdeaTag(value: unknown): boolean {
     isRecord(value) &&
     typeof value.id === "string" &&
     typeof value.name === "string" &&
-    typeof value.color === "string"
+    typeof value.color === "string" &&
+    normalizeTagColor(value.color) !== null
   );
 }
 
@@ -65,6 +67,15 @@ function isOptionalStringArray(value: unknown): value is string[] | undefined {
   return value === undefined || isStringArray(value);
 }
 
+function isOptionalPreviousStatus(value: unknown): value is IdeaNote["previousStatus"] {
+  return (
+    value === undefined ||
+    value === "active" ||
+    value === "completed" ||
+    value === "archive"
+  );
+}
+
 function isIdeaNote(value: unknown): boolean {
   return (
     isRecord(value) &&
@@ -81,6 +92,7 @@ function isIdeaNote(value: unknown): boolean {
     isFiniteNumber(value.createdAt) &&
     isFiniteNumber(value.updatedAt) &&
     isOptionalFiniteNumber(value.trashedAt) &&
+    isOptionalPreviousStatus(value.previousStatus) &&
     isOptionalStringArray(value.notifiedReminderKeys)
   );
 }
@@ -108,6 +120,19 @@ function isIdeaSettings(value: unknown): boolean {
   );
 }
 
+function sanitizeIdeaNote(note: IdeaNote): IdeaNote {
+  const { previousStatus, ...rest } = note;
+  if (
+    note.status === "trash" &&
+    (previousStatus === "active" ||
+      previousStatus === "completed" ||
+      previousStatus === "archive")
+  ) {
+    return { ...rest, previousStatus };
+  }
+  return rest;
+}
+
 export function validateIdeaNotesData(data: unknown): data is IdeaNotesData {
   return (
     isRecord(data) &&
@@ -122,7 +147,15 @@ export function sanitizeIdeaNotesData(data: IdeaNotesData): IdeaNotesData {
     data.settings as IdeaNotesData["settings"] & {
       backgroundColor?: unknown;
     };
-  return { ...data, settings };
+  return {
+    ...data,
+    notes: data.notes.map(sanitizeIdeaNote),
+    tags: data.tags.map((tag) => ({
+      ...tag,
+      color: normalizeTagColor(tag.color) ?? tag.color,
+    })),
+    settings,
+  };
 }
 
 export function assertIdeaNotesData(data: unknown): IdeaNotesData {

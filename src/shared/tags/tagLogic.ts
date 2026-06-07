@@ -3,6 +3,7 @@
 // 1. 重命名全局标签并同步每条笔记的标签引用。
 // 2. 删除全局标签并清理笔记里的孤儿标签引用。
 import type { IdeaNotesData, IdeaTag } from "../types";
+import { normalizeTagColor } from "./tagColor";
 
 export const tagColorPalette = [
   "#2563eb",
@@ -89,9 +90,12 @@ export function updateTagColor(
   tagName: string,
   color: string,
 ): IdeaNotesData {
-  if (!data.tags.some((tag) => tag.name === tagName)) return data;
+  const normalizedColor = normalizeTagColor(color);
+  if (!normalizedColor || !data.tags.some((tag) => tag.name === tagName)) return data;
   return {
     ...data,
-    tags: data.tags.map((tag) => (tag.name === tagName ? { ...tag, color } : tag)),
+    tags: data.tags.map((tag) =>
+      tag.name === tagName ? { ...tag, color: normalizedColor } : tag,
+    ),
   };
 }

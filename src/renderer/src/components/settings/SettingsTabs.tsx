@@ -55,12 +55,14 @@ export function SettingsTabs({
   }>;
 
   return (
-    <div className="settings-sidebar">
+    <div className="settings-sidebar" role="tablist">
       {tabs.map((tab) => (
         <AppButton
           className="settings-tab"
           variant="tab"
           active={activeTab === tab.id}
+          role="tab"
+          aria-selected={activeTab === tab.id}
           disabled={isSaving}
           icon={tab.icon}
           key={tab.id}

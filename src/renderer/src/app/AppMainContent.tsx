@@ -13,14 +13,12 @@ import type {
   NoteStatus,
   SortMode,
 } from "@shared/types";
-import { SaveFeedbackAlert } from "../components/feedback/SaveFeedbackAlert";
-import { NotesList } from "../components/notes/NotesList";
-import { StatsPanel } from "../components/overview/StatsPanel";
-import { TagSettingsPanel } from "../components/settings/TagSettingsPanel";
-import { NotesToolbar } from "../components/toolbar/NotesToolbar";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import type { TagInputError } from "../hooks/useTagCommands";
 import type { AppCopy } from "../i18n";
+import { MainNotesView } from "./MainNotesView";
+import { OverviewView } from "./OverviewView";
+import { TagSettingsView } from "./TagSettingsView";
 import type { ViewMode } from "./viewMode";
 
 interface AppMainContentProps {
@@ -131,12 +129,6 @@ export function AppMainContent({
   setDeleteTarget,
 }: AppMainContentProps): ReactElement {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
-  const tagInputErrorMessage =
-    tagInputError === "required"
-      ? copy.tagNameRequired
-      : tagInputError === "duplicate"
-        ? copy.tagAlreadyExists
-        : null;
 
   useKeyboardShortcuts({
     searchInputRef,
@@ -150,74 +142,68 @@ export function AppMainContent({
 
   if (viewMode === "tag-settings") {
     return (
-      <TagSettingsPanel
+      <TagSettingsView
         data={data}
         copy={copy}
         tagName={tagName}
-        tagInputError={tagInputErrorMessage}
-        tagSaveFeedback={mainSaveFeedback}
+        tagInputError={tagInputError}
+        mainSaveFeedback={mainSaveFeedback}
         isSaving={isSaving}
         setTagName={setTagName}
-        onAddTag={handleAddTag}
-        onRenameTag={handleRenameTag}
-        onTagColorChange={handleTagColorChange}
-        onDeleteTag={handleDeleteTag}
+        handleAddTag={handleAddTag}
+        handleRenameTag={handleRenameTag}
+        handleTagColorChange={handleTagColorChange}
+        handleDeleteTag={handleDeleteTag}
       />
     );
   }
 
   if (viewMode === "overview") {
     return (
-      <StatsPanel
-        notes={data?.notes ?? []}
+      <OverviewView
+        data={data}
         copy={copy}
-        onStatusClick={onStatsStatusClick}
-        onPriorityClick={onStatsPriorityClick}
-        onTagClick={onStatsTagClick}
+        onStatsStatusClick={onStatsStatusClick}
+        onStatsPriorityClick={onStatsPriorityClick}
+        onStatsTagClick={onStatsTagClick}
       />
     );
   }
 
   return (
-    <>
-      <SaveFeedbackAlert message={shouldShowMainSaveError ? mainSaveFeedback : null} />
-      <NotesToolbar
-        copy={copy}
-        searchInputRef={searchInputRef}
-        searchQuery={searchQuery}
-        onSearchQueryChange={setSearchQuery}
-        priority={priority}
-        onPriorityChange={setPriority}
-        sortMode={sortMode}
-        onSortModeChange={setSortMode}
-        noteViewMode={noteViewMode}
-        trashCount={trashCount}
-        sidebarToggleTitle={sidebarToggleTitle}
-        onToggleSidebar={onToggleSidebar}
-        onResetFilters={resetFilters}
-        onClearTrash={onClearTrash}
-      />
-      <NotesList
-        copy={copy}
-        language={currentLanguage}
-        tags={tags}
-        searchQuery={searchQuery}
-        noteViewMode={noteViewMode}
-        visibleNotes={visibleNotes}
-        hasData={hasData}
-        isLoading={isLoading}
-        hasLoadError={hasLoadError}
-        onRetryLoad={() => loadData()}
-        onOpenNote={openExistingNote}
-        onToggleCompleted={handleToggleCompleted}
-        onToggleChecklist={handleToggleChecklist}
-        onArchive={handleArchiveNote}
-        onTrash={handleMoveToTrash}
-        onRestore={handleRestore}
-        onRestoreArchived={handleRestoreArchivedNote}
-        onDuplicate={handleDuplicateNote}
-        onDelete={setDeleteTarget}
-      />
-    </>
+    <MainNotesView
+      copy={copy}
+      currentLanguage={currentLanguage}
+      tags={tags}
+      mainSaveFeedback={mainSaveFeedback}
+      shouldShowMainSaveError={shouldShowMainSaveError}
+      searchInputRef={searchInputRef}
+      searchQuery={searchQuery}
+      priority={priority}
+      sortMode={sortMode}
+      noteViewMode={noteViewMode}
+      visibleNotes={visibleNotes}
+      hasData={hasData}
+      isLoading={isLoading}
+      hasLoadError={hasLoadError}
+      trashCount={trashCount}
+      sidebarToggleTitle={sidebarToggleTitle}
+      setSearchQuery={setSearchQuery}
+      setPriority={setPriority}
+      setSortMode={setSortMode}
+      onToggleSidebar={onToggleSidebar}
+      resetFilters={resetFilters}
+      onClearTrash={onClearTrash}
+      loadData={loadData}
+      openExistingNote={openExistingNote}
+      handleToggleCompleted={handleToggleCompleted}
+      handleToggleChecklist={handleToggleChecklist}
+      handleArchiveNote={handleArchiveNote}
+      handleMoveToTrash={handleMoveToTrash}
+      handleRestore={handleRestore}
+      handleRestoreArchivedNote={handleRestoreArchivedNote}
+      handleDuplicateNote={handleDuplicateNote}
+      setDeleteTarget={setDeleteTarget}
+    />
   );
 }

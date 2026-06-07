@@ -1,0 +1,34 @@
+/*
+ * 编辑器侧栏样式模块。
+ * 管理元信息侧栏、标签选择区和时间戳展示。
+ */
+.editor-side,
+.tag-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tag-picker {
+  gap: 8px;
+}
+
+.timestamp-value {
+  color: var(--fg);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.editor-side {
+  padding-left: 18px;
+  border-left: 1px solid var(--border);
+}
+
+@media (max-width: 760px) {
+  .editor-side {
+    padding-left: 0;
+    padding-top: 14px;
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}

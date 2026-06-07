@@ -27,10 +27,10 @@ describe("App deadline and priority styles", () => {
       resolve(RENDERER_SRC, "styles/toolbar.css"),
       "utf8",
     );
-    const noteStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/note-card.css"),
-      "utf8",
-    );
+    const noteStyles = [
+      readFileSync(resolve(RENDERER_SRC, "styles/note-card.css"), "utf8"),
+      readFileSync(resolve(RENDERER_SRC, "styles/note-card-meta.css"), "utf8"),
+    ].join("\n");
     const rootBlock = readCssRuleBlock(baseStyles, ":root");
     const darkBlock = readCssRuleBlock(baseStyles, ".app-window.dark");
     const noteCardBlock = readCssRuleBlock(noteStyles, ".note-card");

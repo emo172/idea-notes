@@ -75,6 +75,62 @@ describe("主进程截止提醒调度器", () => {
     );
   });
 
+  it("通知显示失败时仍写回已提醒 key 避免重复触发", async () => {
+    const data = getDefaultData(baseTime);
+    data.settings.reminders = { enabled: true, leadMinutes: 10 };
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "failing-reminder-note",
+        title: "失败提醒目标",
+        dueAt: "2026-05-29T09:00:00",
+        notifiedReminderKeys: undefined,
+      },
+    ];
+    notificationShow.mockImplementation(() => {
+      throw new Error("notification failed");
+    });
+    storeMock.readData.mockResolvedValue(data);
+    storeMock.saveData.mockImplementation(async (nextData) => nextData);
+    const { checkRemindersOnce } = await importScheduler();
+
+    await checkRemindersOnce(Date.parse("2026-05-29T08:50:00"));
+
+    expect(storeMock.saveData).toHaveBeenCalledTimes(1);
+    expect(storeMock.saveData.mock.calls[0]?.[0].notes[0].notifiedReminderKeys).toEqual(
+      ["failing-reminder-note:2026-05-29T09:00:00:10"],
+    );
+  });
+
+  it("通知构造失败时仍写回已提醒 key 避免重复触发", async () => {
+    const data = getDefaultData(baseTime);
+    data.settings.reminders = { enabled: true, leadMinutes: 10 };
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "constructor-failing-reminder-note",
+        title: "构造失败提醒目标",
+        dueAt: "2026-05-29T09:00:00",
+        notifiedReminderKeys: undefined,
+      },
+    ];
+    notificationConstructor.mockImplementationOnce(() => {
+      throw new Error("notification constructor failed");
+    });
+    storeMock.readData.mockResolvedValue(data);
+    storeMock.saveData.mockImplementation(async (nextData) => nextData);
+    const { checkRemindersOnce } = await importScheduler();
+
+    await checkRemindersOnce(Date.parse("2026-05-29T08:50:00"));
+
+    expect(notificationConstructor).toHaveBeenCalledTimes(1);
+    expect(notificationShow).not.toHaveBeenCalled();
+    expect(storeMock.saveData).toHaveBeenCalledTimes(1);
+    expect(storeMock.saveData.mock.calls[0]?.[0].notes[0].notifiedReminderKeys).toEqual(
+      ["constructor-failing-reminder-note:2026-05-29T09:00:00:10"],
+    );
+  });
+
   it("没有应提醒笔记时不发送通知也不写入数据", async () => {
     const data = getDefaultData(baseTime);
     data.settings.reminders = { enabled: false, leadMinutes: 10 };

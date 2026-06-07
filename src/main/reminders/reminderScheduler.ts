@@ -16,12 +16,16 @@ export async function checkRemindersOnce(now = Date.now()): Promise<void> {
 
   let nextData = data;
   for (const reminder of reminders) {
-    new Notification({
-      title: reminder.note.title || "灵感笔记提醒",
-      body: reminder.note.dueAt
-        ? `截止时间：${reminder.note.dueAt}`
-        : "笔记已到提醒时间",
-    }).show();
+    try {
+      new Notification({
+        title: reminder.note.title || "灵感笔记提醒",
+        body: reminder.note.dueAt
+          ? `截止时间：${reminder.note.dueAt}`
+          : "笔记已到提醒时间",
+      }).show();
+    } catch {
+      // 系统通知显示失败时仍记录本轮提醒，避免后续调度重复触发。
+    }
     nextData = markReminderNotified(nextData, reminder.key);
   }
   await saveData(nextData);

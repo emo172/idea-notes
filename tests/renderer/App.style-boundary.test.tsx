@@ -11,8 +11,25 @@ import { RENDERER_SRC, readCssRuleBlock } from "./testUtils";
 const noteStyleFiles = [
   "notes-list.css",
   "note-card.css",
+  "note-card-meta.css",
+  "note-card-content.css",
+  "note-card-tags.css",
   "checklist-preview.css",
   "note-actions.css",
+] as const;
+
+const editorStyleFiles = [
+  "editor-layout.css",
+  "editor-main.css",
+  "markdown-preview.css",
+  "editor-side.css",
+] as const;
+
+const settingsStyleFiles = [
+  "settings-view.css",
+  "settings-tabs.css",
+  "settings-form.css",
+  "tag-manager.css",
 ] as const;
 
 function readStyleFile(file: string): string {
@@ -31,8 +48,8 @@ describe("App style boundaries", () => {
       "toolbar.css",
       ...noteStyleFiles,
       "dialogs.css",
-      "editor.css",
-      "settings.css",
+      ...editorStyleFiles,
+      ...settingsStyleFiles,
     ];
 
     for (const file of styleFiles) {
@@ -49,16 +66,27 @@ describe("App style boundaries", () => {
         '@import "./styles/toolbar.css";',
         '@import "./styles/notes-list.css";',
         '@import "./styles/note-card.css";',
+        '@import "./styles/note-card-meta.css";',
+        '@import "./styles/note-card-content.css";',
+        '@import "./styles/note-card-tags.css";',
         '@import "./styles/checklist-preview.css";',
         '@import "./styles/note-actions.css";',
         '@import "./styles/dialogs.css";',
-        '@import "./styles/editor.css";',
-        '@import "./styles/settings.css";',
+        '@import "./styles/editor-layout.css";',
+        '@import "./styles/editor-main.css";',
+        '@import "./styles/markdown-preview.css";',
+        '@import "./styles/editor-side.css";',
+        '@import "./styles/settings-view.css";',
+        '@import "./styles/settings-tabs.css";',
+        '@import "./styles/settings-form.css";',
+        '@import "./styles/tag-manager.css";',
       ].join("\n"),
     );
 
     expect(existsSync(resolve(RENDERER_SRC, "styles/notes.css"))).toBe(false);
     expect(styleEntry).not.toContain('@import "./styles/notes.css";');
+    expect(styleEntry).not.toContain('@import "./styles/editor.css";');
+    expect(styleEntry).not.toContain('@import "./styles/settings.css";');
     expect(styleEntry).not.toContain(".note-card {");
     expect(styleEntry).not.toContain(".settings-view {");
   });
@@ -76,7 +104,18 @@ describe("App style boundaries", () => {
     expect(styleEntry).toContain('@import "./styles/dropdown.css";');
     expect(dropdownStyles).toContain(".dropdown-anchor");
     expect(dropdownStyles).toContain(".dropdown-menu");
+    expect(dropdownStyles).toContain("max-height: min(280px, calc(100vh - 96px));");
+    expect(dropdownStyles).toContain("overflow-y: auto;");
     expect(dropdownStyles).toContain(".dropdown-menu button:hover");
+  });
+
+  it("笔记卡片菜单向上展开，避免列表底部菜单被视口裁切", () => {
+    const noteActionStyles = readStyleFile("note-actions.css");
+    const contextMenuBlock = readCssRuleBlock(noteActionStyles, ".note-context-menu");
+
+    expect(contextMenuBlock).toContain("right: 0;");
+    expect(contextMenuBlock).toContain("top: auto;");
+    expect(contextMenuBlock).toContain("bottom: calc(100% + 6px);");
   });
 
   it("拆分后的样式模块不混入其他页面职责", () => {
@@ -90,12 +129,19 @@ describe("App style boundaries", () => {
     );
     const noteListStyles = readStyleFile("notes-list.css");
     const noteCardStyles = readStyleFile("note-card.css");
+    const noteMetaStyles = readStyleFile("note-card-meta.css");
+    const noteContentStyles = readStyleFile("note-card-content.css");
+    const noteTagStyles = readStyleFile("note-card-tags.css");
     const checklistPreviewStyles = readStyleFile("checklist-preview.css");
     const noteActionStyles = readStyleFile("note-actions.css");
-    const editorStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/editor.css"),
-      "utf8",
-    );
+    const editorLayoutStyles = readStyleFile("editor-layout.css");
+    const editorMainStyles = readStyleFile("editor-main.css");
+    const markdownPreviewStyles = readStyleFile("markdown-preview.css");
+    const editorSideStyles = readStyleFile("editor-side.css");
+    const settingsViewStyles = readStyleFile("settings-view.css");
+    const settingsTabsStyles = readStyleFile("settings-tabs.css");
+    const settingsFormStyles = readStyleFile("settings-form.css");
+    const tagManagerStyles = readStyleFile("tag-manager.css");
 
     expect(sidebarStyles).not.toContain(".notes-list");
     expect(sidebarStyles).not.toContain(".tag-picker");
@@ -105,6 +151,9 @@ describe("App style boundaries", () => {
     for (const styles of [
       noteListStyles,
       noteCardStyles,
+      noteMetaStyles,
+      noteContentStyles,
+      noteTagStyles,
       checklistPreviewStyles,
       noteActionStyles,
     ]) {
@@ -114,10 +163,35 @@ describe("App style boundaries", () => {
     }
     expect(noteListStyles).toContain(".notes-list");
     expect(noteCardStyles).toContain(".note-card");
+    expect(noteCardStyles).not.toContain(".note-meta");
+    expect(noteCardStyles).not.toContain(".note-body-preview");
+    expect(noteCardStyles).not.toContain(".tags");
+    expect(noteMetaStyles).toContain(".note-meta");
+    expect(noteContentStyles).toContain(".note-body-preview");
+    expect(noteContentStyles).toContain(".note-content-preview");
+    expect(noteTagStyles).toContain(".tags");
+    expect(noteTagStyles).toContain(".tag");
     expect(checklistPreviewStyles).toContain(".checklist-preview");
     expect(noteActionStyles).toContain(".card-actions");
-    expect(editorStyles).not.toContain(".settings-head");
-    expect(editorStyles).not.toContain(".settings-main");
+    expect(editorLayoutStyles).toContain(".editor-overlay");
+    expect(editorLayoutStyles).toContain(".editor-actions");
+    expect(editorMainStyles).toContain(".editor-textarea-container");
+    expect(editorMainStyles).toContain(".line-numbers");
+    expect(markdownPreviewStyles).toContain(".markdown-preview");
+    expect(editorSideStyles).toContain(".editor-side");
+    for (const styles of [
+      editorLayoutStyles,
+      editorMainStyles,
+      markdownPreviewStyles,
+      editorSideStyles,
+    ]) {
+      expect(styles).not.toContain(".settings-head");
+      expect(styles).not.toContain(".settings-main");
+    }
+    expect(settingsViewStyles).toContain(".settings-view");
+    expect(settingsTabsStyles).toContain(".settings-tab");
+    expect(settingsFormStyles).toContain(".setting-row");
+    expect(tagManagerStyles).toContain(".tag-manager-list");
   });
 
   it("笔记卡片清单预览使用紧凑行距", () => {

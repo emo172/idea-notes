@@ -121,10 +121,25 @@ describe("App editor create", () => {
     );
   });
 
+  it("正文滚动时同步行号滚动位置", async () => {
+    installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "新建" }));
+    const textarea = screen.getByLabelText("正文") as HTMLTextAreaElement;
+    const lineNumbers = container.querySelector(".line-numbers") as HTMLDivElement;
+
+    Object.defineProperty(textarea, "scrollTop", { value: 96, configurable: true });
+    textarea.dispatchEvent(new Event("scroll", { bubbles: true }));
+
+    expect(lineNumbers.scrollTop).toBe(96);
+  });
+
   it("正文输入框编号和正文文字使用统一字号与行高", () => {
     // 样式变量直接决定行号和正文对齐，读源码比 jsdom 计算样式更稳定。
     const editorStyles = readFileSync(
-      resolve(RENDERER_SRC, "styles/editor.css"),
+      resolve(RENDERER_SRC, "styles/editor-main.css"),
       "utf8",
     );
 

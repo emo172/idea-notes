@@ -18,11 +18,20 @@ export function readRendererStyles(): string {
     "styles/toolbar.css",
     "styles/notes-list.css",
     "styles/note-card.css",
+    "styles/note-card-meta.css",
+    "styles/note-card-content.css",
+    "styles/note-card-tags.css",
     "styles/checklist-preview.css",
     "styles/note-actions.css",
     "styles/dialogs.css",
-    "styles/editor.css",
-    "styles/settings.css",
+    "styles/editor-layout.css",
+    "styles/editor-main.css",
+    "styles/markdown-preview.css",
+    "styles/editor-side.css",
+    "styles/settings-view.css",
+    "styles/settings-tabs.css",
+    "styles/settings-form.css",
+    "styles/tag-manager.css",
   ];
 
   return styleFiles

@@ -57,12 +57,17 @@ export function duplicateNote(
   note: IdeaNote,
   options: DuplicateNoteOptions = {},
 ): IdeaNote {
-  // 复制笔记保留原内容和状态，只更新身份、标题后缀与时间戳。
+  // 复制笔记保留原内容和状态，只更新身份、标题后缀、清单项身份与时间戳。
   const now = options.now ?? Date.now();
+  const id = options.id ?? generateNoteId(now);
   return {
     ...note,
-    id: options.id ?? generateNoteId(now),
+    id,
     title: `${note.title}${options.titleSuffix ?? ""}`,
+    checklist: note.checklist.map((item, index) => ({
+      ...item,
+      id: `${id}-item-${index + 1}`,
+    })),
     createdAt: now,
     updatedAt: now,
   };

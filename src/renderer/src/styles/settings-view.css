@@ -1,0 +1,74 @@
+/*
+ * 设置页视图样式模块。
+ * 管理设置覆盖层、顶部标题区、主体网格和主滚动内容区。
+ */
+.settings-view {
+  position: absolute;
+  inset: 48px 0 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  z-index: 60;
+}
+
+.settings-head {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border);
+}
+
+.settings-head h2 {
+  margin: 0;
+}
+
+.settings-head p {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.settings-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-body {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 200px minmax(0, 1fr);
+}
+
+.settings-main {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px;
+  overflow: auto;
+}
+
+@media (max-width: 760px) {
+  .settings-head {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .settings-actions {
+    flex-wrap: wrap;
+  }
+
+  .settings-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .settings-main {
+    padding: 14px;
+  }
+}

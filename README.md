@@ -8,6 +8,7 @@
 - 渲染端：React 渲染层负责笔记列表、编辑器、设置中心和交互状态。
 - 共享层：`src/shared/` 存放 main、preload、renderer 和 tests 共用的类型与纯业务逻辑。
 - 测试优先：项目用 Vitest 覆盖共享逻辑、主进程、preload 和渲染层交互。
+- 响应式边界：当前响应式目标是 Electron 桌面窗口的 720px 窄宽度，不承诺移动端浏览器布局。
 
 ## 环境要求
 
@@ -26,29 +27,32 @@ npm run dev
 
 ## 常用命令
 
-| 命令                                         | 用途                                                 |
-| -------------------------------------------- | ---------------------------------------------------- |
-| `npm install`                                | 安装项目依赖                                         |
-| `npm ci`                                     | 按 `package-lock.json` 干净安装依赖                  |
-| `npm run dev`                                | 启动 Electron + Vite 开发环境                        |
-| `npm run typecheck`                          | 运行 TypeScript 类型检查                             |
-| `npm run lint`                               | 运行 ESLint 静态检查                                 |
-| `npm run format:check`                       | 检查 Prettier 格式                                   |
-| `npm run format`                             | 使用 Prettier 格式化源码、测试和文档                 |
-| `npm test`                                   | 运行全部 Vitest 测试                                 |
-| `npm test -- tests/shared/noteLogic.test.ts` | 只运行共享业务逻辑测试                               |
-| `npm test -- tests/main`                     | 只运行主进程相关测试                                 |
-| `npm test -- tests/preload`                  | 只运行 preload 契约测试                              |
-| `npm test -- tests/renderer`                 | 只运行渲染层测试                                     |
-| `npm run build`                              | 生成生产构建，输出到 `out/`                          |
-| `npm run smoke`                              | 检查已生成的生产构建关键产物                         |
-| `npm run ci`                                 | 依次运行类型检查、lint、格式检查、测试、构建和 smoke |
-| `npm run preview`                            | 预览构建结果                                         |
-| `npm run package`                            | 先构建，再生成 `release/` 目录包                     |
-| `npm run package:mac`                        | 生成 macOS `dmg` 安装包                              |
-| `npm run package:win`                        | 生成 Windows `nsis` 安装包                           |
-| `npm run package:linux`                      | 生成 Linux `AppImage` 安装包                         |
-| `npm run package:all`                        | 按当前构建环境支持情况生成多平台安装包               |
+| 命令                                                | 用途                                                 |
+| --------------------------------------------------- | ---------------------------------------------------- |
+| `npm install`                                       | 安装项目依赖                                         |
+| `npm ci`                                            | 按 `package-lock.json` 干净安装依赖                  |
+| `npm run dev`                                       | 启动 Electron + Vite 开发环境                        |
+| `npm run typecheck`                                 | 运行 TypeScript 类型检查                             |
+| `npm run lint`                                      | 运行 ESLint 静态检查                                 |
+| `npm run format:check`                              | 检查 Prettier 格式                                   |
+| `npm run format`                                    | 使用 Prettier 格式化源码、测试和文档                 |
+| `npm test`                                          | 运行全部 Vitest 测试                                 |
+| `npm test -- tests/shared`                          | 只运行共享逻辑测试                                   |
+| `npm test -- tests/main/backup.test.ts`             | 只运行数据备份导入导出测试                           |
+| `npm test -- tests/main/reminder-scheduler.test.ts` | 只运行截止提醒调度测试                               |
+| `npm test -- tests/renderer/DropdownMenu.test.tsx`  | 只运行下拉菜单组件测试                               |
+| `npm test -- tests/main`                            | 只运行主进程相关测试                                 |
+| `npm test -- tests/preload`                         | 只运行 preload 契约测试                              |
+| `npm test -- tests/renderer`                        | 只运行渲染层测试                                     |
+| `npm run build`                                     | 生成生产构建，输出到 `out/`                          |
+| `npm run smoke`                                     | 检查已生成的生产构建关键产物                         |
+| `npm run ci`                                        | 依次运行类型检查、lint、格式检查、测试、构建和 smoke |
+| `npm run preview`                                   | 预览构建结果                                         |
+| `npm run package`                                   | 先构建，再生成 `release/` 目录包                     |
+| `npm run package:mac`                               | 生成 macOS `dmg` 安装包                              |
+| `npm run package:win`                               | 生成 Windows `nsis` 安装包                           |
+| `npm run package:linux`                             | 生成 Linux `AppImage` 安装包                         |
+| `npm run package:all`                               | 按当前构建环境支持情况生成多平台安装包               |
 
 ## 详细项目目录结构
 
@@ -80,10 +84,13 @@ idea-notes/
 │   │   ├── index.ts                  # Electron 主进程启动编排
 │   │   ├── ipc/registerIpc.ts        # IPC handler 注册和来源校验
 │   │   ├── platform/linuxStartup.ts  # Linux 开发启动开关
+│   │   ├── reminders/
+│   │   │   └── reminderScheduler.ts  # 截止提醒调度器
 │   │   ├── startup/loginItems.ts     # 开机自启动系统 API 封装
 │   │   ├── window/createMainWindow.ts # 主窗口创建和窗口状态
 │   │   ├── store.ts                  # 本地 JSON 存储读写入口
 │   │   └── store/
+│   │       ├── backup.ts             # 数据导入导出
 │   │       ├── normalizeData.ts      # 旧数据迁移和归一化
 │   │       └── writeJsonFile.ts      # 临时文件 + rename 安全写入
 │   ├── preload/
@@ -99,13 +106,19 @@ idea-notes/
 │   │       ├── components/
 │   │       │   ├── dialogs/          # 确认对话框等弹层组件
 │   │       │   ├── editor/           # 全表面笔记编辑器及字段/侧栏/动作子组件
-│   │       │   ├── feedback/         # 保存反馈等通用反馈组件
+│   │       │   ├── feedback/
+│   │       │   │   └── SaveFeedbackAlert.tsx # 保存反馈提示
 │   │       │   ├── notes/            # 笔记卡片、清单预览、卡片菜单相关组件
+│   │       │   ├── overview/
+│   │       │   │   └── StatsPanel.tsx # 概览统计面板
 │   │       │   ├── settings/         # 设置中心和标签设置面板
 │   │       │   ├── shell/            # 自定义标题栏和侧边栏外壳
 │   │       │   ├── titlebar/         # 自定义标题栏图标组件
 │   │       │   ├── toolbar/          # 搜索、筛选、排序工具栏
-│   │       │   └── ui/               # 通用按钮、下拉菜单等 UI 组件
+│   │       │   └── ui/
+│   │       │       └── dropdown/
+│   │       │           ├── DropdownButton.tsx # 下拉菜单触发按钮
+│   │       │           └── DropdownMenu.tsx # 下拉菜单焦点和关闭行为
 │   │       ├── hooks/                # 数据、筛选、窗口、命令、焦点陷阱等 hook
 │   │       ├── i18n/
 │   │       │   ├── en.ts             # 英文文案
@@ -121,15 +134,28 @@ idea-notes/
 │   │       │   ├── sidebar.css       # 侧栏、导航、标签筛选样式
 │   │       │   ├── toolbar.css       # 搜索、筛选、排序工具栏样式
 │   │       │   ├── notes-list.css    # 笔记列表滚动区样式
-│   │       │   ├── note-card.css     # 笔记卡片容器、标题、标签和状态样式
+│   │       │   ├── note-card.css     # 笔记卡片容器、标题和状态样式
+│   │       │   ├── note-card-meta.css # 笔记卡片元信息、优先级和截止状态
+│   │       │   ├── note-card-content.css # 笔记卡片正文预览和搜索高亮
+│   │       │   ├── note-card-tags.css # 笔记卡片标签列表样式
 │   │       │   ├── checklist-preview.css # 清单预览样式
 │   │       │   ├── note-actions.css  # 卡片动作样式
 │   │       │   ├── dialogs.css       # 确认弹窗样式
-│   │       │   ├── editor.css        # 编辑器布局和输入区样式
-│   │       │   └── settings.css      # 设置中心和设置项样式
+│   │       │   ├── editor-layout.css # 编辑器覆盖层、主体网格和动作区
+│   │       │   ├── editor-main.css   # 编辑器主输入区、模式切换和行号样式
+│   │       │   ├── markdown-preview.css # Markdown 预览内容样式
+│   │       │   ├── editor-side.css   # 编辑器侧栏和标签选择样式
+│   │       │   ├── settings-view.css # 设置覆盖层和主布局
+│   │       │   ├── settings-tabs.css # 设置侧栏页签样式
+│   │       │   ├── settings-form.css # 设置卡片、设置行、开关和备份反馈
+│   │       │   └── tag-manager.css   # 标签设置面板和标签管理列表
 │   │       └── utils/
 │   │           ├── dateFormatting.ts # 渲染层日期格式化工具
-│   │           └── noteDraft.ts      # 笔记与编辑草稿之间的转换工具
+│   │           ├── highlightText.tsx # 搜索命中文本高亮
+│   │           ├── markdownPreview.tsx # Markdown 预览渲染工具
+│   │           ├── noteCounts.ts     # 笔记统计计数工具
+│   │           ├── noteDraft.ts      # 笔记与编辑草稿之间的转换工具
+│   │           └── tagDisplay.ts     # 标签展示排序和名称工具
 │   └── shared/
 │       ├── defaultData.ts            # 首次启动种子数据和默认设置
 │       ├── ideaNotesDataValidation.ts # IdeaNotesData 运行时结构校验
@@ -140,13 +166,19 @@ idea-notes/
 │       └── types.ts                  # 主进程、preload、renderer、tests 共享类型
 └── tests/
     ├── main/
+    │   ├── backup.test.ts            # 数据导出、覆盖导入、合并导入和非法 JSON
+    │   ├── helpers/
+    │   │   └── storeTestUtils.ts     # store 测试临时 userData 和 Electron mock
     │   ├── packaging-config.test.ts  # 跨平台打包脚本、安装包目标和桌面图标配置
     │   ├── window-config.test.ts     # 主窗口配置和 preload 路径
     │   ├── linux-startup.test.ts     # Linux 启动约定
     │   ├── ipc-contract.test.ts      # IPC handler 契约
+    │   ├── reminder-scheduler.test.ts # 截止提醒通知和已提醒 key 写回
     │   ├── smoke-script.test.ts      # smoke 脚本和 CI 串联
-    │   ├── vitest-config.test.ts     # Vitest 排除本地 worktree/产物目录
-    │   └── store.test.ts             # 本地存储文件创建、保存、损坏 JSON 行为
+    │   ├── store.read-write.test.ts  # 本地存储文件创建、保存和损坏 JSON 行为
+    │   ├── store.trash-retention.test.ts # 回收站过期清理和写回失败容错
+    │   ├── store.migration.test.ts   # 旧标签、设置和 previousStatus 迁移
+    │   └── vitest-config.test.ts     # Vitest 排除本地 worktree/产物目录
     ├── preload/
     │   └── index.test.ts             # preload 暴露 API 和 IPC 通道契约
     ├── renderer/
@@ -154,10 +186,12 @@ idea-notes/
     │   ├── testUtils.ts              # renderer 测试兼容导出入口
     │   ├── App.*.test.tsx            # 按 core/editor/sidebar/toolbar/theme/settings/card/trash 等域拆分
     │   ├── DialogShell.test.tsx      # 弹窗焦点和键盘行为
-    │   ├── DropdownMenu.test.tsx     # 通用下拉菜单组件行为
+    │   ├── DropdownMenu.test.tsx     # 下拉菜单焦点、键盘和关闭行为
     │   └── noteDeadline.test.ts      # 截止状态纯逻辑契约
     ├── shared/
-    │   ├── noteLogic.test.ts         # 共享业务逻辑测试
+    │   ├── noteLogic.test.ts         # shared 业务逻辑聚合导出守护
+    │   ├── notes/                    # checklist、筛选、提醒、统计、回收站逻辑测试
+    │   ├── tags/                     # 标签创建、重命名、删除和颜色逻辑测试
     │   └── ideaNotesDataValidation.test.ts # 运行时数据结构校验测试
     └── smoke/
         └── build-output.test.ts      # 生产构建产物 smoke
@@ -170,7 +204,11 @@ idea-notes/
 3. `src/main/ipc/registerIpc.ts` 注册 IPC handler，并用主窗口来源校验保护桌面能力。
 4. `src/main/window/createMainWindow.ts` 创建窗口并保持 preload 路径和窗口状态契约。
 5. `src/main/store.ts` 负责读取和保存 `IdeaNotesData`，旧数据归一化在 `src/main/store/normalizeData.ts`。
-6. `src/shared/noteLogic.ts` 是兼容导出入口，具体规则按 `notes/`、`tags/`、`settings/` 拆分。
+6. `src/main/store/backup.ts` 负责数据导出、覆盖导入和合并导入。
+7. `src/main/reminders/reminderScheduler.ts` 负责截止提醒通知调度和已提醒 key 写回。
+8. Renderer 组件按职责拆分，概览统计在 `src/renderer/src/components/overview/StatsPanel.tsx`，保存反馈在 `src/renderer/src/components/feedback/SaveFeedbackAlert.tsx`，通用下拉菜单按钮和菜单分别在 `src/renderer/src/components/ui/dropdown/DropdownButton.tsx`、`src/renderer/src/components/ui/dropdown/DropdownMenu.tsx`。
+9. Renderer 工具函数放在 `src/renderer/src/utils/`，包括 `highlightText.tsx` 搜索高亮、`markdownPreview.tsx` Markdown 预览、`noteCounts.ts` 笔记计数、`tagDisplay.ts` 标签展示，以及 `noteDraft.ts` 草稿转换。
+10. `src/shared/noteLogic.ts` 是兼容导出入口，具体规则按 `notes/`、`tags/`、`settings/` 拆分。
 
 ## 数据文件与错误处理
 
@@ -195,23 +233,26 @@ GitHub Actions 位于 `.github/workflows/ci.yml`，在 `pull_request` 和推送�
 
 ## 测试策略
 
-| 修改范围                                                | 推荐命令                                                                       | 覆盖重点                                      |
-| ------------------------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------- |
-| `src/shared/`                                           | `npm test -- tests/shared/noteLogic.test.ts`                                   | 纯业务逻辑、筛选排序、标签、回收站            |
-| `src/shared/ideaNotesDataValidation.ts`                 | `npm test -- tests/shared/ideaNotesDataValidation.test.ts`                     | 持久化数据运行时结构校验                      |
-| `src/main/store.ts`                                     | `npm test -- tests/main/store.test.ts`                                         | userData 文件、默认数据、保存写入、损坏 JSON  |
-| 打包脚本、安装包目标、桌面图标                          | `npm test -- tests/main/packaging-config.test.ts`                              | package 脚本、electron-builder 目标、图标资源 |
-| `src/main/window/`                                      | `npm test -- tests/main/window-config.test.ts`                                 | preload 路径、窗口尺寸、桌面图标              |
-| `src/main/platform/`                                    | `npm test -- tests/main/linux-startup.test.ts`                                 | Linux 启动参数、桌面标识                      |
-| `src/main/ipc/`                                         | `npm test -- tests/main/ipc-contract.test.ts`                                  | IPC 通道、来源校验、payload 校验              |
-| `src/preload/index.ts`、`IdeaNotesApi`                  | `npm test -- tests/preload/index.test.ts`                                      | 暴露 API、IPC 通道、禁止任意 ipcRenderer      |
-| renderer 组件、样式、i18n                               | `npm test -- tests/renderer`                                                   | React 交互、样式契约、文案同步、卡片流程      |
-| TypeScript/TSX/配置脚本                                 | `npm run lint`                                                                 | ESLint 静态检查、React Hooks 基础规则         |
-| 源码、测试、配置和版本化文档                            | `npm run format:check`                                                         | Prettier 格式一致性                           |
-| `package.json`、`.github/workflows`、`vitest.config.ts` | `npm test -- tests/main/smoke-script.test.ts tests/main/vitest-config.test.ts` | CI/smoke 脚本和测试扫描边界                   |
-| 生产构建产物                                            | `npm run build && npm run smoke`                                               | main/preload/renderer 关键产物                |
-| 全仓交付前                                              | `npm test`                                                                     | 全量回归                                      |
-| 构建/入口/打包相关                                      | `npm run build`                                                                | main/preload/renderer 生产构建                |
+| 修改范围                                                                                  | 推荐命令                                                                                                                      | 覆盖重点                                                             |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| `src/shared/`                                                                             | `npm test -- tests/shared`                                                                                                    | 纯业务逻辑、筛选排序、标签、回收站和聚合导出入口                     |
+| `src/shared/ideaNotesDataValidation.ts`                                                   | `npm test -- tests/shared/ideaNotesDataValidation.test.ts`                                                                    | 持久化数据运行时结构校验                                             |
+| `src/main/store.ts`、`src/main/store/normalizeData.ts`、`src/main/store/writeJsonFile.ts` | `npm test -- tests/main/store.read-write.test.ts tests/main/store.trash-retention.test.ts tests/main/store.migration.test.ts` | userData 文件、默认数据、保存写入、损坏 JSON、回收站保留、旧数据迁移 |
+| `src/main/store/backup.ts`                                                                | `npm test -- tests/main/backup.test.ts`                                                                                       | 数据导出、覆盖导入、合并导入和非法 JSON                              |
+| `src/main/reminders/reminderScheduler.ts`                                                 | `npm test -- tests/main/reminder-scheduler.test.ts`                                                                           | 截止提醒通知和已提醒 key 写回                                        |
+| 打包脚本、安装包目标、桌面图标                                                            | `npm test -- tests/main/packaging-config.test.ts`                                                                             | package 脚本、electron-builder 目标、图标资源                        |
+| `src/main/window/`                                                                        | `npm test -- tests/main/window-config.test.ts`                                                                                | preload 路径、窗口尺寸、桌面图标                                     |
+| `src/main/platform/`                                                                      | `npm test -- tests/main/linux-startup.test.ts`                                                                                | Linux 启动参数、桌面标识                                             |
+| `src/main/ipc/`                                                                           | `npm test -- tests/main/ipc-contract.test.ts`                                                                                 | IPC 通道、来源校验、payload 校验                                     |
+| `src/preload/index.ts`、`IdeaNotesApi`                                                    | `npm test -- tests/preload/index.test.ts`                                                                                     | 暴露 API、IPC 通道、禁止任意 ipcRenderer                             |
+| `src/renderer/src/components/ui/dropdown/`                                                | `npm test -- tests/renderer/DropdownMenu.test.tsx`                                                                            | 下拉菜单焦点、键盘和关闭行为                                         |
+| renderer 组件、样式、i18n                                                                 | `npm test -- tests/renderer`                                                                                                  | React 交互、样式契约、文案同步、卡片流程                             |
+| TypeScript/TSX/配置脚本                                                                   | `npm run lint`                                                                                                                | ESLint 静态检查、React Hooks 基础规则                                |
+| 源码、测试、配置和版本化文档                                                              | `npm run format:check`                                                                                                        | Prettier 格式一致性                                                  |
+| `package.json`、`.github/workflows`、`vitest.config.ts`                                   | `npm test -- tests/main/smoke-script.test.ts tests/main/vitest-config.test.ts`                                                | CI/smoke 脚本和测试扫描边界                                          |
+| 生产构建产物                                                                              | `npm run build && npm run smoke`                                                                                              | main/preload/renderer 关键产物                                       |
+| 全仓交付前                                                                                | `npm test`                                                                                                                    | 全量回归                                                             |
+| 构建/入口/打包相关                                                                        | `npm run build`                                                                                                               | main/preload/renderer 生产构建                                       |
 
 ## 开发规范
 
