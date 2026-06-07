@@ -41,6 +41,7 @@ export interface IdeaNote {
   createdAt: number;
   updatedAt: number;
   trashedAt?: number;
+  previousStatus?: Exclude<NoteStatus, "trash">;
   notifiedReminderKeys?: string[];
 }
 

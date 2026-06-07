@@ -5,6 +5,7 @@
 import { defaultSettings } from "@shared/defaultData";
 import { sanitizeIdeaNotesData } from "@shared/ideaNotesDataValidation";
 import { createNextTag, ensureUniqueTagId } from "@shared/noteLogic";
+import { normalizeTagColor } from "@shared/tags/tagColor";
 import type { IdeaNotesData, IdeaTag } from "@shared/types";
 
 const themeModes = new Set(["light", "dark", "system"]);
@@ -45,8 +46,8 @@ function normalizeGlobalTags(tags: unknown): IdeaTag[] {
     if (!name || seenNames.has(name)) continue;
     const fallbackTag = createNextTag(name, result);
     const color =
-      isRecord(item) && typeof item.color === "string" && item.color.trim()
-        ? item.color
+      isRecord(item) && typeof item.color === "string"
+        ? (normalizeTagColor(item.color) ?? fallbackTag.color)
         : fallbackTag.color;
     const importedId =
       isRecord(item) && typeof item.id === "string" && item.id.trim()
@@ -104,15 +105,34 @@ function normalizeNotifiedReminderKeys(keys: unknown): string[] | undefined {
   return normalized.length > 0 ? [...new Set(normalized)] : undefined;
 }
 
+function normalizePreviousStatus(note: IdeaNotesData["notes"][number]): {
+  previousStatus?: IdeaNotesData["notes"][number]["previousStatus"];
+} {
+  const { previousStatus } = note;
+  if (
+    note.status !== "trash" ||
+    (previousStatus !== "active" &&
+      previousStatus !== "completed" &&
+      previousStatus !== "archive")
+  ) {
+    return {};
+  }
+  return { previousStatus };
+}
+
 export function normalizeData(data: IdeaNotesData): IdeaNotesData {
   return sanitizeIdeaNotesData({
     ...data,
     tags: normalizeGlobalTags(data.tags),
-    notes: data.notes.map((note) => ({
-      ...note,
-      tags: normalizeNoteTags(note.tags),
-      notifiedReminderKeys: normalizeNotifiedReminderKeys(note.notifiedReminderKeys),
-    })),
+    notes: data.notes.map((note) => {
+      const { previousStatus: _previousStatus, ...rest } = note;
+      return {
+        ...rest,
+        tags: normalizeNoteTags(note.tags),
+        notifiedReminderKeys: normalizeNotifiedReminderKeys(note.notifiedReminderKeys),
+        ...normalizePreviousStatus(note),
+      };
+    }),
     settings: normalizeSettings(data.settings),
   });
 }

@@ -14,22 +14,38 @@ const baseTime = Date.parse("2026-05-29T08:00:00.000Z");
 
 function validDataWithExtraFields(): unknown {
   const data = getDefaultData(baseTime);
+  const checklistWithLegacyFields = data.notes[0].checklist.map((item) => ({
+    ...item,
+    legacyChecklistField: "保留但不消费",
+  }));
   return {
     ...data,
     legacyRootField: "保留但不消费",
+    tags: [{ id: "tag-work", name: "工作", color: " #10B981 " }],
     settings: {
       ...data.settings,
       backgroundColor: "#102030",
       legacySetting: true,
     },
-    notes: data.notes.map((note) => ({
-      ...note,
-      legacyNoteField: "保留但不消费",
-      checklist: note.checklist.map((item) => ({
-        ...item,
-        legacyChecklistField: "保留但不消费",
-      })),
-    })),
+    notes: [
+      {
+        ...data.notes[0],
+        id: "active-with-previous",
+        status: "active",
+        previousStatus: "completed",
+        legacyNoteField: "保留但不消费",
+        checklist: checklistWithLegacyFields,
+      },
+      {
+        ...data.notes[0],
+        id: "trash-with-previous",
+        status: "trash",
+        trashedAt: baseTime,
+        previousStatus: "archive",
+        legacyNoteField: "保留但不消费",
+        checklist: checklistWithLegacyFields,
+      },
+    ],
   };
 }
 
@@ -82,15 +98,19 @@ describe("validateIdeaNotesData", () => {
     ).toBe(true);
   });
 
-  it("清理已删除的背景设置字段但保留其它旧字段", () => {
+  it("清理已删除的背景设置字段、保留其它旧字段并归一化标签颜色", () => {
     const data = validDataWithExtraFields();
     if (!validateIdeaNotesData(data)) throw new Error("测试数据应通过校验");
 
     const sanitized = sanitizeIdeaNotesData(data);
 
+    expect(sanitized.tags[0]?.color).toBe("#10b981");
     expect(sanitized.settings).not.toHaveProperty("backgroundColor");
     expect(sanitized.settings).toHaveProperty("legacySetting", true);
+    expect(sanitized.notes[0]).not.toHaveProperty("previousStatus");
     expect(sanitized.notes[0]).toHaveProperty("legacyNoteField", "保留但不消费");
+    expect(sanitized.notes[1]?.previousStatus).toBe("archive");
+    expect(sanitized.notes[1]).toHaveProperty("legacyNoteField", "保留但不消费");
   });
 
   it.each([
@@ -158,6 +178,10 @@ describe("validateIdeaNotesData", () => {
     { name: "缺少 name", tag: { id: "tag-work", color: "#2563eb" } },
     { name: "缺少 color", tag: { id: "tag-work", name: "工作" } },
     { name: "非法 color", tag: { id: "tag-work", name: "工作", color: 123 } },
+    {
+      name: "非法 color 字符串",
+      tag: { id: "tag-work", name: "工作", color: "not-a-color" },
+    },
   ])("拒绝非法标签对象：$name", ({ tag }) => {
     const data = getDefaultData(baseTime);
 

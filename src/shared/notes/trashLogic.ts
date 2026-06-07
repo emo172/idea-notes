@@ -37,14 +37,20 @@ export function toggleNoteCompleted(note: IdeaNote, now = Date.now()): IdeaNote 
 }
 
 export function moveNoteToTrash(note: IdeaNote, now = Date.now()): IdeaNote {
-  // 移入回收站时保留全部内容，并记录 trashedAt 供后续保留时间策略使用。
-  return { ...note, status: "trash", updatedAt: now, trashedAt: now };
+  // 移入回收站时记录删除前状态，恢复时能回到用户原来的工作区。
+  return {
+    ...note,
+    status: "trash",
+    previousStatus: note.status === "trash" ? note.previousStatus : note.status,
+    updatedAt: now,
+    trashedAt: now,
+  };
 }
 
 export function restoreNoteFromTrash(note: IdeaNote, now = Date.now()): IdeaNote {
-  // 从回收站恢复时回到进行中，并移除回收时间戳。
-  const { trashedAt: _trashedAt, ...rest } = note;
-  return { ...rest, status: "active", updatedAt: now };
+  // 旧数据没有 previousStatus 时仍恢复到进行中，保持兼容。
+  const { trashedAt: _trashedAt, previousStatus, ...rest } = note;
+  return { ...rest, status: previousStatus ?? "active", updatedAt: now };
 }
 
 export function permanentlyDeleteNote(notes: IdeaNote[], noteId: string): IdeaNote[] {
