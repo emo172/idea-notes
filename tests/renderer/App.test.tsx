@@ -18,19 +18,31 @@ describe("App renderer test structure", () => {
       "App.editor-failure.test.tsx",
       "App.sidebar.test.tsx",
       "App.window-controls.test.tsx",
-      "App.toolbar.test.tsx",
+      "App.toolbar-controls.test.tsx",
+      "App.search-query.test.tsx",
+      "App.keyboard-shortcuts.test.tsx",
+      "App.overview.test.tsx",
+      "App.ui-contracts.test.tsx",
       "App.theme-mode.test.tsx",
       "App.style-boundary.test.tsx",
       "App.responsive-style.test.tsx",
       "App.deadline-style.test.tsx",
-      "App.tags.test.tsx",
+      "App.tags-crud.test.tsx",
+      "App.tags-failure.test.tsx",
+      "App.tags-color.test.tsx",
       "App.settings-appearance.test.tsx",
-      "App.settings-system.test.tsx",
+      "App.settings-startup.test.tsx",
+      "App.settings-reminders.test.tsx",
+      "App.settings-backup.test.tsx",
       "App.settings-reset.test.tsx",
       "App.settings-i18n.test.tsx",
-      "App.card-render.test.tsx",
+      "App.card-content.test.tsx",
+      "App.card-deadline.test.tsx",
+      "App.card-meta.test.tsx",
       "App.card-actions.test.tsx",
-      "App.trash-flow.test.tsx",
+      "App.trash-actions.test.tsx",
+      "App.trash-confirm.test.tsx",
+      "App.trash-failure.test.tsx",
       "App.duplicate-flow.test.tsx",
     ];
 
@@ -38,10 +50,58 @@ describe("App renderer test structure", () => {
       expect(existsSync(resolve(rendererTests, file))).toBe(true);
     }
 
+    expect(
+      ["toolbar", "card-render", "trash-flow", "settings-system", "tags"].some((name) =>
+        existsSync(resolve(rendererTests, `App.${name}.test.tsx`)),
+      ),
+    ).toBe(false);
+
     const thisFile = readFileSync(resolve(rendererTests, "App.test.tsx"), "utf8");
-    expect(thisFile.match(/\bit\(/g) ?? []).toHaveLength(7);
-    expect(thisFile.split("\n").length).toBeLessThan(170);
+    expect(thisFile.match(/\bit\(/g) ?? []).toHaveLength(11);
+    expect(thisFile.split("\n").length).toBeLessThan(320);
     expect(thisFile).not.toMatch(/^function installApi/m);
+  });
+
+  it("拆分 App 主内容和覆盖层组合组件", () => {
+    const appPath = resolve("src/renderer/src/app");
+    const appFiles = [
+      "MainNotesView.tsx",
+      "OverviewView.tsx",
+      "TagSettingsView.tsx",
+      "SettingsOverlay.tsx",
+      "EditorOverlay.tsx",
+      "ConfirmOverlays.tsx",
+    ];
+    const mainContentSource = readFileSync(
+      resolve(appPath, "AppMainContent.tsx"),
+      "utf8",
+    );
+    const overlaysSource = readFileSync(resolve(appPath, "AppOverlays.tsx"), "utf8");
+
+    for (const file of appFiles) {
+      expect(existsSync(resolve(appPath, file))).toBe(true);
+    }
+
+    for (const component of ["MainNotesView", "OverviewView", "TagSettingsView"]) {
+      expect(mainContentSource).toContain(
+        `import { ${component} } from "./${component}";`,
+      );
+      expect(mainContentSource).toContain(`<${component}`);
+    }
+    expect(mainContentSource).not.toContain("<NotesToolbar");
+    expect(mainContentSource).not.toContain("<NotesList");
+    expect(mainContentSource).not.toContain("<StatsPanel");
+    expect(mainContentSource).not.toContain("<TagSettingsPanel");
+
+    for (const component of ["SettingsOverlay", "EditorOverlay", "ConfirmOverlays"]) {
+      expect(overlaysSource).toContain(
+        `import { ${component} } from "./${component}";`,
+      );
+      expect(overlaysSource).toContain(`<${component}`);
+    }
+    expect(overlaysSource).not.toContain("<SettingsPanel");
+    expect(overlaysSource).not.toContain("<EditorDialog");
+    expect(overlaysSource.match(/<ConfirmDialog/g) ?? []).toHaveLength(0);
   });
 
   it("抽出 useNoteFilters 管理笔记筛选状态", () => {
@@ -63,32 +123,32 @@ describe("App renderer test structure", () => {
 
   it("抽出 NotesToolbar 承载工具栏 JSX", () => {
     const toolbarPath = resolve("src/renderer/src/components/toolbar/NotesToolbar.tsx");
-    const mainContentPath = resolve("src/renderer/src/app/AppMainContent.tsx");
-    const mainContentSource = readFileSync(mainContentPath, "utf8");
+    const mainNotesViewPath = resolve("src/renderer/src/app/MainNotesView.tsx");
+    const mainNotesViewSource = readFileSync(mainNotesViewPath, "utf8");
 
     expect(existsSync(toolbarPath)).toBe(true);
-    expect(mainContentSource).toContain(
+    expect(mainNotesViewSource).toContain(
       'import { NotesToolbar } from "../components/toolbar/NotesToolbar";',
     );
-    expect(mainContentSource).toContain("<NotesToolbar");
-    expect(mainContentSource).not.toContain('className="toolbar"');
-    expect(mainContentSource).not.toContain('className="search-field"');
-    expect(mainContentSource).not.toContain('className="toolbar-select-group"');
+    expect(mainNotesViewSource).toContain("<NotesToolbar");
+    expect(mainNotesViewSource).not.toContain('className="toolbar"');
+    expect(mainNotesViewSource).not.toContain('className="search-field"');
+    expect(mainNotesViewSource).not.toContain('className="toolbar-select-group"');
   });
 
   it("抽出 NotesList 承载笔记列表 JSX", () => {
     const notesListPath = resolve("src/renderer/src/components/notes/NotesList.tsx");
-    const mainContentPath = resolve("src/renderer/src/app/AppMainContent.tsx");
-    const mainContentSource = readFileSync(mainContentPath, "utf8");
+    const mainNotesViewPath = resolve("src/renderer/src/app/MainNotesView.tsx");
+    const mainNotesViewSource = readFileSync(mainNotesViewPath, "utf8");
 
     expect(existsSync(notesListPath)).toBe(true);
-    expect(mainContentSource).toContain(
+    expect(mainNotesViewSource).toContain(
       'import { NotesList } from "../components/notes/NotesList";',
     );
-    expect(mainContentSource).toContain("<NotesList");
-    expect(mainContentSource).not.toContain('className="notes-list"');
-    expect(mainContentSource).not.toContain("visibleNotes.map(");
-    expect(mainContentSource).not.toContain("copy.loadErrorTitle");
+    expect(mainNotesViewSource).toContain("<NotesList");
+    expect(mainNotesViewSource).not.toContain('className="notes-list"');
+    expect(mainNotesViewSource).not.toContain("visibleNotes.map(");
+    expect(mainNotesViewSource).not.toContain("copy.loadErrorTitle");
   });
 
   it("拆分 NoteCard 子结构并隔离截止状态逻辑", () => {
@@ -152,5 +212,67 @@ describe("App renderer test structure", () => {
     expect(appSource).not.toContain('className="titlebar"');
     expect(appSource).not.toContain('className="sidebar"');
     expect(appSource).not.toContain('className="nav-menu"');
+  });
+
+  it("拆分 AppShell 标题栏和侧栏子组件", () => {
+    const shellPath = resolve("src/renderer/src/components/shell");
+    const appShellSource = readFileSync(resolve(shellPath, "AppShell.tsx"), "utf8");
+
+    for (const component of ["Titlebar", "SidebarNav", "SidebarTags"]) {
+      expect(existsSync(resolve(shellPath, `${component}.tsx`))).toBe(true);
+      expect(appShellSource).toContain(
+        `import { ${component} } from "./${component}";`,
+      );
+      expect(appShellSource).toContain(`<${component}`);
+    }
+
+    expect(appShellSource).not.toContain('className="titlebar"');
+    expect(appShellSource).not.toContain('className="nav-menu"');
+    expect(appShellSource).not.toContain('className="tag-stack"');
+    expect(appShellSource).not.toContain("tags.map(");
+  });
+
+  it("拆分标签设置面板子组件和草稿 hook", () => {
+    const settingsPath = resolve("src/renderer/src/components/settings");
+    const tagSettingsSource = readFileSync(
+      resolve(settingsPath, "TagSettingsPanel.tsx"),
+      "utf8",
+    );
+
+    for (const file of [
+      "TagAddForm.tsx",
+      "TagManagerList.tsx",
+      "TagManagerItem.tsx",
+      "useTagDrafts.ts",
+    ]) {
+      expect(existsSync(resolve(settingsPath, file))).toBe(true);
+    }
+
+    for (const component of ["TagAddForm", "TagManagerList"]) {
+      expect(tagSettingsSource).toContain(
+        `import { ${component} } from "./${component}";`,
+      );
+      expect(tagSettingsSource).toContain(`<${component}`);
+    }
+    expect(tagSettingsSource).toContain(
+      'import { useTagDrafts } from "./useTagDrafts";',
+    );
+    expect(tagSettingsSource).toContain("useTagDrafts({");
+    expect(tagSettingsSource).not.toContain('className="tag-add-row"');
+    expect(tagSettingsSource).not.toContain('className="tag-manager-item"');
+    expect(tagSettingsSource).not.toContain("data.tags.map(");
+    expect(tagSettingsSource).not.toContain("useState<Map");
+  });
+
+  it("拆分笔记卡片更多操作菜单", () => {
+    const notesPath = resolve("src/renderer/src/components/notes");
+    const headerSource = readFileSync(resolve(notesPath, "NoteCardHeader.tsx"), "utf8");
+
+    expect(existsSync(resolve(notesPath, "NoteCardMenu.tsx"))).toBe(true);
+    expect(headerSource).toContain('import { NoteCardMenu } from "./NoteCardMenu";');
+    expect(headerSource).toContain("<NoteCardMenu");
+    expect(headerSource).not.toContain("<DropdownMenu");
+    expect(headerSource).not.toContain("copy.menuRestoreArchive");
+    expect(headerSource).not.toContain("copy.permanentDelete");
   });
 });

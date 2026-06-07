@@ -101,6 +101,56 @@ describe("App window controls", () => {
     }
   });
 
+  it("置顶窗口失败时显式忽略 IPC 拒绝并保留原状态", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+    const unhandledRejection = vi.fn();
+    vi.mocked(api.toggleAlwaysOnTop).mockRejectedValueOnce(
+      new Error("always on top failed"),
+    );
+    process.on("unhandledRejection", unhandledRejection);
+
+    try {
+      render(<App />);
+
+      await screen.findByText("重构 Desktop App 导航栏");
+      await user.click(screen.getByRole("button", { name: "置顶" }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const pinButton = screen.getByRole("button", { name: "置顶" });
+      expect(api.toggleAlwaysOnTop).toHaveBeenCalledTimes(1);
+      expect(unhandledRejection).not.toHaveBeenCalled();
+      expect(pinButton.classList).not.toContain("active");
+    } finally {
+      process.off("unhandledRejection", unhandledRejection);
+    }
+  });
+
+  it("最大化窗口失败时显式忽略 IPC 拒绝并保留原状态", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+    const unhandledRejection = vi.fn();
+    vi.mocked(api.toggleMaximizeWindow).mockRejectedValueOnce(
+      new Error("maximize failed"),
+    );
+    process.on("unhandledRejection", unhandledRejection);
+
+    try {
+      render(<App />);
+
+      await screen.findByText("重构 Desktop App 导航栏");
+      await user.click(screen.getByRole("button", { name: "最大化" }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      expect(api.toggleMaximizeWindow).toHaveBeenCalledTimes(1);
+      expect(unhandledRejection).not.toHaveBeenCalled();
+      expect(screen.getByRole("button", { name: "最大化" })).toBeTruthy();
+      expect(screen.queryByRole("button", { name: "还原窗口" })).toBeNull();
+    } finally {
+      process.off("unhandledRejection", unhandledRejection);
+    }
+  });
+
   it("标题栏图标组件从 Phosphor 图标库导入", () => {
     const packageJson = JSON.parse(readFileSync(resolve("package.json"), "utf8"));
     const appSource = readFileSync(

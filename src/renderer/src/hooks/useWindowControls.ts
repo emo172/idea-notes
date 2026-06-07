@@ -33,13 +33,19 @@ export function useWindowControls(): {
   return {
     windowState,
     toggleAlwaysOnTop: async () => {
-      setWindowState(await window.ideaNotes.toggleAlwaysOnTop());
+      await window.ideaNotes
+        .toggleAlwaysOnTop()
+        .then((state) => setWindowState(state))
+        .catch(() => undefined);
     },
     minimizeWindow: () => {
       void window.ideaNotes.minimizeWindow().catch(() => undefined);
     },
     toggleMaximizeWindow: async () => {
-      setWindowState(await window.ideaNotes.toggleMaximizeWindow());
+      await window.ideaNotes
+        .toggleMaximizeWindow()
+        .then((state) => setWindowState(state))
+        .catch(() => undefined);
     },
     closeWindow: () => {
       void window.ideaNotes.closeWindow().catch(() => undefined);
