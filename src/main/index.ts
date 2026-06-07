@@ -5,11 +5,11 @@
 // 3. 保持入口文件只承担启动编排，不直接承载窗口、IPC 和平台细节。
 import { app, BrowserWindow } from "electron";
 import { registerIpc } from "./ipc/registerIpc";
-import { configureLinuxDevelopmentStartup } from "./platform/linuxStartup";
+import { configureLinuxStartup } from "./platform/linuxStartup";
 import { startReminderScheduler } from "./reminders/reminderScheduler";
 import { createMainWindow } from "./window/createMainWindow";
 
-configureLinuxDevelopmentStartup(app);
+configureLinuxStartup(app);
 
 // 主窗口引用只保存在主进程内，用于校验 IPC 请求来源和管理窗口生命周期。
 let mainWindow: BrowserWindow | null = null;

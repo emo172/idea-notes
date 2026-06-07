@@ -17,16 +17,16 @@
 | 命令                    | 产物                               |
 | ----------------------- | ---------------------------------- |
 | `npm run package`       | 当前平台目录包，输出到 `release/`  |
-| `npm run package:linux` | Linux `AppImage`                   |
+| `npm run package:linux` | Linux `AppImage` 和 `deb`          |
 | `npm run package:win`   | Windows `nsis` 安装包              |
 | `npm run package:mac`   | macOS `dmg`                        |
 | `npm run package:all`   | 按当前环境支持情况生成多平台安装包 |
 
 ## 平台注意事项
 
-- Linux：本地开发脚本使用 `NO_SANDBOX=1`，但发布包仍需在目标发行版上手动启动验证；还要确认系统通知中心、文件对话框和开机自启动入口在目标桌面环境可用。
-- Windows：`nsis` 产物需要在 Windows 环境验证安装、卸载、桌面快捷方式、系统通知、文件对话框和开机自启动行为。
-- macOS：`dmg` 产物如需分发给非本机用户，通常还需要签名和公证；当前仓库未配置签名证书。发布前仍需在 macOS 上确认通知权限提示、系统通知中心、文件对话框和登录项行为。
+- Linux：`AppImage` 适合免安装运行；`deb` 适合 Debian/Ubuntu 系统安装，安装后应在系统应用菜单中出现“灵感笔记”图标。本地开发脚本使用 `NO_SANDBOX=1`，但发布包仍需在目标发行版上手动启动验证；还要确认系统通知中心、文件对话框和开机自启动入口在目标桌面环境可用。
+- Windows：`nsis` 产物会创建“灵感笔记”开始菜单快捷方式和桌面快捷方式；需要在 Windows 环境验证安装、卸载、点击软件图标启动、系统通知、文件对话框和开机自启动行为。
+- macOS：`dmg` 产物如需分发给非本机用户，通常还需要签名和公证；当前仓库未配置签名证书。发布前仍需在 macOS 上确认拖入 Applications 后的应用图标启动、通知权限提示、系统通知中心、文件对话框和登录项行为。
 
 ## smoke 边界
 
