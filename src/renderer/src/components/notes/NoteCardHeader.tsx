@@ -3,14 +3,13 @@
 // 1. 渲染卡片标题、编辑按钮和更多操作菜单。
 // 2. 按笔记状态控制菜单项，不改变 App 传入回调的触发语义。
 import type { ReactElement } from "react";
-import { DotsThreeIcon, PencilSimpleIcon } from "@phosphor-icons/react";
+import { PencilSimpleIcon } from "@phosphor-icons/react";
 import { parseSearchQuery } from "@shared/noteLogic";
 import type { IdeaNote } from "@shared/types";
 import type { AppCopy } from "../../i18n";
 import { highlightText } from "../../utils/highlightText";
 import { AppButton } from "../ui/AppButton";
-import { DropdownButton } from "../ui/dropdown/DropdownButton";
-import { DropdownMenu } from "../ui/dropdown/DropdownMenu";
+import { NoteCardMenu } from "./NoteCardMenu";
 
 interface NoteCardHeaderProps {
   note: IdeaNote;
@@ -67,72 +66,21 @@ export function NoteCardHeader({
             onClick={() => onOpen(note)}
           />
         ) : null}
-        <DropdownButton
-          buttonClassName="note-icon-btn"
-          icon={<DotsThreeIcon weight="bold" />}
-          label={copy.moreActions}
-        >
-          <DropdownMenu className="note-context-menu" label={copy.moreActions}>
-            {canEdit ? (
-              <>
-                <button type="button" role="menuitem" onClick={() => onOpen(note)}>
-                  {copy.menuEdit}
-                </button>
-                <button type="button" role="menuitem" onClick={onToggleCompleted}>
-                  {copy.menuComplete}
-                </button>
-                <button type="button" role="menuitem" onClick={() => onArchive(note)}>
-                  {copy.menuArchive}
-                </button>
-                <button type="button" role="menuitem" onClick={() => onDuplicate(note)}>
-                  {copy.menuDuplicate}
-                </button>
-                <button type="button" role="menuitem" onClick={() => onTrash(note)}>
-                  {copy.menuMoveTrash}
-                </button>
-              </>
-            ) : null}
-            {isCompleted ? (
-              <>
-                <button type="button" role="menuitem" onClick={onToggleCompleted}>
-                  {copy.menuRestoreProgress}
-                </button>
-                <button type="button" role="menuitem" onClick={() => onTrash(note)}>
-                  {copy.menuMoveTrash}
-                </button>
-              </>
-            ) : null}
-            {note.status === "archive" ? (
-              <>
-                <button
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onRestoreArchived(note)}
-                >
-                  {copy.menuRestoreArchive}
-                </button>
-                <button type="button" role="menuitem" onClick={() => onTrash(note)}>
-                  {copy.menuMoveTrash}
-                </button>
-              </>
-            ) : null}
-            {isInTrash ? (
-              <>
-                <button type="button" role="menuitem" onClick={() => onRestore(note)}>
-                  {copy.menuRestoreTrash}
-                </button>
-                <button
-                  className="danger"
-                  type="button"
-                  role="menuitem"
-                  onClick={() => onDelete(note)}
-                >
-                  {copy.permanentDelete}
-                </button>
-              </>
-            ) : null}
-          </DropdownMenu>
-        </DropdownButton>
+        <NoteCardMenu
+          note={note}
+          copy={copy}
+          canEdit={canEdit}
+          isCompleted={isCompleted}
+          isInTrash={isInTrash}
+          onOpen={onOpen}
+          onToggleCompleted={onToggleCompleted}
+          onArchive={onArchive}
+          onTrash={onTrash}
+          onRestore={onRestore}
+          onRestoreArchived={onRestoreArchived}
+          onDuplicate={onDuplicate}
+          onDelete={onDelete}
+        />
       </div>
     </div>
   );
