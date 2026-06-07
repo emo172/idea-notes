@@ -1,6 +1,6 @@
 /*
  * 笔记卡片样式模块。
- * 管理卡片容器、标题、状态、优先级、截止日期、正文预览和标签。
+ * 管理卡片容器、标题、卡片状态和头尾基础布局。
  */
 .note-card {
   --note-card-bg: var(--surface);
@@ -60,31 +60,9 @@
   opacity: 0.62;
 }
 
-.note-card.deadline-overdue {
-  --note-card-bg: var(--deadline-overdue-card-bg);
-  --note-card-border: color-mix(
-    in oklab,
-    var(--deadline-overdue-text),
-    var(--border) 60%
-  );
-  --deadline-status-color: var(--deadline-overdue-text);
-}
-
-.note-card.deadline-pending {
-  --note-card-bg: var(--deadline-pending-card-bg);
-  --note-card-border: color-mix(
-    in oklab,
-    var(--deadline-pending-text),
-    var(--border) 64%
-  );
-  --deadline-status-color: var(--deadline-pending-text);
-}
-
 .note-header,
-.note-meta,
 .note-footer,
-.card-actions,
-.tags {
+.card-actions {
   display: flex;
   align-items: center;
 }
@@ -92,111 +70,4 @@
 .note-header,
 .note-footer {
   justify-content: space-between;
-}
-
-.priority-label {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--fg-2);
-  background: var(--surface-warm);
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.priority-label.high {
-  color: var(--priority-high);
-  border-color: color-mix(in oklab, var(--priority-high), transparent 68%);
-  background: color-mix(in oklab, var(--priority-high), transparent 90%);
-}
-
-.priority-label.medium {
-  color: var(--priority-medium);
-  border-color: color-mix(in oklab, var(--priority-medium), transparent 68%);
-  background: color-mix(in oklab, var(--priority-medium), transparent 90%);
-}
-
-.priority-label.low {
-  color: var(--priority-low);
-  border-color: color-mix(in oklab, var(--priority-low), transparent 68%);
-  background: color-mix(in oklab, var(--priority-low), transparent 90%);
-}
-
-.note-meta {
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 6px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.note-meta-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.note-meta-item svg {
-  width: 13px;
-  height: 13px;
-}
-
-.deadline-status {
-  display: inline-flex;
-  align-items: center;
-  padding: 2px 7px;
-  border-radius: 999px;
-  background: var(--surface);
-  font-weight: 700;
-}
-
-.deadline-status.overdue {
-  color: var(--deadline-status-color);
-}
-
-.deadline-status.pending {
-  color: var(--deadline-status-color);
-}
-
-.note-body-preview {
-  margin: 0;
-  color: var(--fg-2);
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-  white-space: pre-line;
-}
-
-.search-highlight {
-  padding: 0 2px;
-  border-radius: 4px;
-  color: var(--fg);
-  background: color-mix(in oklab, var(--priority-medium), transparent 72%);
-  font-weight: inherit;
-}
-
-/* 正文和清单预览共用浅色底面，让卡片主体内容从标题、状态和底部动作中分离出来。 */
-.note-content-preview {
-  margin: 12px 0;
-  padding: 8px;
-  border-radius: 8px;
-  background: var(--bg);
-}
-
-.tags {
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.tag {
-  max-width: 100%;
-  padding: 5px 8px;
-  color: var(--tag-color, var(--muted));
-  background: color-mix(
-    in oklab,
-    var(--tag-color, var(--surface-warm)),
-    transparent 88%
-  );
-  overflow-wrap: anywhere;
 }

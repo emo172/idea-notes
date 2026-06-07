@@ -1,0 +1,64 @@
+/*
+ * Markdown 预览样式模块。
+ * 管理编辑器预览面板和预览内容中的标题、段落、列表、引用与代码块。
+ */
+.markdown-preview {
+  flex: 1;
+  min-height: 260px;
+  padding: 16px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--fg);
+  background: var(--surface);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.65;
+}
+
+.markdown-preview h1,
+.markdown-preview h2,
+.markdown-preview h3 {
+  margin: 0 0 10px;
+  color: var(--fg);
+  letter-spacing: 0;
+}
+
+.markdown-preview p,
+.markdown-preview ul,
+.markdown-preview blockquote,
+.markdown-preview pre {
+  margin: 0 0 12px;
+}
+
+.markdown-preview ul {
+  padding-left: 20px;
+}
+
+.markdown-preview blockquote {
+  padding-left: 12px;
+  border-left: 3px solid var(--accent);
+  color: var(--fg-2);
+}
+
+.markdown-preview pre,
+.markdown-preview code {
+  border-radius: 6px;
+  background: color-mix(in oklab, var(--border-soft), var(--surface) 35%);
+}
+
+.markdown-preview pre {
+  padding: 10px 12px;
+  overflow: auto;
+}
+
+.markdown-preview code {
+  padding: 2px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.92em;
+}
+
+.markdown-preview pre code {
+  padding: 0;
+  background: transparent;
+}

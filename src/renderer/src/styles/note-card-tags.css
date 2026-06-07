@@ -1,0 +1,22 @@
+/*
+ * 笔记卡片标签样式模块。
+ * 管理卡片底部标签列表和单个标签视觉状态。
+ */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.tag {
+  max-width: 100%;
+  padding: 5px 8px;
+  color: var(--tag-color, var(--muted));
+  background: color-mix(
+    in oklab,
+    var(--tag-color, var(--surface-warm)),
+    transparent 88%
+  );
+  overflow-wrap: anywhere;
+}

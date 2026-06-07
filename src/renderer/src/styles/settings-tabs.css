@@ -1,0 +1,42 @@
+/*
+ * 设置页签样式模块。
+ * 管理设置侧栏、页签按钮和窄宽度下的横向页签布局。
+ */
+.settings-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-right: 1px solid var(--border);
+  background: var(--surface-warm);
+}
+
+.settings-sidebar h3 {
+  margin: 0;
+}
+
+.settings-tab {
+  min-height: 38px;
+  border-radius: 12px;
+  text-align: left;
+}
+
+.settings-tab.active {
+  color: var(--accent);
+  background: var(--surface);
+}
+
+@media (max-width: 760px) {
+  .settings-sidebar {
+    flex-direction: row;
+    gap: 8px;
+    padding: 12px 18px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+  }
+
+  .settings-tab {
+    flex: 1 0 160px;
+  }
+}
