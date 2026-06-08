@@ -10,6 +10,8 @@ coverage/
 # 项目计划和规格文档由本地 OpenCode 流程维护，不纳入 git 提交。
 docs/
 .omo/
+# 本地隔离工作区目录，防止误提交 git worktree 内容。
+.worktrees/
 # 系统、日志和临时文件。
 .DS_Store
 *.log
