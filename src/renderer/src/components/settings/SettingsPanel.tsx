@@ -98,6 +98,7 @@ export function SettingsPanel({
               copy={copy}
               isSaving={isSaving}
               settings={settings}
+              onSettingsChange={onSettingsChange}
               onStartupChange={onStartupChange}
             />
           ) : null}

@@ -75,6 +75,18 @@ function normalizeSettings(settings: unknown): IdeaNotesData["settings"] {
       typeof legacySettings.startup === "boolean"
         ? legacySettings.startup
         : defaultSettings.startup,
+    silentStart:
+      typeof legacySettings.silentStart === "boolean"
+        ? legacySettings.silentStart
+        : defaultSettings.silentStart,
+    minimizeToTrayOnClose:
+      typeof legacySettings.minimizeToTrayOnClose === "boolean"
+        ? legacySettings.minimizeToTrayOnClose
+        : defaultSettings.minimizeToTrayOnClose,
+    appWindowControls:
+      typeof legacySettings.appWindowControls === "boolean"
+        ? legacySettings.appWindowControls
+        : defaultSettings.appWindowControls,
     trashAutoDelete:
       typeof legacySettings.trashAutoDelete === "string" &&
       trashRetentions.has(legacySettings.trashAutoDelete)

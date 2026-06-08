@@ -4,7 +4,7 @@
 // 2. 确保非法根对象、笔记、设置、枚举和时间戳不会通过校验。
 // 3. 允许旧本地数据残留额外字段，避免迁移期间误伤用户数据。
 import { describe, expect, it } from "vitest";
-import { getDefaultData } from "@shared/defaultData";
+import { defaultSettings, getDefaultData } from "@shared/defaultData";
 import {
   sanitizeIdeaNotesData,
   validateIdeaNotesData,
@@ -50,6 +50,12 @@ function validDataWithExtraFields(): unknown {
 }
 
 describe("validateIdeaNotesData", () => {
+  it("默认设置包含窗口启动和托盘行为字段", () => {
+    expect(defaultSettings.silentStart).toBe(false);
+    expect(defaultSettings.minimizeToTrayOnClose).toBe(false);
+    expect(defaultSettings.appWindowControls).toBe(true);
+  });
+
   it("接受合法数据并允许对象携带额外字段", () => {
     expect(validateIdeaNotesData(validDataWithExtraFields())).toBe(true);
   });
@@ -144,6 +150,9 @@ describe("validateIdeaNotesData", () => {
   it.each([
     { field: "themeMode", value: "sepia" },
     { field: "startup", value: "yes" },
+    { field: "silentStart", value: "yes" },
+    { field: "minimizeToTrayOnClose", value: "yes" },
+    { field: "appWindowControls", value: "yes" },
     { field: "trashAutoDelete", value: "14" },
     { field: "language", value: "fr" },
     { field: "reminders", value: { enabled: true, leadMinutes: 30 } },

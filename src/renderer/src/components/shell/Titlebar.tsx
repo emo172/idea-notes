@@ -18,6 +18,7 @@ import { AppButton } from "../ui/AppButton";
 interface TitlebarProps {
   copy: AppCopy;
   windowState: DesktopWindowState;
+  useAppWindowControls: boolean;
   pinButtonLabel: string;
   onToggleAlwaysOnTop: () => Promise<void>;
   onOpenSettings: () => void;
@@ -29,6 +30,7 @@ interface TitlebarProps {
 export function Titlebar({
   copy,
   windowState,
+  useAppWindowControls,
   pinButtonLabel,
   onToggleAlwaysOnTop,
   onOpenSettings,
@@ -60,27 +62,29 @@ export function Titlebar({
           icon={<SettingsIcon />}
           onClick={onOpenSettings}
         />
-        <div className="window-controls">
-          <AppButton
-            variant="icon"
-            aria-label={copy.minimize}
-            icon={<MinimizeIcon />}
-            onClick={onMinimizeWindow}
-          />
-          <AppButton
-            variant="icon"
-            aria-label={windowState.isMaximized ? copy.restoreWindow : copy.maximize}
-            icon={windowState.isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
-            onClick={onToggleMaximizeWindow}
-          />
-          <AppButton
-            className="close"
-            variant="icon"
-            aria-label={copy.close}
-            icon={<CloseIcon />}
-            onClick={onCloseWindow}
-          />
-        </div>
+        {useAppWindowControls ? (
+          <div className="window-controls">
+            <AppButton
+              variant="icon"
+              aria-label={copy.minimize}
+              icon={<MinimizeIcon />}
+              onClick={onMinimizeWindow}
+            />
+            <AppButton
+              variant="icon"
+              aria-label={windowState.isMaximized ? copy.restoreWindow : copy.maximize}
+              icon={windowState.isMaximized ? <RestoreIcon /> : <MaximizeIcon />}
+              onClick={onToggleMaximizeWindow}
+            />
+            <AppButton
+              className="close"
+              variant="icon"
+              aria-label={copy.close}
+              icon={<CloseIcon />}
+              onClick={onCloseWindow}
+            />
+          </div>
+        ) : null}
       </div>
     </header>
   );

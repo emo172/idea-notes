@@ -16,6 +16,7 @@ interface AppShellProps {
   appBodyClassName: string;
   copy: AppCopy;
   windowState: DesktopWindowState;
+  useAppWindowControls: boolean;
   pinButtonLabel: string;
   viewMode: ViewMode;
   counts: Record<NoteStatus, number>;
@@ -39,6 +40,7 @@ export function AppShell({
   appBodyClassName,
   copy,
   windowState,
+  useAppWindowControls,
   pinButtonLabel,
   viewMode,
   counts,
@@ -61,6 +63,7 @@ export function AppShell({
       <Titlebar
         copy={copy}
         windowState={windowState}
+        useAppWindowControls={useAppWindowControls}
         pinButtonLabel={pinButtonLabel}
         onToggleAlwaysOnTop={onToggleAlwaysOnTop}
         onOpenSettings={onOpenSettings}

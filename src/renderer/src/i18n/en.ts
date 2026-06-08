@@ -17,8 +17,16 @@ export const enSettings: SettingsCopy = {
   dataSettings: "Data Management",
   themeMode: "Theme Mode",
   themeDescription: "Set the default light or dark appearance",
-  startupBehavior: "Startup Behavior",
+  startupBehavior: "Run automatically at system startup",
   startupDescription: "Start Idea Notes after system login",
+  silentStart: "Silent Start",
+  silentStartDescription: "Start without showing the main window and stay in tray",
+  minimizeToTrayOnClose: "Minimize to tray on close",
+  minimizeToTrayOnCloseDescription:
+    "Hide the window when closing; turn off to quit directly",
+  appWindowControls: "Use app window controls",
+  appWindowControlsDescription:
+    "Use app-built buttons when enabled; system window mode applies on next launch when disabled",
   trashRetention: "Trash Retention",
   trashDescription: "Automatically clean notes from trash after they expire",
   reminders: "Due reminders",

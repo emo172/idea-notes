@@ -252,7 +252,7 @@ describe("App settings reset", () => {
     await user.click(within(confirmDialog).getByRole("button", { name: "取消" }));
     await user.click(screen.getByRole("tab", { name: "启动行为" }));
     const startupSwitch = screen.getByRole("checkbox", {
-      name: /启动行为/,
+      name: /随系统启动自动运行/,
     }) as HTMLInputElement;
     expect(startupSwitch.checked).toBe(true);
   });

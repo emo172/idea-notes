@@ -19,6 +19,12 @@ export interface SettingsCopy {
   themeDescription: string;
   startupBehavior: string;
   startupDescription: string;
+  silentStart: string;
+  silentStartDescription: string;
+  minimizeToTrayOnClose: string;
+  minimizeToTrayOnCloseDescription: string;
+  appWindowControls: string;
+  appWindowControlsDescription: string;
   trashRetention: string;
   trashDescription: string;
   reminders: string;

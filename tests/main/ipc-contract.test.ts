@@ -30,6 +30,7 @@ describe("主进程 IPC 契约", () => {
     expect(saveHandler).toContain("assertIdeaNotesData(data)");
     expect(saveHandler).toContain("sanitizeIdeaNotesData(validatedData)");
     expect(saveHandler).toContain("const savedData = await saveData(sanitizedData)");
+    expect(saveHandler).toContain("onSettingsSaved(savedData.settings)");
     expect(saveHandler).toContain("checkRemindersOnce()");
     expect(saveHandler).toContain("return savedData");
   });
@@ -58,7 +59,12 @@ describe("主进程 IPC 契约", () => {
     expect(importHandler).toContain("assertMainWindow");
     expect(importHandler).toContain('mode !== "overwrite" && mode !== "merge"');
     expect(importHandler).toContain('throw new Error("Invalid import mode")');
-    expect(importHandler).toContain("importDataFile(window, mode)");
+    expect(importHandler).toContain(
+      "const result = await importDataFile(window, mode)",
+    );
+    expect(importHandler).toContain("if (result.data)");
+    expect(importHandler).toContain("onSettingsSaved(result.data.settings)");
+    expect(importHandler).toContain("return result");
   });
 
   it("开机自启动 IPC 保存前校验布尔 payload", () => {

@@ -13,7 +13,7 @@ import {
   assertIdeaNotesData,
   sanitizeIdeaNotesData,
 } from "@shared/ideaNotesDataValidation";
-import type { ImportDataMode } from "@shared/types";
+import type { IdeaSettings, ImportDataMode } from "@shared/types";
 
 // 所有 IPC handler 都先确认消息来自当前主窗口，避免其他 WebContents 伪造调用。
 function assertMainWindow(
@@ -26,7 +26,15 @@ function assertMainWindow(
   return senderWindow;
 }
 
-export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
+interface RegisterIpcOptions {
+  getMainWindow: () => BrowserWindow | null;
+  onSettingsSaved: (settings: IdeaSettings) => void;
+}
+
+export function registerIpc({
+  getMainWindow,
+  onSettingsSaved,
+}: RegisterIpcOptions): void {
   ipcMain.handle("notes:get-data", async (event) => {
     assertMainWindow(BrowserWindow.fromWebContents(event.sender), getMainWindow());
     return readData();
@@ -37,6 +45,7 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     const validatedData = assertIdeaNotesData(data);
     const sanitizedData = sanitizeIdeaNotesData(validatedData);
     const savedData = await saveData(sanitizedData);
+    onSettingsSaved(savedData.settings);
     void checkRemindersOnce().catch(() => {
       // 保存后的即时提醒检查失败时不阻断用户保存结果。
     });
@@ -59,7 +68,9 @@ export function registerIpc(getMainWindow: () => BrowserWindow | null): void {
     if (mode !== "overwrite" && mode !== "merge") {
       throw new Error("Invalid import mode");
     }
-    return importDataFile(window, mode);
+    const result = await importDataFile(window, mode);
+    if (result.data) onSettingsSaved(result.data.settings);
+    return result;
   });
 
   ipcMain.handle("window:get-state", (event) => {

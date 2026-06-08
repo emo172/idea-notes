@@ -1,11 +1,11 @@
 // 主窗口创建模块。
 // 作用：
-// 1. 创建无边框桌面窗口。
+// 1. 按设置创建应用级或系统边框桌面窗口。
 // 2. 管理 preload、桌面图标和开发/生产 renderer 入口。
 // 3. 提供 renderer 需要展示的最小窗口状态。
 import { BrowserWindow } from "electron";
 import { join } from "node:path";
-import type { DesktopWindowState } from "@shared/types";
+import type { DesktopWindowState, IdeaSettings } from "@shared/types";
 
 export const desktopWindowIconPath =
   process.platform === "linux" || process.platform === "win32"
@@ -20,15 +20,24 @@ export function getWindowState(window: BrowserWindow): DesktopWindowState {
   };
 }
 
-export function createMainWindow(onClosed: () => void): BrowserWindow {
+export interface CreateMainWindowOptions {
+  settings: IdeaSettings;
+  onClosed: () => void;
+}
+
+export function createMainWindow({
+  settings,
+  onClosed,
+}: CreateMainWindowOptions): BrowserWindow {
   const mainWindow = new BrowserWindow({
     width: 1180,
     height: 760,
     minWidth: 720,
     minHeight: 640,
     title: "灵感笔记",
-    frame: false,
-    titleBarStyle: "hidden",
+    frame: !settings.appWindowControls,
+    titleBarStyle: settings.appWindowControls ? "hidden" : "default",
+    show: !settings.silentStart,
     backgroundColor: "#f8fafc",
     icon: desktopWindowIconPath,
     webPreferences: {

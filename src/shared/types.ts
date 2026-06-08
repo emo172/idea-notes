@@ -49,6 +49,9 @@ export interface IdeaNote {
 export interface IdeaSettings {
   themeMode: ThemeMode;
   startup: boolean;
+  silentStart: boolean;
+  minimizeToTrayOnClose: boolean;
+  appWindowControls: boolean;
   trashAutoDelete: TrashRetention;
   language: AppLanguage;
   reminders: {

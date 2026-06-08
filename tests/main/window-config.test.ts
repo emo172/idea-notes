@@ -54,4 +54,19 @@ describe("主进程窗口配置", () => {
     expect(windowOptions).toContain("minWidth: 720");
     expect(windowOptions).not.toContain("minWidth: 960");
   });
+
+  it("主窗口根据设置切换应用级窗口按钮和静默启动", () => {
+    const windowSource = readFileSync(
+      resolve("src/main/window/createMainWindow.ts"),
+      "utf8",
+    );
+
+    expect(windowSource).toContain("CreateMainWindowOptions");
+    expect(windowSource).toContain("settings: IdeaSettings");
+    expect(windowSource).toContain("frame: !settings.appWindowControls");
+    expect(windowSource).toContain(
+      'titleBarStyle: settings.appWindowControls ? "hidden" : "default"',
+    );
+    expect(windowSource).toContain("show: !settings.silentStart");
+  });
 });

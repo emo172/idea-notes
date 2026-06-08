@@ -151,6 +151,23 @@ describe("App window controls", () => {
     }
   });
 
+  it("关闭应用级窗口按钮后隐藏自建窗口控制按钮", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings.appWindowControls = false;
+    const { api } = installApi(data);
+
+    render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    expect(screen.getByRole("button", { name: "置顶" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "设置" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "最小化" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "最大化" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "还原窗口" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "关闭" })).toBeNull();
+    expect(api.getWindowState).toHaveBeenCalledTimes(1);
+  });
+
   it("标题栏图标组件从 Phosphor 图标库导入", () => {
     const packageJson = JSON.parse(readFileSync(resolve("package.json"), "utf8"));
     const appSource = readFileSync(
