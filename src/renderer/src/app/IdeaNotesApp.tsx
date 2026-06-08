@@ -51,6 +51,7 @@ export default function App(): ReactElement {
   const [deleteTarget, setDeleteTarget] = useState<IdeaNote | null>(null);
   const [isClearTrashConfirmOpen, setIsClearTrashConfirmOpen] = useState(false);
   const [isResetSettingsConfirmOpen, setIsResetSettingsConfirmOpen] = useState(false);
+  const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [notificationFeedback, setNotificationFeedback] = useState<string | null>(null);
   const currentLanguage = data?.settings.language ?? defaultSettings.language;
   const currentFontFamily =
@@ -266,6 +267,7 @@ export default function App(): ReactElement {
           handleTagColorChange={handleTagColorChange}
           handleDeleteTag={handleDeleteTag}
           openNewNote={noteEditor.openNewNote}
+          onOpenShortcutHelp={() => setIsShortcutHelpOpen(true)}
           handleSaveNote={noteEditor.handleSaveNote}
           setViewMode={(status) => setViewMode(status)}
           onStatsStatusClick={viewCommands.showStatsStatus}
@@ -292,6 +294,7 @@ export default function App(): ReactElement {
       }
       onToggleAlwaysOnTop={toggleAlwaysOnTop}
       onOpenSettings={() => viewCommands.openAuxiliaryView("settings")}
+      onOpenShortcutHelp={() => setIsShortcutHelpOpen(true)}
       onMinimizeWindow={minimizeWindow}
       onToggleMaximizeWindow={toggleMaximizeWindow}
       onCloseWindow={closeWindow}
@@ -310,12 +313,14 @@ export default function App(): ReactElement {
         editorSaveFeedback={editorSaveFeedback}
         backupFeedback={backupFeedback}
         hasConfirmDialog={hasConfirmDialog}
+        isShortcutHelpOpen={isShortcutHelpOpen}
         isResetSettingsConfirmOpen={isResetSettingsConfirmOpen}
         importConfirmMode={importConfirmMode}
         setIsResetSettingsConfirmOpen={setIsResetSettingsConfirmOpen}
         setImportConfirmMode={setImportConfirmMode}
         setSaveFeedback={setSaveFeedback}
         setViewMode={setViewMode}
+        setIsShortcutHelpOpen={setIsShortcutHelpOpen}
         handleSettingsChange={handleSettingsChange}
         handleStartupChange={handleStartupChange}
         handleExportData={handleExportData}

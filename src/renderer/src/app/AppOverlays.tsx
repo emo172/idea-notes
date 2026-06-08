@@ -11,6 +11,7 @@ import type {
 } from "@shared/types";
 import type { UseNoteEditorResult } from "../hooks/useNoteEditor";
 import type { AppCopy } from "../i18n";
+import { ShortcutHelpDialog } from "../components/dialogs/ShortcutHelpDialog";
 import { ConfirmOverlays } from "./ConfirmOverlays";
 import { EditorOverlay } from "./EditorOverlay";
 import { SettingsOverlay } from "./SettingsOverlay";
@@ -26,12 +27,14 @@ interface AppOverlaysProps {
   editorSaveFeedback: string | null;
   backupFeedback: string | null;
   hasConfirmDialog: boolean;
+  isShortcutHelpOpen: boolean;
   isResetSettingsConfirmOpen: boolean;
   importConfirmMode: ImportDataMode | null;
   setIsResetSettingsConfirmOpen: Dispatch<SetStateAction<boolean>>;
   setImportConfirmMode: (mode: ImportDataMode | null) => void;
   setSaveFeedback: (feedback: null) => void;
   setViewMode: Dispatch<SetStateAction<ViewMode>>;
+  setIsShortcutHelpOpen: Dispatch<SetStateAction<boolean>>;
   handleSettingsChange: (settings: Partial<IdeaNotesData["settings"]>) => Promise<void>;
   handleStartupChange: (enabled: boolean) => Promise<void>;
   handleExportData: () => Promise<void>;
@@ -56,12 +59,14 @@ export function AppOverlays({
   editorSaveFeedback,
   backupFeedback,
   hasConfirmDialog,
+  isShortcutHelpOpen,
   isResetSettingsConfirmOpen,
   importConfirmMode,
   setIsResetSettingsConfirmOpen,
   setImportConfirmMode,
   setSaveFeedback,
   setViewMode,
+  setIsShortcutHelpOpen,
   handleSettingsChange,
   handleStartupChange,
   handleExportData,
@@ -113,6 +118,10 @@ export function AppOverlays({
         setIsClearTrashConfirmOpen={setIsClearTrashConfirmOpen}
         handleClearTrash={handleClearTrash}
       />
+
+      {isShortcutHelpOpen ? (
+        <ShortcutHelpDialog copy={copy} onClose={() => setIsShortcutHelpOpen(false)} />
+      ) : null}
 
       <EditorOverlay
         data={data}

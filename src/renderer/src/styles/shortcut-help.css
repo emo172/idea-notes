@@ -1,0 +1,112 @@
+/*
+ * 快捷键帮助弹窗样式模块。
+ * 管理快捷键参考弹窗的面板、分类列表和原生 kbd 键帽视觉。
+ */
+.shortcut-help-overlay {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: color-mix(in oklab, var(--fg), transparent 72%);
+  z-index: 70;
+}
+
+.shortcut-help-panel {
+  width: min(560px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  box-shadow: var(--shadow);
+}
+
+.shortcut-help-head {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.shortcut-help-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px 0 4px;
+}
+
+.shortcut-help-intro {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.shortcut-groups {
+  display: grid;
+  gap: 14px;
+}
+
+.shortcut-group {
+  padding: 14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 16px;
+  background: color-mix(in oklab, var(--surface-warm), transparent 36%);
+}
+
+.shortcut-category {
+  margin: 0 0 10px;
+  color: var(--fg);
+  font-size: 14px;
+}
+
+.shortcut-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.shortcut-row {
+  display: grid;
+  grid-template-columns: minmax(112px, max-content) minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  color: var(--fg-2);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.shortcut-row dt,
+.shortcut-row dd {
+  margin: 0;
+}
+
+.shortcut-row kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--fg);
+  background: var(--surface);
+  box-shadow: inset 0 -2px 0 var(--border-soft);
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.shortcut-help-actions {
+  justify-content: flex-end;
+  padding-top: 16px;
+}
+
+@media (max-width: 760px) {
+  .shortcut-help-panel {
+    padding: 18px;
+  }
+
+  .shortcut-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+  }
+}

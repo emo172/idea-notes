@@ -51,6 +51,7 @@ interface AppMainContentProps {
   handleTagColorChange: (tag: string, color: string) => Promise<boolean>;
   handleDeleteTag: (tag: string) => Promise<void>;
   openNewNote: () => void;
+  onOpenShortcutHelp: () => void;
   handleSaveNote: () => Promise<void>;
   setViewMode: (status: NoteStatus) => void;
   onStatsStatusClick: (status: NoteStatus) => void;
@@ -109,6 +110,7 @@ export function AppMainContent({
   handleTagColorChange,
   handleDeleteTag,
   openNewNote,
+  onOpenShortcutHelp,
   handleSaveNote,
   setViewMode,
   onStatsStatusClick,
@@ -140,6 +142,7 @@ export function AppMainContent({
     isSaving,
     hasConfirmDialog,
     onOpenNewNote: openNewNote,
+    onOpenShortcutHelp,
     onSaveEditor: handleSaveNote,
     onViewModeChange: setViewMode,
   });

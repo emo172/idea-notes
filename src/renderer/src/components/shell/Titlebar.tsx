@@ -12,6 +12,7 @@ import {
   PinIcon,
   RestoreIcon,
   SettingsIcon,
+  ShortcutHelpIcon,
 } from "../titlebar/TitlebarIcons";
 import { AppButton } from "../ui/AppButton";
 
@@ -22,6 +23,7 @@ interface TitlebarProps {
   pinButtonLabel: string;
   onToggleAlwaysOnTop: () => Promise<void>;
   onOpenSettings: () => void;
+  onOpenShortcutHelp: () => void;
   onMinimizeWindow: () => void;
   onToggleMaximizeWindow: () => Promise<void>;
   onCloseWindow: () => void;
@@ -34,6 +36,7 @@ export function Titlebar({
   pinButtonLabel,
   onToggleAlwaysOnTop,
   onOpenSettings,
+  onOpenShortcutHelp,
   onMinimizeWindow,
   onToggleMaximizeWindow,
   onCloseWindow,
@@ -61,6 +64,14 @@ export function Titlebar({
           title={copy.settings}
           icon={<SettingsIcon />}
           onClick={onOpenSettings}
+        />
+        <AppButton
+          className="icon-btn titlebar-icon-btn"
+          variant="icon"
+          aria-label={copy.shortcutHelp}
+          title={copy.shortcutHelp}
+          icon={<ShortcutHelpIcon />}
+          onClick={onOpenShortcutHelp}
         />
         {useAppWindowControls ? (
           <div className="window-controls">

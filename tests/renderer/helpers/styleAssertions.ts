@@ -24,6 +24,7 @@ export function readRendererStyles(): string {
     "styles/checklist-preview.css",
     "styles/note-actions.css",
     "styles/dialogs.css",
+    "styles/shortcut-help.css",
     "styles/editor-layout.css",
     "styles/editor-main.css",
     "styles/markdown-preview.css",

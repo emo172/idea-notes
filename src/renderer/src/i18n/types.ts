@@ -76,6 +76,10 @@ export interface AppCopy {
   alwaysOnTop: string;
   cancelAlwaysOnTop: string;
   settings: string;
+  shortcutHelp: string;
+  shortcutCategoryNavigation: string;
+  shortcutCategoryEditing: string;
+  shortcutCategoryView: string;
   minimize: string;
   maximize: string;
   restoreWindow: string;

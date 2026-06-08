@@ -18,6 +18,8 @@ const noteStyleFiles = [
   "note-actions.css",
 ] as const;
 
+const dialogStyleFiles = ["dialogs.css", "shortcut-help.css"] as const;
+
 const editorStyleFiles = [
   "editor-layout.css",
   "editor-main.css",
@@ -47,7 +49,7 @@ describe("App style boundaries", () => {
       "sidebar.css",
       "toolbar.css",
       ...noteStyleFiles,
-      "dialogs.css",
+      ...dialogStyleFiles,
       ...editorStyleFiles,
       ...settingsStyleFiles,
     ];
@@ -72,6 +74,7 @@ describe("App style boundaries", () => {
         '@import "./styles/checklist-preview.css";',
         '@import "./styles/note-actions.css";',
         '@import "./styles/dialogs.css";',
+        '@import "./styles/shortcut-help.css";',
         '@import "./styles/editor-layout.css";',
         '@import "./styles/editor-main.css";',
         '@import "./styles/markdown-preview.css";',
