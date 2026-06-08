@@ -43,6 +43,7 @@ export interface IdeaNote {
   trashedAt?: number;
   previousStatus?: Exclude<NoteStatus, "trash">;
   notifiedReminderKeys?: string[];
+  pinned?: boolean;
 }
 
 // 用户偏好设置随主数据一起写入本地 JSON 文件。

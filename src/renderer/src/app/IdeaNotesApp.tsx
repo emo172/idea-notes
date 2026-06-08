@@ -108,6 +108,7 @@ export default function App(): ReactElement {
     handlePermanentDelete,
     handleClearTrash,
     handleToggleCompleted,
+    handleTogglePin,
     handleToggleChecklist,
   } = useNoteCommands({
     data,
@@ -230,6 +231,7 @@ export default function App(): ReactElement {
           loadData={loadData}
           openExistingNote={noteEditor.openExistingNote}
           handleToggleCompleted={handleToggleCompleted}
+          handleTogglePin={handleTogglePin}
           handleToggleChecklist={handleToggleChecklist}
           handleArchiveNote={handleArchiveNote}
           handleMoveToTrash={handleMoveToTrash}

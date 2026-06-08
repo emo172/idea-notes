@@ -17,7 +17,12 @@ export {
   findDueReminders,
   markReminderNotified,
 } from "./notes/reminderLogic";
-export { createNote, duplicateNote, saveNote } from "./notes/noteMutations";
+export {
+  createNote,
+  duplicateNote,
+  saveNote,
+  toggleNotePin,
+} from "./notes/noteMutations";
 export {
   moveNoteToTrash,
   permanentlyDeleteAllTrash,

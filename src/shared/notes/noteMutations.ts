@@ -53,6 +53,14 @@ export function saveNote(
   return { ...data, notes: [createNote(input, options), ...data.notes] };
 }
 
+export function toggleNotePin(note: IdeaNote, now = Date.now()): IdeaNote {
+  return {
+    ...note,
+    pinned: !note.pinned,
+    updatedAt: now,
+  };
+}
+
 export function duplicateNote(
   note: IdeaNote,
   options: DuplicateNoteOptions = {},

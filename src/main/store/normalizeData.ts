@@ -142,6 +142,7 @@ export function normalizeData(data: IdeaNotesData): IdeaNotesData {
         ...rest,
         tags: normalizeNoteTags(note.tags),
         notifiedReminderKeys: normalizeNotifiedReminderKeys(note.notifiedReminderKeys),
+        pinned: note.pinned === undefined ? false : note.pinned,
         ...normalizePreviousStatus(note),
       };
     }),

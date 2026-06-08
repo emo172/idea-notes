@@ -132,6 +132,8 @@ export const zhTW: AppCopy = {
   confirmDelete: "確認",
   editNote: "編輯筆記",
   moreActions: "更多操作",
+  pinNote: "置頂",
+  unpinNote: "取消置頂",
   menuEdit: "編輯",
   menuComplete: "完成",
   menuArchive: "歸檔",

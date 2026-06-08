@@ -1,6 +1,6 @@
 // 笔记命令 hook。
 // 作用：
-// 1. 集中封装卡片状态、清单、复制、回收站和彻底删除命令。
+// 1. 集中封装卡片状态、置顶、清单、复制、回收站和彻底删除命令。
 // 2. 让 App 只负责把命令传给组件，不直接组合每个持久化 payload。
 import type { Dispatch, SetStateAction } from "react";
 import {
@@ -13,6 +13,7 @@ import {
   restoreNoteFromTrash,
   toggleChecklistItem,
   toggleNoteCompleted,
+  toggleNotePin,
 } from "@shared/noteLogic";
 import type { IdeaNote, IdeaNotesData, NoteStatus } from "@shared/types";
 import type { AppCopy } from "../i18n";
@@ -49,6 +50,7 @@ export function useNoteCommands({
   handlePermanentDelete: (noteId: string) => Promise<void>;
   handleClearTrash: () => Promise<void>;
   handleToggleCompleted: (note: IdeaNote) => Promise<void>;
+  handleTogglePin: (note: IdeaNote) => Promise<void>;
   handleToggleChecklist: (
     note: IdeaNote,
     itemId: string,
@@ -119,6 +121,10 @@ export function useNoteCommands({
     await updateNote(toggleNoteCompleted(note));
   }
 
+  async function handleTogglePin(note: IdeaNote): Promise<void> {
+    await updateNote(toggleNotePin(note));
+  }
+
   async function handleToggleChecklist(
     note: IdeaNote,
     itemId: string,
@@ -137,6 +143,7 @@ export function useNoteCommands({
     handlePermanentDelete,
     handleClearTrash,
     handleToggleCompleted,
+    handleTogglePin,
     handleToggleChecklist,
   };
 }

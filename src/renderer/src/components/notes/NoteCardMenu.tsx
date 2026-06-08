@@ -17,6 +17,7 @@ interface NoteCardMenuProps {
   isInTrash: boolean;
   onOpen: (note: IdeaNote) => void;
   onToggleCompleted: () => Promise<void>;
+  onTogglePin: (note: IdeaNote) => Promise<void>;
   onArchive: (note: IdeaNote) => Promise<void>;
   onTrash: (note: IdeaNote) => Promise<void>;
   onRestore: (note: IdeaNote) => Promise<void>;
@@ -33,6 +34,7 @@ export function NoteCardMenu({
   isInTrash,
   onOpen,
   onToggleCompleted,
+  onTogglePin,
   onArchive,
   onTrash,
   onRestore,
@@ -49,6 +51,9 @@ export function NoteCardMenu({
       <DropdownMenu className="note-context-menu" label={copy.moreActions}>
         {canEdit ? (
           <>
+            <button type="button" role="menuitem" onClick={() => onTogglePin(note)}>
+              {note.pinned ? copy.unpinNote : copy.pinNote}
+            </button>
             <button type="button" role="menuitem" onClick={() => onOpen(note)}>
               {copy.menuEdit}
             </button>

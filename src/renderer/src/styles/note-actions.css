@@ -13,6 +13,19 @@
   color: var(--muted);
 }
 
+.note-pin-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--accent);
+  line-height: 0;
+}
+
+.note-pin-indicator svg {
+  width: var(--button-icon-size);
+  height: var(--button-icon-size);
+}
+
 .note-context-menu {
   top: auto;
   right: 0;

@@ -64,6 +64,7 @@ interface AppMainContentProps {
   loadData: () => Promise<void>;
   openExistingNote: (note: IdeaNote) => void;
   handleToggleCompleted: (note: IdeaNote) => Promise<void>;
+  handleTogglePin: (note: IdeaNote) => Promise<void>;
   handleToggleChecklist: (
     note: IdeaNote,
     itemId: string,
@@ -120,6 +121,7 @@ export function AppMainContent({
   loadData,
   openExistingNote,
   handleToggleCompleted,
+  handleTogglePin,
   handleToggleChecklist,
   handleArchiveNote,
   handleMoveToTrash,
@@ -197,6 +199,7 @@ export function AppMainContent({
       loadData={loadData}
       openExistingNote={openExistingNote}
       handleToggleCompleted={handleToggleCompleted}
+      handleTogglePin={handleTogglePin}
       handleToggleChecklist={handleToggleChecklist}
       handleArchiveNote={handleArchiveNote}
       handleMoveToTrash={handleMoveToTrash}

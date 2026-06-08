@@ -131,6 +131,8 @@ export interface AppCopy {
   confirmDelete: string;
   editNote: string;
   moreActions: string;
+  pinNote: string;
+  unpinNote: string;
   menuEdit: string;
   menuComplete: string;
   menuArchive: string;

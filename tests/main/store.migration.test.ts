@@ -220,4 +220,66 @@ describe("主进程本地存储迁移", () => {
     });
     expect(persisted.settings).toEqual(data.settings);
   });
+
+  it("旧笔记缺少 pinned 字段时归一化为 pinned: false", async () => {
+    const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    // 刻意移除 pinned 字段来模拟旧数据格式（默认数据已包含 pinned: false）
+    const notesWithoutPinned = defaultData.notes.map(
+      ({ pinned: _pinned, ...rest }) => rest,
+    );
+    const legacyData = {
+      ...defaultData,
+      notes: notesWithoutPinned,
+    };
+    await writeFile(
+      storeTest.dataFilePath(),
+      JSON.stringify(legacyData, null, 2),
+      "utf8",
+    );
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const persisted = JSON.parse(
+      await readFile(storeTest.dataFilePath(), "utf8"),
+    ) as IdeaNotesData;
+
+    for (const note of data.notes) {
+      expect(note.pinned).toBe(false);
+    }
+    for (const note of persisted.notes) {
+      expect(note.pinned).toBe(false);
+    }
+  });
+
+  it("已有 pinned 字段的笔记在归一化时保留原值不变", async () => {
+    const defaultData = getDefaultData(Date.parse("2026-05-29T08:00:00.000Z"));
+    const legacyData = {
+      ...defaultData,
+      notes: [
+        {
+          ...defaultData.notes[0],
+          id: "pinned-true",
+          pinned: true,
+        },
+        {
+          ...defaultData.notes[0],
+          id: "pinned-false",
+          pinned: false,
+        },
+      ],
+    };
+    await writeFile(
+      storeTest.dataFilePath(),
+      JSON.stringify(legacyData, null, 2),
+      "utf8",
+    );
+    const { readData } = await importStore();
+
+    const data = await readData();
+    const pinnedTrue = data.notes.find((note) => note.id === "pinned-true");
+    const pinnedFalse = data.notes.find((note) => note.id === "pinned-false");
+
+    expect(pinnedTrue?.pinned).toBe(true);
+    expect(pinnedFalse?.pinned).toBe(false);
+  });
 });

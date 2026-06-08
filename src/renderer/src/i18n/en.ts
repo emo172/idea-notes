@@ -137,6 +137,8 @@ export const en: AppCopy = {
   confirmDelete: "Confirm delete",
   editNote: "Edit Note",
   moreActions: "More actions",
+  pinNote: "Pin note",
+  unpinNote: "Unpin note",
   menuEdit: "Edit",
   menuComplete: "Done",
   menuArchive: "Archive",

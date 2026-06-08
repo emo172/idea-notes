@@ -132,6 +132,8 @@ export const zhCN: AppCopy = {
   confirmDelete: "确认",
   editNote: "编辑笔记",
   moreActions: "更多操作",
+  pinNote: "置顶",
+  unpinNote: "取消置顶",
   menuEdit: "编辑",
   menuComplete: "完成",
   menuArchive: "归档",
