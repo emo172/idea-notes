@@ -42,6 +42,7 @@ describe("preload 暴露的桌面能力 API", () => {
 
     expect(Object.keys(api).sort()).toEqual([
       "closeWindow",
+      "copyToClipboard",
       "exportData",
       "getData",
       "getWindowState",
@@ -120,5 +121,14 @@ describe("preload 暴露的桌面能力 API", () => {
       "window:toggle-always-on-top",
     );
     expect(electronMock.invoke).toHaveBeenNthCalledWith(6, "app:set-startup", true);
+  });
+
+  it("将剪贴板写入映射到固定 IPC 通道", async () => {
+    const api = await loadPreloadApi();
+    electronMock.invoke.mockResolvedValueOnce(undefined);
+
+    await api.copyToClipboard!("test text");
+
+    expect(electronMock.invoke).toHaveBeenCalledWith("clipboard:write", "test text");
   });
 });

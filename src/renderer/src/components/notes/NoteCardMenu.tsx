@@ -42,6 +42,12 @@ export function NoteCardMenu({
   onDuplicate,
   onDelete,
 }: NoteCardMenuProps): ReactElement {
+  const canCopyBody = note.body !== "";
+
+  function copyToClipboard(text: string): void {
+    void window.ideaNotes.copyToClipboard?.(text);
+  }
+
   return (
     <DropdownButton
       buttonClassName="note-icon-btn"
@@ -66,6 +72,18 @@ export function NoteCardMenu({
             <button type="button" role="menuitem" onClick={() => onDuplicate(note)}>
               {copy.menuDuplicate}
             </button>
+            {renderCopyTitleMenuItem()}
+            <button
+              type="button"
+              role="menuitem"
+              disabled={!canCopyBody}
+              onPointerUp={canCopyBody ? () => copyToClipboard(note.body) : undefined}
+              onClick={(event) => {
+                if (canCopyBody && event.detail === 0) copyToClipboard(note.body);
+              }}
+            >
+              {copy.copyBody}
+            </button>
             <button type="button" role="menuitem" onClick={() => onTrash(note)}>
               {copy.menuMoveTrash}
             </button>
@@ -73,6 +91,7 @@ export function NoteCardMenu({
         ) : null}
         {isCompleted ? (
           <>
+            {renderCopyTitleMenuItem()}
             <button type="button" role="menuitem" onClick={onToggleCompleted}>
               {copy.menuRestoreProgress}
             </button>
@@ -83,6 +102,7 @@ export function NoteCardMenu({
         ) : null}
         {note.status === "archive" ? (
           <>
+            {renderCopyTitleMenuItem()}
             <button
               type="button"
               role="menuitem"
@@ -97,6 +117,7 @@ export function NoteCardMenu({
         ) : null}
         {isInTrash ? (
           <>
+            {renderCopyTitleMenuItem()}
             <button type="button" role="menuitem" onClick={() => onRestore(note)}>
               {copy.menuRestoreTrash}
             </button>
@@ -113,4 +134,19 @@ export function NoteCardMenu({
       </DropdownMenu>
     </DropdownButton>
   );
+
+  function renderCopyTitleMenuItem(): ReactElement {
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        onPointerUp={() => copyToClipboard(note.title)}
+        onClick={(event) => {
+          if (event.detail === 0) copyToClipboard(note.title);
+        }}
+      >
+        {copy.copyTitle}
+      </button>
+    );
+  }
 }

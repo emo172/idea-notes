@@ -121,4 +121,5 @@ export interface IdeaNotesApi {
   closeWindow: () => Promise<void>;
   toggleAlwaysOnTop: () => Promise<DesktopWindowState>;
   setStartup: (enabled: boolean) => Promise<boolean>;
+  copyToClipboard?: (text: string) => Promise<void>;
 }

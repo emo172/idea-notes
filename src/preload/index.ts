@@ -9,6 +9,8 @@ import type { IdeaNotesApi, IdeaNotesData, ImportDataMode } from "@shared/types"
 
 // preload 只暴露固定函数，不暴露 ipcRenderer 本体，避免 renderer 发送任意 IPC 消息。
 const api: IdeaNotesApi = {
+  // 剪贴板写入通过主进程 IPC 执行，renderer 不直接访问 Electron clipboard API。
+  copyToClipboard: (text: string) => ipcRenderer.invoke("clipboard:write", text),
   // 笔记数据读写统一走主进程，renderer 不直接访问文件系统。
   getData: () => ipcRenderer.invoke("notes:get-data"),
   saveData: (data: IdeaNotesData) => ipcRenderer.invoke("notes:save-data", data),

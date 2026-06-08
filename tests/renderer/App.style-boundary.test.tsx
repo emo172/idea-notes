@@ -109,13 +109,13 @@ describe("App style boundaries", () => {
     expect(dropdownStyles).toContain(".dropdown-menu button:hover");
   });
 
-  it("笔记卡片菜单向上展开，避免列表底部菜单被视口裁切", () => {
+  it("笔记卡片菜单向下展开，避免新增菜单项被列表顶部裁切", () => {
     const noteActionStyles = readStyleFile("note-actions.css");
     const contextMenuBlock = readCssRuleBlock(noteActionStyles, ".note-context-menu");
 
     expect(contextMenuBlock).toContain("right: 0;");
-    expect(contextMenuBlock).toContain("top: auto;");
-    expect(contextMenuBlock).toContain("bottom: calc(100% + 6px);");
+    expect(contextMenuBlock).toContain("top: calc(100% + 6px);");
+    expect(contextMenuBlock).toContain("bottom: auto;");
   });
 
   it("拆分后的样式模块不混入其他页面职责", () => {

@@ -42,6 +42,7 @@ export function installApi(
       isAlwaysOnTop: true,
     })),
     setStartup: vi.fn(async (enabled) => enabled),
+    copyToClipboard: vi.fn(async () => undefined),
   };
 
   Object.defineProperty(window, "ideaNotes", {

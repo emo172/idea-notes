@@ -3,7 +3,7 @@
 // 1. 注册笔记数据、窗口控制和开机自启动 IPC handler。
 // 2. 校验消息来源，确保只有当前主窗口可以调用桌面能力。
 // 3. 保持 renderer 只能通过 preload 暴露的固定 API 访问桌面能力。
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, clipboard, ipcMain } from "electron";
 import { checkRemindersOnce } from "../reminders/reminderScheduler";
 import { readData, saveData } from "../store";
 import { exportDataFile, importDataFile } from "../store/backup";
@@ -115,6 +115,14 @@ export function registerIpc({
     );
     window.setAlwaysOnTop(!window.isAlwaysOnTop());
     return getWindowState(window);
+  });
+
+  ipcMain.handle("clipboard:write", async (event, text: string) => {
+    assertMainWindow(BrowserWindow.fromWebContents(event.sender), getMainWindow());
+    if (typeof text !== "string") {
+      throw new Error("Invalid clipboard payload");
+    }
+    clipboard.writeText(text);
   });
 
   ipcMain.handle("app:set-startup", (event, enabled: boolean) => {

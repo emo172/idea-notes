@@ -67,6 +67,26 @@ describe("主进程 IPC 契约", () => {
     expect(importHandler).toContain("return result");
   });
 
+  it("注册剪贴板写入 IPC 并校验消息来源与 payload 类型", () => {
+    const ipcSource = readFileSync(resolve("src/main/ipc/registerIpc.ts"), "utf8");
+    const clipboardHandler = ipcSource.match(
+      /ipcMain\.handle\("clipboard:write"[\s\S]*?\n  \}\);/,
+    )?.[0];
+
+    expect(ipcSource).toContain("clipboard");
+    expect(ipcSource).toMatch(
+      /import\s*\{[\s\S]*?clipboard[\s\S]*?\}\s*from\s*"electron"/,
+    );
+    expect(clipboardHandler).toBeTruthy();
+    expect(clipboardHandler).toContain("assertMainWindow");
+    expect(clipboardHandler).toContain("BrowserWindow.fromWebContents");
+    expect(clipboardHandler).toContain('typeof text !== "string"');
+    expect(clipboardHandler).toContain("clipboard.writeText(text)");
+    expect(clipboardHandler?.indexOf('typeof text !== "string"')).toBeLessThan(
+      clipboardHandler?.indexOf("clipboard.writeText(text)") ?? -1,
+    );
+  });
+
   it("开机自启动 IPC 保存前校验布尔 payload", () => {
     const ipcSource = readFileSync(resolve("src/main/ipc/registerIpc.ts"), "utf8");
     const startupSource = readFileSync(

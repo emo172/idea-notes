@@ -3,7 +3,14 @@
 // 作用：
 // 1. 覆盖卡片完成、删除、编辑入口和更多操作菜单。
 // 2. 覆盖保存失败和保存中忙碌反馈。
-import { act, render, screen, waitFor, within } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+  within,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getDefaultData } from "@shared/defaultData";
@@ -110,7 +117,7 @@ describe("App card actions", () => {
 
     await user.click(screen.getAllByRole("button", { name: "更多操作" })[0]);
     const menu = screen.getByRole("menu", { name: "更多操作" });
-    for (const label of ["编辑", "完成", "复制", "删除"]) {
+    for (const label of ["编辑", "完成", "复制", "复制标题", "复制正文", "删除"]) {
       expect(within(menu).getByRole("menuitem", { name: label })).toBeTruthy();
     }
 
@@ -119,6 +126,159 @@ describe("App card actions", () => {
     await waitFor(() => expect(api.saveData).toHaveBeenCalled());
     expect(saved.at(-1)?.notes[0]?.title).toBe("重构 Desktop App 导航栏 副本");
     expect(screen.queryByRole("menu", { name: "更多操作" })).toBeNull();
+  });
+
+  it("更多操作菜单复制标题到剪贴板", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+    const copyTitle = within(menu).getByRole("menuitem", { name: "复制标题" });
+
+    expect((copyTitle as HTMLButtonElement).disabled).toBe(false);
+    await user.click(copyTitle);
+
+    expect(api.copyToClipboard).toHaveBeenCalledTimes(1);
+    expect(api.copyToClipboard).toHaveBeenCalledWith("重构 Desktop App 导航栏");
+  });
+
+  it("更多操作菜单指针点击复制标题时在菜单关闭前写入剪贴板", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+    const copyTitle = within(menu).getByRole("menuitem", { name: "复制标题" });
+
+    fireEvent.pointerUp(copyTitle);
+
+    expect(api.copyToClipboard).toHaveBeenCalledWith("重构 Desktop App 导航栏");
+  });
+
+  it("更多操作菜单复制正文到剪贴板", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+    const copyBody = within(menu).getByRole("menuitem", { name: "复制正文" });
+
+    expect((copyBody as HTMLButtonElement).disabled).toBe(false);
+    await user.click(copyBody);
+
+    expect(api.copyToClipboard).toHaveBeenCalledTimes(1);
+    expect(api.copyToClipboard).toHaveBeenCalledWith(
+      "实现可拖拽的 Titlebar\n添加窗口控制\n增加置顶按钮\n修复深色模式图标对比度",
+    );
+  });
+
+  it("正文为空时更多操作菜单禁用复制正文但保留复制标题", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [{ ...data.notes[0], body: "" }, data.notes[1]];
+    const { api } = installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+    const copyTitle = within(menu).getByRole("menuitem", { name: "复制标题" });
+    const copyBody = within(menu).getByRole("menuitem", { name: "复制正文" });
+
+    expect((copyTitle as HTMLButtonElement).disabled).toBe(false);
+    expect((copyBody as HTMLButtonElement).disabled).toBe(true);
+    await user.click(copyBody);
+
+    expect(api.copyToClipboard).not.toHaveBeenCalled();
+  });
+
+  it("置顶笔记显示置顶图标，非置顶笔记不显示", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      { ...data.notes[0], pinned: true },
+      { ...data.notes[1], pinned: false },
+    ];
+    installApi(data);
+
+    render(<App />);
+
+    const pinnedCard = (await screen.findByText("重构 Desktop App 导航栏")).closest(
+      "article",
+    ) as HTMLElement;
+    const unpinnedCard = screen
+      .getByText("产品命名灵感")
+      .closest("article") as HTMLElement;
+    expect(within(pinnedCard).getByLabelText("置顶")).toBeTruthy();
+    expect(within(unpinnedCard).queryByLabelText("置顶")).toBeNull();
+  });
+
+  it("更多操作菜单在编辑项前切换置顶状态并通过既有排序更新列表", async () => {
+    const { api, saved } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+    const { container } = render(<App />);
+
+    const title = await screen.findByText("产品命名灵感");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    let menu = screen.getByRole("menu", { name: "更多操作" });
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual(["置顶", "编辑", "完成", "归档", "复制", "复制标题", "复制正文", "删除"]);
+
+    await user.click(within(menu).getByRole("menuitem", { name: "置顶" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+    expect(saved.at(-1)?.notes.find((note) => note.id === "seed-naming")?.pinned).toBe(
+      true,
+    );
+    await waitFor(() => {
+      const articles = Array.from(container.querySelectorAll("article"));
+      expect(within(articles[0] as HTMLElement).getByText("产品命名灵感")).toBeTruthy();
+    });
+
+    const pinnedCard = screen
+      .getByText("产品命名灵感")
+      .closest("article") as HTMLElement;
+    await user.click(within(pinnedCard).getByRole("button", { name: "更多操作" }));
+    menu = screen.getByRole("menu", { name: "更多操作" });
+    expect(
+      within(menu)
+        .getAllByRole("menuitem")
+        .map((item) => item.textContent),
+    ).toEqual([
+      "取消置顶",
+      "编辑",
+      "完成",
+      "归档",
+      "复制",
+      "复制标题",
+      "复制正文",
+      "删除",
+    ]);
+
+    await user.click(within(menu).getByRole("menuitem", { name: "取消置顶" }));
+
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(2));
+    expect(saved.at(-1)?.notes.find((note) => note.id === "seed-naming")?.pinned).toBe(
+      false,
+    );
   });
 
   it("已完成笔记只在更多菜单展示恢复和删除且不能编辑", async () => {
@@ -163,7 +323,64 @@ describe("App card actions", () => {
     expect(within(menu).getByRole("menuitem", { name: "删除" })).toBeTruthy();
     expect(within(menu).queryByRole("menuitem", { name: "编辑" })).toBeNull();
     expect(within(menu).queryByRole("menuitem", { name: "完成" })).toBeNull();
+    expect(within(menu).getByRole("menuitem", { name: "复制标题" })).toBeTruthy();
     expect(within(menu).queryByRole("menuitem", { name: "复制" })).toBeNull();
+    expect(within(menu).queryByRole("menuitem", { name: "复制正文" })).toBeNull();
+  });
+
+  it("已完成笔记更多操作菜单仍可复制标题", async () => {
+    const completedData = getDefaultData(BASE_TIME);
+    completedData.notes = [
+      {
+        ...completedData.notes[0],
+        status: "completed",
+      },
+      completedData.notes[1],
+    ];
+    const { api } = installApi(completedData);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /已完成/ }));
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+    const copyTitle = within(menu).getByRole("menuitem", { name: "复制标题" });
+
+    expect((copyTitle as HTMLButtonElement).disabled).toBe(false);
+    await user.click(copyTitle);
+
+    expect(api.copyToClipboard).toHaveBeenCalledTimes(1);
+    expect(api.copyToClipboard).toHaveBeenCalledWith("重构 Desktop App 导航栏");
+  });
+
+  it("回收站笔记更多操作菜单不展示置顶或取消置顶", async () => {
+    const trashData = getDefaultData(BASE_TIME);
+    trashData.notes = [
+      {
+        ...trashData.notes[0],
+        pinned: true,
+        status: "trash",
+        trashedAt: Date.parse("2026-05-29T09:00:00.000Z"),
+      },
+      trashData.notes[1],
+    ];
+    installApi(trashData);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: /回收站/ }));
+    const trashCard = (await screen.findByText("重构 Desktop App 导航栏")).closest(
+      "article",
+    ) as HTMLElement;
+    await user.click(within(trashCard).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+
+    expect(within(menu).queryByRole("menuitem", { name: "置顶" })).toBeNull();
+    expect(within(menu).queryByRole("menuitem", { name: "取消置顶" })).toBeNull();
   });
 
   it("可以归档进行中笔记，并从归档区恢复到进行中", async () => {

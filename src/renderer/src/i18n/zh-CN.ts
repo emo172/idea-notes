@@ -124,6 +124,8 @@ export const zhCN: AppCopy = {
   markComplete: "完成",
   duplicate: "复制",
   duplicateTitleSuffix: " 副本",
+  copyTitle: "复制标题",
+  copyBody: "复制正文",
   delete: "删除",
   deleteConfirmTitle: "确认彻底删除？",
   deleteConfirmBody: "删除后无法恢复",

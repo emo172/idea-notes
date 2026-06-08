@@ -123,6 +123,8 @@ export interface AppCopy {
   markComplete: string;
   duplicate: string;
   duplicateTitleSuffix: string;
+  copyTitle: string;
+  copyBody: string;
   delete: string;
   deleteConfirmTitle: string;
   deleteConfirmBody: string;

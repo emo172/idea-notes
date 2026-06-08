@@ -124,6 +124,8 @@ export const zhTW: AppCopy = {
   markComplete: "完成",
   duplicate: "複製",
   duplicateTitleSuffix: " 複本",
+  copyTitle: "複製標題",
+  copyBody: "複製正文",
   delete: "刪除",
   deleteConfirmTitle: "確認永久刪除？",
   deleteConfirmBody: "刪除後無法恢復",

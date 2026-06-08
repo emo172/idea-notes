@@ -129,6 +129,8 @@ export const en: AppCopy = {
   markComplete: "Complete",
   duplicate: "Duplicate",
   duplicateTitleSuffix: " Copy",
+  copyTitle: "Copy title",
+  copyBody: "Copy body",
   delete: "Delete",
   deleteConfirmTitle: "Delete permanently?",
   deleteConfirmBody: "This cannot be undone",
