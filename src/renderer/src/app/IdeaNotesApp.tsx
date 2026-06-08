@@ -3,7 +3,7 @@
 // 1. 渲染自定义标题栏、侧边栏、筛选工具栏，并组合笔记卡片、编辑器和设置面板。
 // 2. 通过拆分后的 hooks 编排数据、窗口、笔记、标签、设置和编辑器命令。
 // 3. 将渲染层状态编排与拆分后的组件、工具函数、多语言文案连接起来。
-import { useEffect, useState, type ReactElement } from "react";
+import { useEffect, useRef, useState, type ReactElement } from "react";
 import { defaultSettings } from "@shared/defaultData";
 import type { IdeaNote } from "@shared/types";
 import { AppShell } from "../components/shell/AppShell";
@@ -51,6 +51,7 @@ export default function App(): ReactElement {
   const [deleteTarget, setDeleteTarget] = useState<IdeaNote | null>(null);
   const [isClearTrashConfirmOpen, setIsClearTrashConfirmOpen] = useState(false);
   const [isResetSettingsConfirmOpen, setIsResetSettingsConfirmOpen] = useState(false);
+  const [notificationFeedback, setNotificationFeedback] = useState<string | null>(null);
   const currentLanguage = data?.settings.language ?? defaultSettings.language;
   const useAppWindowControls =
     data?.settings.appWindowControls ?? defaultSettings.appWindowControls;
@@ -84,6 +85,36 @@ export default function App(): ReactElement {
     setSaveFeedback,
     setViewMode: (status) => setViewMode(status),
   });
+
+  // 通知点击处理：使用 ref 桥接避免空依赖闭包捕获过期 React 状态。
+  const dataRef = useRef(data);
+  dataRef.current = data;
+  const openExistingNoteRef = useRef(noteEditor.openExistingNote);
+  openExistingNoteRef.current = noteEditor.openExistingNote;
+  const copyRef = useRef(copy);
+  copyRef.current = copy;
+
+  useEffect(() => {
+    const unsub = window.ideaNotes.onNotificationClick?.((noteId) => {
+      const notes = dataRef.current?.notes ?? [];
+      const note = notes.find((n) => n.id === noteId);
+      if (note && note.status !== "trash") {
+        openExistingNoteRef.current(note);
+      } else {
+        setNotificationFeedback(copyRef.current.notificationNoteDeleted);
+      }
+    });
+    return () => {
+      unsub?.();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!notificationFeedback) return;
+    const timer = setTimeout(() => setNotificationFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [notificationFeedback]);
+
   const {
     tagName,
     tagInputError,
@@ -198,6 +229,7 @@ export default function App(): ReactElement {
           tagInputError={tagInputError}
           mainSaveFeedback={mainSaveFeedback}
           shouldShowMainSaveError={shouldShowMainSaveError}
+          notificationFeedback={notificationFeedback}
           isSaving={isSaving}
           isEditorOpen={noteEditor.isEditorOpen}
           hasConfirmDialog={hasConfirmDialog}

@@ -22,6 +22,7 @@ interface MainNotesViewProps {
   tags: IdeaTag[];
   mainSaveFeedback: string | null;
   shouldShowMainSaveError: boolean;
+  notificationFeedback: string | null;
   searchInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   priority: NotePriority | "all";
@@ -62,6 +63,7 @@ export function MainNotesView({
   tags,
   mainSaveFeedback,
   shouldShowMainSaveError,
+  notificationFeedback,
   searchInputRef,
   searchQuery,
   priority,
@@ -94,6 +96,7 @@ export function MainNotesView({
   return (
     <>
       <SaveFeedbackAlert message={shouldShowMainSaveError ? mainSaveFeedback : null} />
+      <SaveFeedbackAlert message={notificationFeedback} />
       <NotesToolbar
         copy={copy}
         searchInputRef={searchInputRef}

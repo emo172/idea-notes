@@ -107,6 +107,9 @@ export interface DataFileResult {
   reason?: "cancelled" | "invalid" | "failed";
 }
 
+// 通知点击回调，接收被点击笔记的 id，用于打开对应编辑器。
+export type NotificationClickCallback = (noteId: string) => void;
+
 // preload 暴露给渲染层的唯一桌面能力入口，禁止直接暴露 ipcRenderer。
 export interface IdeaNotesApi {
   getData: () => Promise<IdeaNotesData>;
@@ -122,4 +125,5 @@ export interface IdeaNotesApi {
   toggleAlwaysOnTop: () => Promise<DesktopWindowState>;
   setStartup: (enabled: boolean) => Promise<boolean>;
   copyToClipboard?: (text: string) => Promise<void>;
+  onNotificationClick?: (callback: NotificationClickCallback) => () => void;
 }

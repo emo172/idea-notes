@@ -10,6 +10,8 @@ import type { IdeaNotesApi } from "@shared/types";
 const electronMock = vi.hoisted(() => ({
   exposeInMainWorld: vi.fn(),
   invoke: vi.fn(),
+  on: vi.fn(),
+  removeListener: vi.fn(),
 }));
 
 vi.mock("electron", () => ({
@@ -18,6 +20,8 @@ vi.mock("electron", () => ({
   },
   ipcRenderer: {
     invoke: electronMock.invoke,
+    on: electronMock.on,
+    removeListener: electronMock.removeListener,
   },
 }));
 
@@ -35,6 +39,8 @@ describe("preload 暴露的桌面能力 API", () => {
   beforeEach(() => {
     electronMock.exposeInMainWorld.mockClear();
     electronMock.invoke.mockReset();
+    electronMock.on.mockReset();
+    electronMock.removeListener.mockReset();
   });
 
   it("只暴露固定的 ideaNotes API 方法", async () => {
@@ -48,6 +54,7 @@ describe("preload 暴露的桌面能力 API", () => {
       "getWindowState",
       "importData",
       "minimizeWindow",
+      "onNotificationClick",
       "saveData",
       "setStartup",
       "toggleAlwaysOnTop",
@@ -130,5 +137,42 @@ describe("preload 暴露的桌面能力 API", () => {
     await api.copyToClipboard!("test text");
 
     expect(electronMock.invoke).toHaveBeenCalledWith("clipboard:write", "test text");
+  });
+
+  it("通知点击监听器使用本地引用完成订阅和取消订阅", async () => {
+    const api = await loadPreloadApi();
+    expect(typeof api.onNotificationClick).toBe("function");
+
+    const callback = vi.fn();
+    const unsubscribe = api.onNotificationClick!(callback);
+
+    // 验证 on 使用固定通道名，且传入的是函数
+    expect(electronMock.on).toHaveBeenCalledTimes(1);
+    expect(electronMock.on).toHaveBeenCalledWith(
+      "notification:open-note",
+      expect.any(Function),
+    );
+
+    // 验证返回的取消订阅函数
+    expect(typeof unsubscribe).toBe("function");
+
+    // 模拟主进程推送通知点击消息，验证 renderer 回调收到纯 noteId
+    const listener = electronMock.on.mock.calls[0][1] as (
+      _event: unknown,
+      noteId: string,
+    ) => void;
+    listener({ sender: "mock-ipc" }, "target-note-id");
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(callback).toHaveBeenCalledWith("target-note-id");
+    // renderer 回调不应收到 Electron 事件对象
+    expect(callback.mock.calls[0]).toHaveLength(1);
+
+    // 调用取消订阅，验证 removeListener 使用同一 listener 引用
+    unsubscribe();
+    expect(electronMock.removeListener).toHaveBeenCalledTimes(1);
+    expect(electronMock.removeListener).toHaveBeenCalledWith(
+      "notification:open-note",
+      listener,
+    );
   });
 });

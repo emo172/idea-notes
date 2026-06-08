@@ -149,6 +149,7 @@ export const en: AppCopy = {
   menuRestoreArchive: "Restore",
   menuRestoreProgress: "Restore",
   menuRestoreTrash: "Restore",
+  notificationNoteDeleted: "The note has been deleted or moved to trash",
   newNoteTitle: "New Note",
   backToList: "Back",
   saveNote: "Save",

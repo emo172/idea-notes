@@ -31,6 +31,7 @@ interface AppMainContentProps {
   tagInputError: TagInputError | null;
   mainSaveFeedback: string | null;
   shouldShowMainSaveError: boolean;
+  notificationFeedback: string | null;
   isSaving: boolean;
   isEditorOpen: boolean;
   hasConfirmDialog: boolean;
@@ -88,6 +89,7 @@ export function AppMainContent({
   tagInputError,
   mainSaveFeedback,
   shouldShowMainSaveError,
+  notificationFeedback,
   isSaving,
   isEditorOpen,
   hasConfirmDialog,
@@ -179,6 +181,7 @@ export function AppMainContent({
       tags={tags}
       mainSaveFeedback={mainSaveFeedback}
       shouldShowMainSaveError={shouldShowMainSaveError}
+      notificationFeedback={notificationFeedback}
       searchInputRef={searchInputRef}
       searchQuery={searchQuery}
       priority={priority}

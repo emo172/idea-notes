@@ -143,6 +143,7 @@ export interface AppCopy {
   menuRestoreArchive: string;
   menuRestoreProgress: string;
   menuRestoreTrash: string;
+  notificationNoteDeleted: string;
   newNoteTitle: string;
   backToList: string;
   saveNote: string;

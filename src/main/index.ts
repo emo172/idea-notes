@@ -70,7 +70,14 @@ app.whenReady().then(async () => {
       destroyTray();
     },
   });
-  startReminderScheduler();
+  startReminderScheduler((noteId) => {
+    const win = mainWindow;
+    if (!win) return;
+    if (win.isMinimized()) win.restore();
+    win.show();
+    win.focus();
+    win.webContents.send("notification:open-note", noteId);
+  });
 
   // macOS 点击 Dock 图标时，如果没有窗口则重新创建窗口。
   app.on("activate", () => {

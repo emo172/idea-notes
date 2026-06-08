@@ -35,11 +35,34 @@ describe("主进程 IPC 契约", () => {
     expect(saveHandler).toContain("return savedData");
   });
 
-  it("主进程入口启动截止提醒调度器", () => {
+  it("主进程入口接线通知点击到窗口激活与渲染层推送", () => {
     const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
 
     expect(mainSource).toContain('from "./reminders/reminderScheduler"');
-    expect(mainSource).toContain("startReminderScheduler()");
+
+    // 提取 startReminderScheduler 回调块，锁定窗口恢复→显示→聚焦→推送契约
+    const schedulerBlock = mainSource.match(
+      /startReminderScheduler\(\(noteId\) => \{[\s\S]*?\}\);/,
+    )?.[0];
+    expect(schedulerBlock).toBeTruthy();
+
+    expect(schedulerBlock).toContain("const win = mainWindow");
+    expect(schedulerBlock).toContain("if (!win) return");
+    expect(schedulerBlock).toContain("win.isMinimized()");
+    expect(schedulerBlock).toContain("win.restore()");
+    expect(schedulerBlock).toContain("win.show()");
+    expect(schedulerBlock).toContain("win.focus()");
+    expect(schedulerBlock).toContain(
+      'webContents.send("notification:open-note", noteId)',
+    );
+
+    // 主入口不应注册 ipcMain handler（这是 main→renderer push，不是 handle）
+    expect(mainSource).not.toContain('ipcMain.handle("notification:open-note")');
+  });
+
+  it("IPC 注册文件不含通知通道的 handle", () => {
+    const ipcSource = readFileSync(resolve("src/main/ipc/registerIpc.ts"), "utf8");
+    expect(ipcSource).not.toContain("notification:open-note");
   });
 
   it("注册数据导出和导入 IPC 并校验消息来源", () => {

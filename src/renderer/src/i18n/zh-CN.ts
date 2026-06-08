@@ -144,6 +144,7 @@ export const zhCN: AppCopy = {
   menuRestoreArchive: "恢复",
   menuRestoreProgress: "恢复",
   menuRestoreTrash: "恢复",
+  notificationNoteDeleted: "笔记已被删除或已移至回收站",
   newNoteTitle: "新建笔记",
   backToList: "返回",
   saveNote: "保存",

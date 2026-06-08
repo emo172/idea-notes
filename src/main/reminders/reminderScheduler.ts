@@ -2,14 +2,20 @@
 // 作用：
 // 1. 定时读取本地数据，计算到期提醒并发送桌面通知。
 // 2. 写回已提醒 key，确保同一笔记同一截止时间和提前量只提醒一次。
+// 3. 通过回调传递通知点击事件，由主进程入口负责窗口激活和渲染层通信。
 import { Notification } from "electron";
 import { findDueReminders, markReminderNotified } from "@shared/noteLogic";
 import { readData, saveData } from "../store";
 
 const reminderIntervalMs = 60_000;
 let reminderTimer: NodeJS.Timeout | null = null;
+let onNotificationClick: ((noteId: string) => void) | undefined;
 
-export async function checkRemindersOnce(now = Date.now()): Promise<void> {
+export async function checkRemindersOnce(
+  now = Date.now(),
+  callback?: (noteId: string) => void,
+): Promise<void> {
+  const cb = callback ?? onNotificationClick;
   const data = await readData();
   const reminders = findDueReminders(data, now);
   if (reminders.length === 0) return;
@@ -17,12 +23,16 @@ export async function checkRemindersOnce(now = Date.now()): Promise<void> {
   let nextData = data;
   for (const reminder of reminders) {
     try {
-      new Notification({
+      const notification = new Notification({
         title: reminder.note.title || "灵感笔记提醒",
         body: reminder.note.dueAt
           ? `截止时间：${reminder.note.dueAt}`
           : "笔记已到提醒时间",
-      }).show();
+      });
+      if (cb) {
+        notification.on("click", () => cb(reminder.note.id));
+      }
+      notification.show();
     } catch {
       // 系统通知显示失败时仍记录本轮提醒，避免后续调度重复触发。
     }
@@ -31,8 +41,9 @@ export async function checkRemindersOnce(now = Date.now()): Promise<void> {
   await saveData(nextData);
 }
 
-export function startReminderScheduler(): void {
+export function startReminderScheduler(callback?: (noteId: string) => void): void {
   if (reminderTimer) return;
+  onNotificationClick = callback;
   reminderTimer = setInterval(() => {
     void checkRemindersOnce().catch(() => {
       // 提醒失败不应中断主进程；下一轮调度会再次尝试读取和提醒。
@@ -47,4 +58,5 @@ export function stopReminderScheduler(): void {
   if (!reminderTimer) return;
   clearInterval(reminderTimer);
   reminderTimer = null;
+  onNotificationClick = undefined;
 }
