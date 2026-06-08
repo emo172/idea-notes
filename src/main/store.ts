@@ -16,7 +16,7 @@ import { writeJsonFile } from "./store/writeJsonFile";
 // 数据文件放在 Electron userData 目录，避免写入安装目录或源码目录。
 const dataFileName = "idea-notes-data.json";
 
-function dataPath(): string {
+export function dataPath(): string {
   return join(app.getPath("userData"), dataFileName);
 }
 

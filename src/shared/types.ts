@@ -59,6 +59,7 @@ export interface IdeaSettings {
     enabled: boolean;
     leadMinutes: ReminderLeadMinutes;
   };
+  windowBounds?: WindowBounds;
 }
 
 // 应用持久化根对象，主进程读写磁盘时只处理这一种结构。
@@ -94,10 +95,20 @@ export interface CompletionSummary {
   ratio: number;
 }
 
+// 窗口位置和尺寸，由主进程管理并持久化；renderer 只读不写。
+export interface WindowBounds {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  isMaximized: boolean;
+}
+
 // Electron 窗口状态由主进程返回，渲染层只负责显示和触发动作。
 export interface DesktopWindowState {
   isAlwaysOnTop: boolean;
   isMaximized: boolean;
+  bounds?: WindowBounds;
 }
 
 // 文件导入导出结果由主进程生成，renderer 只按 ok/reason 更新反馈和数据状态。

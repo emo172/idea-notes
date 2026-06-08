@@ -7,7 +7,8 @@ import { app, type BrowserWindow, type Tray } from "electron";
 import { registerIpc } from "./ipc/registerIpc";
 import { configureLinuxStartup } from "./platform/linuxStartup";
 import { startReminderScheduler } from "./reminders/reminderScheduler";
-import { readData } from "./store";
+import { dataPath, readData } from "./store";
+import { writeJsonFile } from "./store/writeJsonFile";
 import { createAppTray } from "./tray/createAppTray";
 import { createMainWindow } from "./window/createMainWindow";
 import type { IdeaSettings } from "@shared/types";
@@ -23,16 +24,39 @@ let isQuitting = false;
 function openMainWindow(settings: IdeaSettings): BrowserWindow {
   mainWindow = createMainWindow({
     settings,
+    savedBounds: settings.windowBounds,
     onClosed: () => {
       mainWindow = null;
     },
   });
   mainWindow.on("close", (event) => {
+    // 窗口关闭前保存 bounds，此时主窗口引用仍然有效。
+    void saveWindowBounds();
     if (!currentSettings?.minimizeToTrayOnClose || isQuitting) return;
     event.preventDefault();
     mainWindow?.hide();
   });
   return mainWindow;
+}
+
+async function saveWindowBounds(): Promise<void> {
+  try {
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      const bounds = mainWindow.getBounds();
+      const isMaximized = mainWindow.isMaximized();
+      const data = await readData();
+      data.settings.windowBounds = {
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+        isMaximized,
+      };
+      await writeJsonFile(dataPath(), data);
+    }
+  } catch {
+    // 保存失败不中断关闭/退出流程。
+  }
 }
 
 async function openMainWindowFromCurrentSettings(): Promise<BrowserWindow> {
@@ -41,8 +65,10 @@ async function openMainWindowFromCurrentSettings(): Promise<BrowserWindow> {
   return openMainWindow(data.settings);
 }
 
-app.on("before-quit", () => {
+app.on("before-quit", async () => {
   isQuitting = true;
+  // 兜底保存：防止通过托盘退出等路径未触发窗口 close 事件的情况。
+  await saveWindowBounds();
 });
 
 function destroyTray(): void {

@@ -69,4 +69,16 @@ describe("主进程窗口配置", () => {
     );
     expect(windowSource).toContain("show: !settings.silentStart");
   });
+
+  it("getWindowState 返回包含 bounds 的 DesktopWindowState", () => {
+    const windowSource = readFileSync(
+      resolve("src/main/window/createMainWindow.ts"),
+      "utf8",
+    );
+
+    const funcMatch = windowSource.match(/export function getWindowState[\s\S]*?\n\}/);
+    expect(funcMatch).toBeTruthy();
+    expect(funcMatch![0]).toContain("getBounds()");
+    expect(funcMatch![0]).toContain("bounds:");
+  });
 });
