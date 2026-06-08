@@ -50,7 +50,7 @@ describe("App settings startup", () => {
 
     await user.click(startupTab);
     expect(api.setStartup).not.toHaveBeenCalled();
-    expect(screen.queryByRole("checkbox", { name: /启动行为/ })).toBeNull();
+    expect(screen.queryByRole("checkbox", { name: /随系统启动自动运行/ })).toBeNull();
     expect(api.saveData).toHaveBeenCalledTimes(1);
 
     const finishSave = resolveSave;
@@ -81,7 +81,7 @@ describe("App settings startup", () => {
     await user.click(await screen.findByRole("button", { name: "设置" }));
     await user.click(screen.getByRole("tab", { name: "启动行为" }));
     const startupSwitch = screen.getByRole("checkbox", {
-      name: /启动行为/,
+      name: /随系统启动自动运行/,
     }) as HTMLInputElement;
     await user.click(startupSwitch);
 
@@ -105,12 +105,46 @@ describe("App settings startup", () => {
 
     await user.click(await screen.findByRole("button", { name: "设置" }));
     await user.click(screen.getByRole("tab", { name: "启动行为" }));
-    const startupSwitch = screen.getByRole("checkbox", { name: /启动行为/ });
+    const startupSwitch = screen.getByRole("checkbox", {
+      name: /随系统启动自动运行/,
+    });
 
     expect(startupSwitch.closest(".switch")).toBeTruthy();
     await user.click(startupSwitch);
 
     await waitFor(() => expect(api.setStartup).toHaveBeenCalledWith(true));
     expect(saved.at(-1)?.settings.startup).toBe(false);
+  });
+
+  it("启动行为页展示并保存窗口启动和托盘设置", async () => {
+    const data = getDefaultData(BASE_TIME);
+    const { api, saved } = installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.click(screen.getByRole("tab", { name: "启动行为" }));
+
+    expect(screen.getByRole("checkbox", { name: /随系统启动自动运行/ })).toBeTruthy();
+    const silentStartSwitch = screen.getByRole("checkbox", { name: /静默启动/ });
+    const minimizeToTraySwitch = screen.getByRole("checkbox", {
+      name: /关闭时最小化到托盘/,
+    });
+    const appWindowControlsSwitch = screen.getByRole("checkbox", {
+      name: /启用应用级窗口按钮/,
+    });
+
+    await user.click(silentStartSwitch);
+    await waitFor(() => expect(saved.at(-1)?.settings.silentStart).toBe(true));
+    expect(api.setStartup).not.toHaveBeenCalled();
+
+    await user.click(minimizeToTraySwitch);
+    await waitFor(() =>
+      expect(saved.at(-1)?.settings.minimizeToTrayOnClose).toBe(true),
+    );
+
+    await user.click(appWindowControlsSwitch);
+    await waitFor(() => expect(saved.at(-1)?.settings.appWindowControls).toBe(false));
   });
 });

@@ -112,6 +112,9 @@ function isIdeaSettings(value: unknown): boolean {
     typeof value.themeMode === "string" &&
     themeModes.has(value.themeMode) &&
     typeof value.startup === "boolean" &&
+    typeof value.silentStart === "boolean" &&
+    typeof value.minimizeToTrayOnClose === "boolean" &&
+    typeof value.appWindowControls === "boolean" &&
     typeof value.trashAutoDelete === "string" &&
     trashRetentions.has(value.trashAutoDelete) &&
     typeof value.language === "string" &&

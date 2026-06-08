@@ -52,6 +52,8 @@ export default function App(): ReactElement {
   const [isClearTrashConfirmOpen, setIsClearTrashConfirmOpen] = useState(false);
   const [isResetSettingsConfirmOpen, setIsResetSettingsConfirmOpen] = useState(false);
   const currentLanguage = data?.settings.language ?? defaultSettings.language;
+  const useAppWindowControls =
+    data?.settings.appWindowControls ?? defaultSettings.appWindowControls;
   const copy = appCopy[currentLanguage];
 
   useEffect(() => {
@@ -178,6 +180,7 @@ export default function App(): ReactElement {
       appBodyClassName={appBodyClassName}
       copy={copy}
       windowState={windowState}
+      useAppWindowControls={useAppWindowControls}
       pinButtonLabel={pinButtonLabel}
       viewMode={viewMode}
       counts={counts}

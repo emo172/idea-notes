@@ -10,6 +10,9 @@ import { createTag } from "./tags/tagLogic";
 export const defaultSettings: IdeaSettings = {
   themeMode: "light",
   startup: false,
+  silentStart: false,
+  minimizeToTrayOnClose: false,
+  appWindowControls: true,
   trashAutoDelete: "never",
   language: "zh-CN",
   reminders: {

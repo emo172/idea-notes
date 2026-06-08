@@ -55,6 +55,9 @@ describe("主进程本地存储迁移", () => {
     expect(data.tags.find((tag) => tag.name === "工作")?.color).toBe("#2563eb");
     expect(data.notes[0].tags).toEqual(["工作", "待办"]);
     expect(data.settings).not.toHaveProperty("backgroundColor");
+    expect(data.settings.silentStart).toBe(false);
+    expect(data.settings.minimizeToTrayOnClose).toBe(false);
+    expect(data.settings.appWindowControls).toBe(true);
     expect(persisted).toEqual(data);
   });
 
