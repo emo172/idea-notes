@@ -60,6 +60,8 @@ export interface IdeaSettings {
     leadMinutes: ReminderLeadMinutes;
   };
   windowBounds?: WindowBounds;
+  fontFamily?: string;
+  fontSize?: number;
 }
 
 // 应用持久化根对象，主进程读写磁盘时只处理这一种结构。

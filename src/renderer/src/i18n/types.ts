@@ -17,6 +17,15 @@ export interface SettingsCopy {
   dataSettings: string;
   themeMode: string;
   themeDescription: string;
+  fontFamily: string;
+  fontSize: string;
+  fontSystemDefault: string;
+  fontSimSun: string;
+  fontSimHei: string;
+  fontKaiTi: string;
+  fontDengXian: string;
+  fontConsolas: string;
+  fontMonaco: string;
   startupBehavior: string;
   startupDescription: string;
   silentStart: string;

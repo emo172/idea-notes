@@ -19,6 +19,8 @@ export const defaultSettings: IdeaSettings = {
     enabled: false,
     leadMinutes: 10,
   },
+  fontFamily: "system",
+  fontSize: 14,
 };
 
 export function getDefaultData(now = Date.now()): IdeaNotesData {

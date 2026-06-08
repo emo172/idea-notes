@@ -50,6 +50,10 @@ function isBoolean(value: unknown): value is boolean {
   return typeof value === "boolean";
 }
 
+function isOptionalBoolean(value: unknown): value is boolean | undefined {
+  return value === undefined || typeof value === "boolean";
+}
+
 function isOptionalString(value: unknown): value is string | undefined {
   return value === undefined || typeof value === "string";
 }
@@ -108,7 +112,8 @@ function isIdeaNote(value: unknown): boolean {
     isFiniteNumber(value.updatedAt) &&
     isOptionalFiniteNumber(value.trashedAt) &&
     isOptionalPreviousStatus(value.previousStatus) &&
-    isOptionalStringArray(value.notifiedReminderKeys)
+    isOptionalStringArray(value.notifiedReminderKeys) &&
+    isOptionalBoolean(value.pinned)
   );
 }
 
@@ -135,6 +140,8 @@ function isIdeaSettings(value: unknown): boolean {
     typeof value.language === "string" &&
     appLanguages.has(value.language) &&
     isReminderSettings(value.reminders) &&
+    isOptionalString(value.fontFamily) &&
+    isOptionalFiniteNumber(value.fontSize) &&
     (value.windowBounds === undefined || isWindowBounds(value.windowBounds))
   );
 }

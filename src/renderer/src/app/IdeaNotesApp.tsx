@@ -53,6 +53,9 @@ export default function App(): ReactElement {
   const [isResetSettingsConfirmOpen, setIsResetSettingsConfirmOpen] = useState(false);
   const [notificationFeedback, setNotificationFeedback] = useState<string | null>(null);
   const currentLanguage = data?.settings.language ?? defaultSettings.language;
+  const currentFontFamily =
+    data?.settings.fontFamily ?? defaultSettings.fontFamily ?? "system";
+  const currentFontSize = data?.settings.fontSize ?? defaultSettings.fontSize ?? 14;
   const useAppWindowControls =
     data?.settings.appWindowControls ?? defaultSettings.appWindowControls;
   const copy = appCopy[currentLanguage];
@@ -60,6 +63,20 @@ export default function App(): ReactElement {
   useEffect(() => {
     document.documentElement.lang = currentLanguage;
   }, [currentLanguage]);
+
+  useEffect(() => {
+    const rootStyle = document.documentElement.style;
+    if (currentFontFamily === "system") {
+      rootStyle.removeProperty("--app-font-family");
+    } else {
+      rootStyle.setProperty("--app-font-family", currentFontFamily);
+    }
+    rootStyle.setProperty("--app-font-size", `${currentFontSize}px`);
+    return () => {
+      rootStyle.removeProperty("--app-font-family");
+      rootStyle.removeProperty("--app-font-size");
+    };
+  }, [currentFontFamily, currentFontSize]);
 
   const noteViewMode = toNoteViewMode(viewMode);
   const notes = data?.notes ?? [];
