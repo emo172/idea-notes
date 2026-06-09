@@ -14,7 +14,7 @@ interface ShortcutHelpDialogProps {
 
 interface ShortcutDef {
   keys: string;
-  description: string;
+  descriptionKey: keyof AppCopy["shortcutDescriptions"];
   category: string;
 }
 
@@ -29,13 +29,15 @@ interface ShortcutCategory {
 }
 
 const SHORTCUTS: ShortcutDef[] = [
-  { keys: "Ctrl/Cmd+F", description: "聚焦搜索框", category: "navigation" },
-  { keys: "Ctrl/Cmd+N", description: "新建笔记", category: "editing" },
-  { keys: "Ctrl/Cmd+S", description: "保存当前编辑", category: "editing" },
-  { keys: "Ctrl/Cmd+1", description: "切换到进行中视图", category: "view" },
-  { keys: "Ctrl/Cmd+2", description: "切换到已完成视图", category: "view" },
-  { keys: "Ctrl/Cmd+3", description: "切换到归档视图", category: "view" },
-  { keys: "Ctrl/Cmd+4", description: "切换到回收站视图", category: "view" },
+  { keys: "Ctrl/Cmd+F", descriptionKey: "search", category: "navigation" },
+  { keys: "F1", descriptionKey: "help", category: "navigation" },
+  { keys: "Ctrl/Cmd+/", descriptionKey: "help", category: "navigation" },
+  { keys: "Ctrl/Cmd+N", descriptionKey: "newNoteInList", category: "editing" },
+  { keys: "Ctrl/Cmd+S", descriptionKey: "saveEditor", category: "editing" },
+  { keys: "Ctrl/Cmd+1", descriptionKey: "viewActiveInList", category: "view" },
+  { keys: "Ctrl/Cmd+2", descriptionKey: "viewCompletedInList", category: "view" },
+  { keys: "Ctrl/Cmd+3", descriptionKey: "viewArchiveInList", category: "view" },
+  { keys: "Ctrl/Cmd+4", descriptionKey: "viewTrashInList", category: "view" },
 ];
 
 const SHORTCUT_CATEGORIES: ShortcutCategory[] = [
@@ -62,7 +64,7 @@ export function ShortcutHelpDialog({
       onEscape={onClose}
     >
       <p id="shortcut-help-description" className="shortcut-help-intro">
-        当前可用的全局快捷键。
+        {copy.shortcutIntro}
       </p>
       <div className="shortcut-groups">
         {SHORTCUT_CATEGORIES.map((category) => (
@@ -75,7 +77,7 @@ export function ShortcutHelpDialog({
                     <dt>
                       <kbd>{shortcut.keys}</kbd>
                     </dt>
-                    <dd>{shortcut.description}</dd>
+                    <dd>{copy.shortcutDescriptions[shortcut.descriptionKey]}</dd>
                   </div>
                 ),
               )}

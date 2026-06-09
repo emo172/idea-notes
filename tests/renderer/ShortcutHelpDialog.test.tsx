@@ -26,6 +26,8 @@ describe("ShortcutHelpDialog", () => {
       "Ctrl/Cmd+N",
       "Ctrl/Cmd+S",
       "Ctrl/Cmd+F",
+      "F1",
+      "Ctrl/Cmd+/",
       "Ctrl/Cmd+1",
       "Ctrl/Cmd+2",
       "Ctrl/Cmd+3",
@@ -36,13 +38,17 @@ describe("ShortcutHelpDialog", () => {
       expect(key.tagName).toBe("KBD");
     }
 
-    expect(within(dialog).getByText("新建笔记")).toBeTruthy();
+    expect(
+      within(dialog).getByText("已支持的快捷键，部分仅在对应界面可用。"),
+    ).toBeTruthy();
     expect(within(dialog).getByText("保存当前编辑")).toBeTruthy();
     expect(within(dialog).getByText("聚焦搜索框")).toBeTruthy();
-    expect(within(dialog).getByText("切换到进行中视图")).toBeTruthy();
-    expect(within(dialog).getByText("切换到已完成视图")).toBeTruthy();
-    expect(within(dialog).getByText("切换到归档视图")).toBeTruthy();
-    expect(within(dialog).getByText("切换到回收站视图")).toBeTruthy();
+    expect(within(dialog).getAllByText("打开快捷键帮助")).toHaveLength(2);
+    expect(within(dialog).getByText("在列表中可新建笔记")).toBeTruthy();
+    expect(within(dialog).getByText("在列表中可切换到进行中视图")).toBeTruthy();
+    expect(within(dialog).getByText("在列表中可切换到已完成视图")).toBeTruthy();
+    expect(within(dialog).getByText("在列表中可切换到归档视图")).toBeTruthy();
+    expect(within(dialog).getByText("在列表中可切换到回收站视图")).toBeTruthy();
   });
 
   it("按 Escape 时调用关闭回调", async () => {
@@ -63,5 +69,56 @@ describe("ShortcutHelpDialog", () => {
     expect(within(dialog).getByRole("heading", { name: "Navigation" })).toBeTruthy();
     expect(within(dialog).getByRole("heading", { name: "Editing" })).toBeTruthy();
     expect(within(dialog).getByRole("heading", { name: "View" })).toBeTruthy();
+  });
+
+  it("英文环境下 intro 和每条说明使用英文且不出现简体中文", () => {
+    render(<ShortcutHelpDialog copy={appCopy.en} onClose={vi.fn()} />);
+
+    const dialog = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+    expect(within(dialog).getByText(appCopy.en.shortcutIntro)).toBeTruthy();
+    expect(within(dialog).queryByText(/current context/i)).toBeNull();
+
+    for (const description of Object.values(appCopy.en.shortcutDescriptions)) {
+      expect(within(dialog).getAllByText(description).length).toBeGreaterThan(0);
+    }
+
+    for (const simplifiedText of [
+      "当前可用的全局快捷键。",
+      "聚焦搜索框",
+      "新建笔记",
+      "保存当前编辑",
+      "切换到进行中视图",
+      "切换到已完成视图",
+      "切换到归档视图",
+      "切换到回收站视图",
+      "当前情境中可用的快捷键。",
+    ]) {
+      expect(within(dialog).queryByText(simplifiedText)).toBeNull();
+    }
+  });
+
+  it("繁体环境下 intro 和每条说明使用繁体且不出现简体中文", () => {
+    render(<ShortcutHelpDialog copy={appCopy["zh-TW"]} onClose={vi.fn()} />);
+
+    const dialog = screen.getByRole("dialog", { name: "快捷鍵參考" });
+    expect(within(dialog).getByText(appCopy["zh-TW"].shortcutIntro)).toBeTruthy();
+
+    for (const description of Object.values(appCopy["zh-TW"].shortcutDescriptions)) {
+      expect(within(dialog).getAllByText(description).length).toBeGreaterThan(0);
+    }
+
+    for (const simplifiedText of [
+      "当前可用的全局快捷键。",
+      "聚焦搜索框",
+      "新建笔记",
+      "保存当前编辑",
+      "切换到进行中视图",
+      "切换到已完成视图",
+      "切换到归档视图",
+      "切换到回收站视图",
+      "当前情境中可用的快捷键。",
+    ]) {
+      expect(within(dialog).queryByText(simplifiedText)).toBeNull();
+    }
   });
 });
