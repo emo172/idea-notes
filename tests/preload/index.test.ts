@@ -50,6 +50,7 @@ describe("preload 暴露的桌面能力 API", () => {
       "closeWindow",
       "copyToClipboard",
       "exportData",
+      "flushPendingNotificationClicks",
       "getData",
       "getWindowState",
       "importData",
@@ -173,6 +174,19 @@ describe("preload 暴露的桌面能力 API", () => {
     expect(electronMock.removeListener).toHaveBeenCalledWith(
       "notification:open-note",
       listener,
+    );
+  });
+
+  it("将待发通知点击 flush 映射到固定 IPC 通道", async () => {
+    const api = await loadPreloadApi();
+    electronMock.invoke.mockResolvedValueOnce(["pending-note-id"]);
+
+    await expect(api.flushPendingNotificationClicks()).resolves.toEqual([
+      "pending-note-id",
+    ]);
+
+    expect(electronMock.invoke).toHaveBeenCalledWith(
+      "notification:flush-pending-clicks",
     );
   });
 });

@@ -139,4 +139,5 @@ export interface IdeaNotesApi {
   setStartup: (enabled: boolean) => Promise<boolean>;
   copyToClipboard?: (text: string) => Promise<void>;
   onNotificationClick?: (callback: NotificationClickCallback) => () => void;
+  flushPendingNotificationClicks: () => Promise<string[]>;
 }

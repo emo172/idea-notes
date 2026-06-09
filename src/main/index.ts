@@ -11,6 +11,9 @@ import { dataPath, readData } from "./store";
 import { writeJsonFile } from "./store/writeJsonFile";
 import { createAppTray } from "./tray/createAppTray";
 import { createMainWindow } from "./window/createMainWindow";
+import { openOrFocusWindowForNotification } from "./window/notificationWindowOpener";
+import { createPendingNotificationClicks } from "./window/pendingNotificationClicks";
+import { createWindowStatePersistence } from "./window/windowStatePersistence";
 import type { IdeaSettings } from "@shared/types";
 
 configureLinuxStartup(app);
@@ -20,6 +23,16 @@ let mainWindow: BrowserWindow | null = null;
 let appTray: Tray | null = null;
 let currentSettings: IdeaSettings | null = null;
 let isQuitting = false;
+const pendingClicks = createPendingNotificationClicks();
+const windowStatePersistence = createWindowStatePersistence({
+  getWindow: () => mainWindow,
+  readData,
+  writeData: async (data) => {
+    await writeJsonFile(dataPath(), data);
+  },
+  shouldHideToTrayOnClose: () => Boolean(currentSettings?.minimizeToTrayOnClose),
+  isQuitting: () => isQuitting,
+});
 
 function openMainWindow(settings: IdeaSettings): BrowserWindow {
   mainWindow = createMainWindow({
@@ -31,32 +44,9 @@ function openMainWindow(settings: IdeaSettings): BrowserWindow {
   });
   mainWindow.on("close", (event) => {
     // 窗口关闭前保存 bounds，此时主窗口引用仍然有效。
-    void saveWindowBounds();
-    if (!currentSettings?.minimizeToTrayOnClose || isQuitting) return;
-    event.preventDefault();
-    mainWindow?.hide();
+    void windowStatePersistence.handleWindowClose(event, mainWindow);
   });
   return mainWindow;
-}
-
-async function saveWindowBounds(): Promise<void> {
-  try {
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      const bounds = mainWindow.getBounds();
-      const isMaximized = mainWindow.isMaximized();
-      const data = await readData();
-      data.settings.windowBounds = {
-        x: bounds.x,
-        y: bounds.y,
-        width: bounds.width,
-        height: bounds.height,
-        isMaximized,
-      };
-      await writeJsonFile(dataPath(), data);
-    }
-  } catch {
-    // 保存失败不中断关闭/退出流程。
-  }
 }
 
 async function openMainWindowFromCurrentSettings(): Promise<BrowserWindow> {
@@ -65,10 +55,10 @@ async function openMainWindowFromCurrentSettings(): Promise<BrowserWindow> {
   return openMainWindow(data.settings);
 }
 
-app.on("before-quit", async () => {
+app.on("before-quit", (event) => {
   isQuitting = true;
   // 兜底保存：防止通过托盘退出等路径未触发窗口 close 事件的情况。
-  await saveWindowBounds();
+  void windowStatePersistence.handleBeforeQuit(event, () => app.quit());
 });
 
 function destroyTray(): void {
@@ -84,6 +74,7 @@ app.whenReady().then(async () => {
     onSettingsSaved: (settings) => {
       currentSettings = settings;
     },
+    flushPendingNotificationClicks: pendingClicks.flush,
   });
   // 不显示默认菜单，让应用保持原型中的沉浸式自定义标题栏体验。
   app.applicationMenu = null;
@@ -97,12 +88,14 @@ app.whenReady().then(async () => {
     },
   });
   startReminderScheduler((noteId) => {
-    const win = mainWindow;
-    if (!win) return;
-    if (win.isMinimized()) win.restore();
-    win.show();
-    win.focus();
-    win.webContents.send("notification:open-note", noteId);
+    void openOrFocusWindowForNotification({
+      noteId,
+      getWindow: () => mainWindow,
+      openWindow: openMainWindowFromCurrentSettings,
+      pendingClicks,
+    }).catch(() => {
+      // 通知点击恢复失败不应造成主进程未处理 Promise rejection。
+    });
   });
 
   // macOS 点击 Dock 图标时，如果没有窗口则重新创建窗口。

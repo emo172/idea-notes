@@ -23,12 +23,17 @@ describe("主进程托盘和窗口生命周期", () => {
 
   it("关闭到托盘启用时拦截关闭事件并隐藏窗口", () => {
     const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+    const persistenceSource = readFileSync(
+      resolve("src/main/window/windowStatePersistence.ts"),
+      "utf8",
+    );
 
     expect(mainSource).toContain("minimizeToTrayOnClose");
     expect(mainSource).toContain('mainWindow.on("close"');
-    expect(mainSource).toContain("event.preventDefault()");
-    expect(mainSource).toContain("hide()");
-    expect(mainSource).toContain("isQuitting");
+    expect(mainSource).toContain("windowStatePersistence.handleWindowClose");
+    expect(persistenceSource).toContain("event.preventDefault()");
+    expect(persistenceSource).toContain("hide()");
+    expect(persistenceSource).toContain("isQuitting");
   });
 
   it("托盘模块提供显示主窗口和退出应用菜单", () => {
@@ -44,5 +49,22 @@ describe("主进程托盘和窗口生命周期", () => {
     expect(traySource).toContain("退出应用");
     expect(traySource).toContain("window.show()");
     expect(traySource).toContain("app.quit()");
+  });
+
+  it("通知点击时接入通知 opener 和 pending queue", () => {
+    const mainSource = readFileSync(resolve("src/main/index.ts"), "utf8");
+    const openerSource = readFileSync(
+      resolve("src/main/window/notificationWindowOpener.ts"),
+      "utf8",
+    );
+
+    expect(mainSource).toContain("openOrFocusWindowForNotification");
+    expect(mainSource).toContain("openWindow: openMainWindowFromCurrentSettings");
+    expect(mainSource).toContain("pendingClicks");
+    expect(openerSource).not.toContain("if (!win) return");
+    expect(openerSource).toContain("pendingClicks.enqueue(noteId)");
+    expect(mainSource).toMatch(
+      /startReminderScheduler\(\(noteId\) => \{[\s\S]*void openOrFocusWindowForNotification\(\{[\s\S]*\}\)\.catch/,
+    );
   });
 });

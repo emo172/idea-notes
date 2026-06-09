@@ -59,6 +59,51 @@ describe("App notification click", () => {
     );
   });
 
+  it("挂载订阅后 flush 待发通知并打开对应笔记", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME), {
+      pendingNotificationClicks: ["seed-navigation"],
+    });
+
+    render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+
+    expect(api.onNotificationClick).toHaveBeenCalledTimes(1);
+    expect(api.flushPendingNotificationClicks).toHaveBeenCalledTimes(1);
+
+    const dialog = await screen.findByRole("dialog", { name: "编辑笔记" });
+    expect(dialog).toBeTruthy();
+    expect((screen.getByLabelText("标题") as HTMLInputElement).value).toBe(
+      "重构 Desktop App 导航栏",
+    );
+  });
+
+  it("flush 待发通知失败后重新挂载会重试并打开对应笔记", async () => {
+    const data = getDefaultData(BASE_TIME);
+    const { api } = installApi(data);
+    api.flushPendingNotificationClicks = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("flush failed"))
+      .mockResolvedValueOnce(["seed-navigation"]);
+
+    const firstRender = render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    expect(api.flushPendingNotificationClicks).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("dialog")).toBeNull();
+
+    firstRender.unmount();
+    render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    expect(api.flushPendingNotificationClicks).toHaveBeenCalledTimes(2);
+    const dialog = await screen.findByRole("dialog", { name: "编辑笔记" });
+    expect(dialog).toBeTruthy();
+    expect((screen.getByLabelText("标题") as HTMLInputElement).value).toBe(
+      "重构 Desktop App 导航栏",
+    );
+  });
+
   it("通知点击回收站笔记时显示删除提示", async () => {
     const data = makeData({
       notes: [
