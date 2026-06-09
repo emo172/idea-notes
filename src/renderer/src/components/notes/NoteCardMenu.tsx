@@ -23,7 +23,9 @@ interface NoteCardMenuProps {
   onRestore: (note: IdeaNote) => Promise<void>;
   onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
+  onCopyText: (text: string, kind: "title" | "body") => Promise<void>;
   onDelete: (note: IdeaNote) => void;
+  canCopyToClipboard: boolean;
 }
 
 export function NoteCardMenu({
@@ -40,13 +42,11 @@ export function NoteCardMenu({
   onRestore,
   onRestoreArchived,
   onDuplicate,
+  onCopyText,
   onDelete,
+  canCopyToClipboard,
 }: NoteCardMenuProps): ReactElement {
-  const canCopyBody = note.body !== "";
-
-  function copyToClipboard(text: string): void {
-    void window.ideaNotes.copyToClipboard?.(text);
-  }
+  const canCopyBody = canCopyToClipboard && note.body !== "";
 
   return (
     <DropdownButton
@@ -77,9 +77,12 @@ export function NoteCardMenu({
               type="button"
               role="menuitem"
               disabled={!canCopyBody}
-              onPointerUp={canCopyBody ? () => copyToClipboard(note.body) : undefined}
+              onPointerUp={
+                canCopyBody ? () => onCopyText(note.body, "body") : undefined
+              }
               onClick={(event) => {
-                if (canCopyBody && event.detail === 0) copyToClipboard(note.body);
+                if (canCopyBody && event.detail === 0)
+                  void onCopyText(note.body, "body");
               }}
             >
               {copy.copyBody}
@@ -140,9 +143,14 @@ export function NoteCardMenu({
       <button
         type="button"
         role="menuitem"
-        onPointerUp={() => copyToClipboard(note.title)}
+        disabled={!canCopyToClipboard}
+        onPointerUp={
+          canCopyToClipboard ? () => onCopyText(note.title, "title") : undefined
+        }
         onClick={(event) => {
-          if (event.detail === 0) copyToClipboard(note.title);
+          if (canCopyToClipboard && event.detail === 0) {
+            void onCopyText(note.title, "title");
+          }
         }}
       >
         {copy.copyTitle}

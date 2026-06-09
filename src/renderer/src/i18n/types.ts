@@ -149,6 +149,9 @@ export interface AppCopy {
   duplicateTitleSuffix: string;
   copyTitle: string;
   copyBody: string;
+  copyTitleSuccess: string;
+  copyBodySuccess: string;
+  copyFailed: string;
   delete: string;
   deleteConfirmTitle: string;
   deleteConfirmBody: string;
