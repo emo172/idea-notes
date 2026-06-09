@@ -43,6 +43,7 @@ export interface IdeaNote {
   trashedAt?: number;
   previousStatus?: Exclude<NoteStatus, "trash">;
   notifiedReminderKeys?: string[];
+  pinned?: boolean;
 }
 
 // 用户偏好设置随主数据一起写入本地 JSON 文件。
@@ -58,6 +59,9 @@ export interface IdeaSettings {
     enabled: boolean;
     leadMinutes: ReminderLeadMinutes;
   };
+  windowBounds?: WindowBounds;
+  fontFamily?: string;
+  fontSize?: number;
 }
 
 // 应用持久化根对象，主进程读写磁盘时只处理这一种结构。
@@ -93,10 +97,20 @@ export interface CompletionSummary {
   ratio: number;
 }
 
+// 窗口位置和尺寸，由主进程管理并持久化；renderer 只读不写。
+export interface WindowBounds {
+  x?: number;
+  y?: number;
+  width: number;
+  height: number;
+  isMaximized: boolean;
+}
+
 // Electron 窗口状态由主进程返回，渲染层只负责显示和触发动作。
 export interface DesktopWindowState {
   isAlwaysOnTop: boolean;
   isMaximized: boolean;
+  bounds?: WindowBounds;
 }
 
 // 文件导入导出结果由主进程生成，renderer 只按 ok/reason 更新反馈和数据状态。
@@ -105,6 +119,9 @@ export interface DataFileResult {
   filePath?: string;
   reason?: "cancelled" | "invalid" | "failed";
 }
+
+// 通知点击回调，接收被点击笔记的 id，用于打开对应编辑器。
+export type NotificationClickCallback = (noteId: string) => void;
 
 // preload 暴露给渲染层的唯一桌面能力入口，禁止直接暴露 ipcRenderer。
 export interface IdeaNotesApi {
@@ -120,4 +137,6 @@ export interface IdeaNotesApi {
   closeWindow: () => Promise<void>;
   toggleAlwaysOnTop: () => Promise<DesktopWindowState>;
   setStartup: (enabled: boolean) => Promise<boolean>;
+  copyToClipboard?: (text: string) => Promise<void>;
+  onNotificationClick?: (callback: NotificationClickCallback) => () => void;
 }

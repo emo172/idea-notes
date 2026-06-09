@@ -16,12 +16,19 @@ export function installApi(
 ): {
   api: IdeaNotesApi;
   saved: IdeaNotesData[];
+  /** 供测试手动触发通知点击回调，验证渲染层 subscribe 行为 */
+  triggerNotificationClick: (noteId: string) => void;
+  /** 供测试验证 unsubscribe 是否被调用 */
+  getUnsubscribeCalls: () => number;
 } {
   const saved: IdeaNotesData[] = [];
   const windowState: DesktopWindowState = options.windowState ?? {
     isAlwaysOnTop: false,
     isMaximized: false,
   };
+  let clickCallback: ((noteId: string) => void) | null = null;
+  let unsubscribeCalls = 0;
+
   const api: IdeaNotesApi = {
     getData: vi.fn(options.getData ?? (async () => data)),
     getWindowState: vi.fn(async () => windowState),
@@ -42,6 +49,14 @@ export function installApi(
       isAlwaysOnTop: true,
     })),
     setStartup: vi.fn(async (enabled) => enabled),
+    copyToClipboard: vi.fn(async () => undefined),
+    onNotificationClick: vi.fn((callback: (noteId: string) => void) => {
+      clickCallback = callback;
+      return () => {
+        clickCallback = null;
+        unsubscribeCalls++;
+      };
+    }),
   };
 
   Object.defineProperty(window, "ideaNotes", {
@@ -49,5 +64,10 @@ export function installApi(
     value: api,
   });
 
-  return { api, saved };
+  return {
+    api,
+    saved,
+    triggerNotificationClick: (noteId: string) => clickCallback?.(noteId),
+    getUnsubscribeCalls: () => unsubscribeCalls,
+  };
 }

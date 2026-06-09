@@ -12,6 +12,7 @@ interface UseKeyboardShortcutsInput {
   isSaving: boolean;
   hasConfirmDialog: boolean;
   onOpenNewNote: () => void;
+  onOpenShortcutHelp: () => void;
   onSaveEditor: () => Promise<void>;
   onViewModeChange: (status: NoteStatus) => void;
 }
@@ -32,11 +33,17 @@ export function useKeyboardShortcuts({
   isSaving,
   hasConfirmDialog,
   onOpenNewNote,
+  onOpenShortcutHelp,
   onSaveEditor,
   onViewModeChange,
 }: UseKeyboardShortcutsInput): void {
   useEffect(() => {
     function handleKeyDown(event: KeyboardEvent): void {
+      if (event.key === "F1" || (isCommandKey(event) && event.key === "/")) {
+        onOpenShortcutHelp();
+        return;
+      }
+
       if (!isCommandKey(event)) return;
 
       const key = event.key.toLowerCase();
@@ -80,6 +87,7 @@ export function useKeyboardShortcuts({
     isEditorOpen,
     isSaving,
     onOpenNewNote,
+    onOpenShortcutHelp,
     onSaveEditor,
     onViewModeChange,
     searchInputRef,

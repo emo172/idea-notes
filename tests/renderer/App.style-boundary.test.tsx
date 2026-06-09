@@ -18,6 +18,8 @@ const noteStyleFiles = [
   "note-actions.css",
 ] as const;
 
+const dialogStyleFiles = ["dialogs.css", "shortcut-help.css"] as const;
+
 const editorStyleFiles = [
   "editor-layout.css",
   "editor-main.css",
@@ -47,7 +49,7 @@ describe("App style boundaries", () => {
       "sidebar.css",
       "toolbar.css",
       ...noteStyleFiles,
-      "dialogs.css",
+      ...dialogStyleFiles,
       ...editorStyleFiles,
       ...settingsStyleFiles,
     ];
@@ -72,6 +74,7 @@ describe("App style boundaries", () => {
         '@import "./styles/checklist-preview.css";',
         '@import "./styles/note-actions.css";',
         '@import "./styles/dialogs.css";',
+        '@import "./styles/shortcut-help.css";',
         '@import "./styles/editor-layout.css";',
         '@import "./styles/editor-main.css";',
         '@import "./styles/markdown-preview.css";',
@@ -109,13 +112,13 @@ describe("App style boundaries", () => {
     expect(dropdownStyles).toContain(".dropdown-menu button:hover");
   });
 
-  it("笔记卡片菜单向上展开，避免列表底部菜单被视口裁切", () => {
+  it("笔记卡片菜单向下展开，避免新增菜单项被列表顶部裁切", () => {
     const noteActionStyles = readStyleFile("note-actions.css");
     const contextMenuBlock = readCssRuleBlock(noteActionStyles, ".note-context-menu");
 
     expect(contextMenuBlock).toContain("right: 0;");
-    expect(contextMenuBlock).toContain("top: auto;");
-    expect(contextMenuBlock).toContain("bottom: calc(100% + 6px);");
+    expect(contextMenuBlock).toContain("top: calc(100% + 6px);");
+    expect(contextMenuBlock).toContain("bottom: auto;");
   });
 
   it("拆分后的样式模块不混入其他页面职责", () => {

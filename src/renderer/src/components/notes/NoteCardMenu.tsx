@@ -17,6 +17,7 @@ interface NoteCardMenuProps {
   isInTrash: boolean;
   onOpen: (note: IdeaNote) => void;
   onToggleCompleted: () => Promise<void>;
+  onTogglePin: (note: IdeaNote) => Promise<void>;
   onArchive: (note: IdeaNote) => Promise<void>;
   onTrash: (note: IdeaNote) => Promise<void>;
   onRestore: (note: IdeaNote) => Promise<void>;
@@ -33,6 +34,7 @@ export function NoteCardMenu({
   isInTrash,
   onOpen,
   onToggleCompleted,
+  onTogglePin,
   onArchive,
   onTrash,
   onRestore,
@@ -40,6 +42,12 @@ export function NoteCardMenu({
   onDuplicate,
   onDelete,
 }: NoteCardMenuProps): ReactElement {
+  const canCopyBody = note.body !== "";
+
+  function copyToClipboard(text: string): void {
+    void window.ideaNotes.copyToClipboard?.(text);
+  }
+
   return (
     <DropdownButton
       buttonClassName="note-icon-btn"
@@ -49,6 +57,9 @@ export function NoteCardMenu({
       <DropdownMenu className="note-context-menu" label={copy.moreActions}>
         {canEdit ? (
           <>
+            <button type="button" role="menuitem" onClick={() => onTogglePin(note)}>
+              {note.pinned ? copy.unpinNote : copy.pinNote}
+            </button>
             <button type="button" role="menuitem" onClick={() => onOpen(note)}>
               {copy.menuEdit}
             </button>
@@ -61,6 +72,18 @@ export function NoteCardMenu({
             <button type="button" role="menuitem" onClick={() => onDuplicate(note)}>
               {copy.menuDuplicate}
             </button>
+            {renderCopyTitleMenuItem()}
+            <button
+              type="button"
+              role="menuitem"
+              disabled={!canCopyBody}
+              onPointerUp={canCopyBody ? () => copyToClipboard(note.body) : undefined}
+              onClick={(event) => {
+                if (canCopyBody && event.detail === 0) copyToClipboard(note.body);
+              }}
+            >
+              {copy.copyBody}
+            </button>
             <button type="button" role="menuitem" onClick={() => onTrash(note)}>
               {copy.menuMoveTrash}
             </button>
@@ -68,6 +91,7 @@ export function NoteCardMenu({
         ) : null}
         {isCompleted ? (
           <>
+            {renderCopyTitleMenuItem()}
             <button type="button" role="menuitem" onClick={onToggleCompleted}>
               {copy.menuRestoreProgress}
             </button>
@@ -78,6 +102,7 @@ export function NoteCardMenu({
         ) : null}
         {note.status === "archive" ? (
           <>
+            {renderCopyTitleMenuItem()}
             <button
               type="button"
               role="menuitem"
@@ -92,6 +117,7 @@ export function NoteCardMenu({
         ) : null}
         {isInTrash ? (
           <>
+            {renderCopyTitleMenuItem()}
             <button type="button" role="menuitem" onClick={() => onRestore(note)}>
               {copy.menuRestoreTrash}
             </button>
@@ -108,4 +134,19 @@ export function NoteCardMenu({
       </DropdownMenu>
     </DropdownButton>
   );
+
+  function renderCopyTitleMenuItem(): ReactElement {
+    return (
+      <button
+        type="button"
+        role="menuitem"
+        onPointerUp={() => copyToClipboard(note.title)}
+        onClick={(event) => {
+          if (event.detail === 0) copyToClipboard(note.title);
+        }}
+      >
+        {copy.copyTitle}
+      </button>
+    );
+  }
 }

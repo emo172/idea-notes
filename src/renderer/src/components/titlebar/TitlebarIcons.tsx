@@ -9,6 +9,7 @@ import {
   GearIcon,
   MinusIcon,
   PushPinIcon,
+  QuestionIcon,
   SidebarIcon,
   XIcon,
 } from "@phosphor-icons/react";
@@ -35,6 +36,17 @@ export function PinIcon({ pinned }: PinIconProps): ReactElement {
 export function SettingsIcon(): ReactElement {
   return (
     <GearIcon
+      className="titlebar-icon"
+      aria-hidden="true"
+      focusable="false"
+      weight="bold"
+    />
+  );
+}
+
+export function ShortcutHelpIcon(): ReactElement {
+  return (
+    <QuestionIcon
       className="titlebar-icon"
       aria-hidden="true"
       focusable="false"

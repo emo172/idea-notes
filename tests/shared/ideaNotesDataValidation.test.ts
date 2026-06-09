@@ -236,3 +236,218 @@ describe("validateIdeaNotesData", () => {
     expect(validateIdeaNotesData(buildData())).toBe(false);
   });
 });
+
+describe("新字段默认值", () => {
+  it("defaultSettings 包含 fontFamily: system", () => {
+    expect(defaultSettings.fontFamily).toBe("system");
+  });
+
+  it("defaultSettings 包含 fontSize: 14", () => {
+    expect(defaultSettings.fontSize).toBe(14);
+  });
+
+  it("默认笔记示例包含 pinned: false", () => {
+    const data = getDefaultData(baseTime);
+    for (const note of data.notes) {
+      expect(note.pinned).toBe(false);
+    }
+  });
+});
+
+describe("validateIdeaNotesData 新字段", () => {
+  it("接受合法 pinned 字段（true）", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        notes: [{ ...data.notes[0], pinned: true, updatedAt: baseTime }],
+      }),
+    ).toBe(true);
+  });
+
+  it("接受合法 pinned 字段（false）", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        notes: [{ ...data.notes[0], pinned: false, updatedAt: baseTime }],
+      }),
+    ).toBe(true);
+  });
+
+  it("接受合法 fontFamily/fontSize 字段", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: { ...data.settings, fontFamily: "system", fontSize: 14 },
+      }),
+    ).toBe(true);
+  });
+
+  it("接受合法 windowBounds 字段（含 x/y）", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: {
+            x: 100,
+            y: 200,
+            width: 1000,
+            height: 700,
+            isMaximized: false,
+          },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("接受合法 windowBounds 字段（不含 x/y）", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: { width: 1000, height: 700, isMaximized: true },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("接受缺失新字段（向后兼容）", () => {
+    expect(validateIdeaNotesData(getDefaultData(baseTime))).toBe(true);
+  });
+
+  it("拒绝非布尔 pinned", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        notes: [
+          {
+            ...data.notes[0],
+            pinned: "yes" as unknown as boolean,
+            updatedAt: baseTime,
+          },
+        ],
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝非字符串 fontFamily", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: { ...data.settings, fontFamily: 123 },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝非数字 fontSize（字符串）", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: { ...data.settings, fontSize: "large" },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝非数字 fontSize（NaN）", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: { ...data.settings, fontSize: Number.NaN },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝缺少 width 的 windowBounds", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: { height: 700, isMaximized: false } as Record<string, unknown>,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝缺少 height 的 windowBounds", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: { width: 1000, isMaximized: false } as Record<string, unknown>,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝缺少 isMaximized 的 windowBounds", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: { width: 1000, height: 700 } as Record<string, unknown>,
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝非布尔 isMaximized", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: { width: 1000, height: 700, isMaximized: "yes" },
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝非数字 windowBounds.width", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: { width: "1000", height: 700, isMaximized: false },
+        },
+      }),
+    ).toBe(false);
+  });
+
+  it("拒绝非数字 windowBounds.x（字符串）", () => {
+    const data = getDefaultData(baseTime);
+    expect(
+      validateIdeaNotesData({
+        ...data,
+        settings: {
+          ...data.settings,
+          windowBounds: {
+            x: "left" as unknown as number,
+            y: 200,
+            width: 1000,
+            height: 700,
+            isMaximized: false,
+          },
+        },
+      }),
+    ).toBe(false);
+  });
+});

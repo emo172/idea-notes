@@ -223,6 +223,98 @@ describe("主进程数据备份导入导出", () => {
     ]);
   });
 
+  it("覆盖导入时过滤 settings.windowBounds", async () => {
+    const localData = getDefaultData(baseTime);
+    const importedData = {
+      ...getDefaultData(baseTime + 1_000),
+      settings: {
+        ...getDefaultData(baseTime + 1_000).settings,
+        windowBounds: {
+          x: 100,
+          y: 200,
+          width: 1920,
+          height: 1080,
+          isMaximized: false,
+        },
+      },
+      tags: [{ id: "tag-imported", name: "导入", color: "#2563eb" }],
+      notes: [
+        {
+          ...getDefaultData(baseTime + 1_000).notes[0],
+          id: "imported-note",
+          title: "导入笔记",
+          tags: ["导入"],
+        },
+      ],
+    };
+    const importPath = join(userDataDir, "import-bounds.json");
+    await writeStoredData(localData);
+    await writeFile(importPath, JSON.stringify(importedData, null, 2), "utf8");
+    electronMock.showOpenDialog.mockResolvedValue({
+      canceled: false,
+      filePaths: [importPath],
+    });
+    const { importDataFile } = await importBackup();
+
+    const result = await importDataFile(null, "overwrite");
+    const persisted = await readStoredData();
+
+    expect(result.ok).toBe(true);
+    // windowBounds 不应被保存到本地
+    expect(persisted.settings.windowBounds).toBeUndefined();
+    // 其他设置字段保留
+    expect(persisted.settings.themeMode).toBe(importedData.settings.themeMode);
+    // notes 和 tags 完整保留
+    expect(persisted.notes).toEqual(importedData.notes);
+    expect(persisted.tags).toEqual(importedData.tags);
+  });
+
+  it("合并导入时本地 windowBounds 保持不变", async () => {
+    const localData = getDefaultData(baseTime);
+    localData.settings.windowBounds = {
+      x: 50,
+      y: 100,
+      width: 1400,
+      height: 900,
+      isMaximized: false,
+    };
+    const importedData = getDefaultData(baseTime + 1_000);
+    importedData.settings.windowBounds = {
+      x: 999,
+      y: 999,
+      width: 2560,
+      height: 1440,
+      isMaximized: true,
+    };
+    importedData.tags = [{ id: "tag-imported", name: "导入", color: "#f97316" }];
+    importedData.notes = [
+      {
+        ...importedData.notes[0],
+        id: "new-imported-note",
+        title: "新增导入笔记",
+        tags: ["导入"],
+      },
+    ];
+    const importPath = join(userDataDir, "merge-bounds.json");
+    await writeStoredData(localData);
+    await writeFile(importPath, JSON.stringify(importedData, null, 2), "utf8");
+    electronMock.showOpenDialog.mockResolvedValue({
+      canceled: false,
+      filePaths: [importPath],
+    });
+    const { importDataFile } = await importBackup();
+
+    const result = await importDataFile(null, "merge");
+    const persisted = await readStoredData();
+
+    expect(result.ok).toBe(true);
+    // 本地 windowBounds 保持不变，不被导入值覆盖
+    expect(persisted.settings.windowBounds).toEqual(localData.settings.windowBounds);
+    // 导入的笔记被合并
+    expect(persisted.notes.length).toBe(localData.notes.length + 1);
+    expect(persisted.notes.map((n) => n.id)).toContain("new-imported-note");
+  });
+
   it("导入非法 JSON 时不改变现有本地数据", async () => {
     const localData = getDefaultData(baseTime);
     const importPath = join(userDataDir, "broken.json");

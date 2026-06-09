@@ -46,6 +46,14 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value);
 }
 
+function isBoolean(value: unknown): value is boolean {
+  return typeof value === "boolean";
+}
+
+function isOptionalBoolean(value: unknown): value is boolean | undefined {
+  return value === undefined || typeof value === "boolean";
+}
+
 function isOptionalString(value: unknown): value is string | undefined {
   return value === undefined || typeof value === "string";
 }
@@ -65,6 +73,17 @@ function isChecklistItem(value: unknown): boolean {
 
 function isOptionalStringArray(value: unknown): value is string[] | undefined {
   return value === undefined || isStringArray(value);
+}
+
+function isWindowBounds(value: unknown): boolean {
+  return (
+    isRecord(value) &&
+    (value.x === undefined || isFiniteNumber(value.x)) &&
+    (value.y === undefined || isFiniteNumber(value.y)) &&
+    isFiniteNumber(value.width) &&
+    isFiniteNumber(value.height) &&
+    isBoolean(value.isMaximized)
+  );
 }
 
 function isOptionalPreviousStatus(value: unknown): value is IdeaNote["previousStatus"] {
@@ -93,7 +112,8 @@ function isIdeaNote(value: unknown): boolean {
     isFiniteNumber(value.updatedAt) &&
     isOptionalFiniteNumber(value.trashedAt) &&
     isOptionalPreviousStatus(value.previousStatus) &&
-    isOptionalStringArray(value.notifiedReminderKeys)
+    isOptionalStringArray(value.notifiedReminderKeys) &&
+    isOptionalBoolean(value.pinned)
   );
 }
 
@@ -119,7 +139,10 @@ function isIdeaSettings(value: unknown): boolean {
     trashRetentions.has(value.trashAutoDelete) &&
     typeof value.language === "string" &&
     appLanguages.has(value.language) &&
-    isReminderSettings(value.reminders)
+    isReminderSettings(value.reminders) &&
+    isOptionalString(value.fontFamily) &&
+    isOptionalFiniteNumber(value.fontSize) &&
+    (value.windowBounds === undefined || isWindowBounds(value.windowBounds))
   );
 }
 

@@ -21,6 +21,7 @@ interface NoteCardProps {
   searchQuery: string;
   onOpen: (note: IdeaNote) => void;
   onToggleCompleted: () => Promise<void>;
+  onTogglePin: (note: IdeaNote) => Promise<void>;
   onToggleChecklist: (itemId: string, checked: boolean) => Promise<void>;
   onArchive: (note: IdeaNote) => Promise<void>;
   onTrash: (note: IdeaNote) => Promise<void>;
@@ -38,6 +39,7 @@ export function NoteCard({
   searchQuery,
   onOpen,
   onToggleCompleted,
+  onTogglePin,
   onToggleChecklist,
   onArchive,
   onTrash,
@@ -68,6 +70,7 @@ export function NoteCard({
         searchQuery={searchQuery}
         onOpen={onOpen}
         onToggleCompleted={onToggleCompleted}
+        onTogglePin={onTogglePin}
         onArchive={onArchive}
         onTrash={onTrash}
         onRestore={onRestore}

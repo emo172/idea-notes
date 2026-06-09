@@ -34,13 +34,11 @@
   --switch-height: 26px;
   --switch-thumb-size: 18px;
   --switch-thumb-offset: 3px;
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  --app-font-family:
+    Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --app-font-size: 14px;
+  font-family: var(--app-font-family);
+  font-size: var(--app-font-size);
   color: var(--fg);
   background: var(--bg);
 }

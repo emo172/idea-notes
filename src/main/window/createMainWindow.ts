@@ -2,10 +2,12 @@
 // 作用：
 // 1. 按设置创建应用级或系统边框桌面窗口。
 // 2. 管理 preload、桌面图标和开发/生产 renderer 入口。
-// 3. 提供 renderer 需要展示的最小窗口状态。
-import { BrowserWindow } from "electron";
+// 3. 提供 renderer 需要展示的最小窗口状态，含位置和尺寸信息。
+// 4. 支持从保存的 bounds 恢复窗口位置和大小，含离屏坐标校验。
+import { BrowserWindow, screen } from "electron";
 import { join } from "node:path";
-import type { DesktopWindowState, IdeaSettings } from "@shared/types";
+import type { DesktopWindowState, IdeaSettings, WindowBounds } from "@shared/types";
+import { isPositionOnScreen } from "./screenBounds";
 
 export const desktopWindowIconPath =
   process.platform === "linux" || process.platform === "win32"
@@ -14,24 +16,34 @@ export const desktopWindowIconPath =
 
 // 将 Electron 的窗口状态压缩成 renderer 需要展示的最小状态对象。
 export function getWindowState(window: BrowserWindow): DesktopWindowState {
+  const bounds = window.getBounds();
   return {
     isAlwaysOnTop: window.isAlwaysOnTop(),
     isMaximized: window.isMaximized(),
+    bounds: {
+      x: bounds.x,
+      y: bounds.y,
+      width: bounds.width,
+      height: bounds.height,
+      isMaximized: window.isMaximized(),
+    },
   };
 }
 
 export interface CreateMainWindowOptions {
   settings: IdeaSettings;
+  savedBounds?: WindowBounds;
   onClosed: () => void;
 }
 
 export function createMainWindow({
   settings,
+  savedBounds,
   onClosed,
 }: CreateMainWindowOptions): BrowserWindow {
   const mainWindow = new BrowserWindow({
-    width: 1180,
-    height: 760,
+    width: savedBounds?.width ?? 1180,
+    height: savedBounds?.height ?? 760,
     minWidth: 720,
     minHeight: 640,
     title: "灵感笔记",
@@ -50,6 +62,24 @@ export function createMainWindow({
     },
   });
   if (desktopWindowIconPath) mainWindow.setIcon(desktopWindowIconPath);
+
+  // 有保存的窗口状态时优先恢复；离屏坐标回退到构造函数中的默认位置。
+  if (savedBounds) {
+    if (savedBounds.isMaximized) {
+      mainWindow.maximize();
+    } else if (
+      savedBounds.x !== undefined &&
+      savedBounds.y !== undefined &&
+      isPositionOnScreen(savedBounds.x, savedBounds.y, screen.getAllDisplays())
+    ) {
+      mainWindow.setBounds({
+        x: savedBounds.x,
+        y: savedBounds.y,
+        width: savedBounds.width,
+        height: savedBounds.height,
+      });
+    }
+  }
 
   // 开发时加载 Vite dev server，生产/预览时加载构建后的静态入口。
   if (process.env.ELECTRON_RENDERER_URL) {

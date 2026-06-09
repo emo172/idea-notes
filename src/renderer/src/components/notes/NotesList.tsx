@@ -22,6 +22,7 @@ interface NotesListProps {
   onRetryLoad: () => void;
   onOpenNote: (note: IdeaNote) => void;
   onToggleCompleted: (note: IdeaNote) => Promise<void>;
+  onTogglePin: (note: IdeaNote) => Promise<void>;
   onToggleChecklist: (
     note: IdeaNote,
     itemId: string,
@@ -48,6 +49,7 @@ export function NotesList({
   onRetryLoad,
   onOpenNote,
   onToggleCompleted,
+  onTogglePin,
   onToggleChecklist,
   onArchive,
   onTrash,
@@ -82,6 +84,7 @@ export function NotesList({
               language={language}
               onOpen={onOpenNote}
               onToggleCompleted={() => onToggleCompleted(note)}
+              onTogglePin={onTogglePin}
               onToggleChecklist={(itemId, checked) =>
                 onToggleChecklist(note, itemId, checked)
               }

@@ -22,6 +22,7 @@ interface MainNotesViewProps {
   tags: IdeaTag[];
   mainSaveFeedback: string | null;
   shouldShowMainSaveError: boolean;
+  notificationFeedback: string | null;
   searchInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   priority: NotePriority | "all";
@@ -42,6 +43,7 @@ interface MainNotesViewProps {
   loadData: () => Promise<void>;
   openExistingNote: (note: IdeaNote) => void;
   handleToggleCompleted: (note: IdeaNote) => Promise<void>;
+  handleTogglePin: (note: IdeaNote) => Promise<void>;
   handleToggleChecklist: (
     note: IdeaNote,
     itemId: string,
@@ -61,6 +63,7 @@ export function MainNotesView({
   tags,
   mainSaveFeedback,
   shouldShowMainSaveError,
+  notificationFeedback,
   searchInputRef,
   searchQuery,
   priority,
@@ -81,6 +84,7 @@ export function MainNotesView({
   loadData,
   openExistingNote,
   handleToggleCompleted,
+  handleTogglePin,
   handleToggleChecklist,
   handleArchiveNote,
   handleMoveToTrash,
@@ -92,6 +96,7 @@ export function MainNotesView({
   return (
     <>
       <SaveFeedbackAlert message={shouldShowMainSaveError ? mainSaveFeedback : null} />
+      <SaveFeedbackAlert message={notificationFeedback} />
       <NotesToolbar
         copy={copy}
         searchInputRef={searchInputRef}
@@ -121,6 +126,7 @@ export function MainNotesView({
         onRetryLoad={() => loadData()}
         onOpenNote={openExistingNote}
         onToggleCompleted={handleToggleCompleted}
+        onTogglePin={handleTogglePin}
         onToggleChecklist={handleToggleChecklist}
         onArchive={handleArchiveNote}
         onTrash={handleMoveToTrash}

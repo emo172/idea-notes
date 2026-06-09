@@ -31,6 +31,7 @@ interface AppMainContentProps {
   tagInputError: TagInputError | null;
   mainSaveFeedback: string | null;
   shouldShowMainSaveError: boolean;
+  notificationFeedback: string | null;
   isSaving: boolean;
   isEditorOpen: boolean;
   hasConfirmDialog: boolean;
@@ -50,6 +51,7 @@ interface AppMainContentProps {
   handleTagColorChange: (tag: string, color: string) => Promise<boolean>;
   handleDeleteTag: (tag: string) => Promise<void>;
   openNewNote: () => void;
+  onOpenShortcutHelp: () => void;
   handleSaveNote: () => Promise<void>;
   setViewMode: (status: NoteStatus) => void;
   onStatsStatusClick: (status: NoteStatus) => void;
@@ -64,6 +66,7 @@ interface AppMainContentProps {
   loadData: () => Promise<void>;
   openExistingNote: (note: IdeaNote) => void;
   handleToggleCompleted: (note: IdeaNote) => Promise<void>;
+  handleTogglePin: (note: IdeaNote) => Promise<void>;
   handleToggleChecklist: (
     note: IdeaNote,
     itemId: string,
@@ -87,6 +90,7 @@ export function AppMainContent({
   tagInputError,
   mainSaveFeedback,
   shouldShowMainSaveError,
+  notificationFeedback,
   isSaving,
   isEditorOpen,
   hasConfirmDialog,
@@ -106,6 +110,7 @@ export function AppMainContent({
   handleTagColorChange,
   handleDeleteTag,
   openNewNote,
+  onOpenShortcutHelp,
   handleSaveNote,
   setViewMode,
   onStatsStatusClick,
@@ -120,6 +125,7 @@ export function AppMainContent({
   loadData,
   openExistingNote,
   handleToggleCompleted,
+  handleTogglePin,
   handleToggleChecklist,
   handleArchiveNote,
   handleMoveToTrash,
@@ -136,6 +142,7 @@ export function AppMainContent({
     isSaving,
     hasConfirmDialog,
     onOpenNewNote: openNewNote,
+    onOpenShortcutHelp,
     onSaveEditor: handleSaveNote,
     onViewModeChange: setViewMode,
   });
@@ -177,6 +184,7 @@ export function AppMainContent({
       tags={tags}
       mainSaveFeedback={mainSaveFeedback}
       shouldShowMainSaveError={shouldShowMainSaveError}
+      notificationFeedback={notificationFeedback}
       searchInputRef={searchInputRef}
       searchQuery={searchQuery}
       priority={priority}
@@ -197,6 +205,7 @@ export function AppMainContent({
       loadData={loadData}
       openExistingNote={openExistingNote}
       handleToggleCompleted={handleToggleCompleted}
+      handleTogglePin={handleTogglePin}
       handleToggleChecklist={handleToggleChecklist}
       handleArchiveNote={handleArchiveNote}
       handleMoveToTrash={handleMoveToTrash}

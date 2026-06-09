@@ -3,7 +3,7 @@
 // 1. 渲染卡片标题、编辑按钮和更多操作菜单。
 // 2. 按笔记状态控制菜单项，不改变 App 传入回调的触发语义。
 import type { ReactElement } from "react";
-import { PencilSimpleIcon } from "@phosphor-icons/react";
+import { PencilSimpleIcon, PushPinIcon } from "@phosphor-icons/react";
 import { parseSearchQuery } from "@shared/noteLogic";
 import type { IdeaNote } from "@shared/types";
 import type { AppCopy } from "../../i18n";
@@ -20,6 +20,7 @@ interface NoteCardHeaderProps {
   searchQuery: string;
   onOpen: (note: IdeaNote) => void;
   onToggleCompleted: () => Promise<void>;
+  onTogglePin: (note: IdeaNote) => Promise<void>;
   onArchive: (note: IdeaNote) => Promise<void>;
   onTrash: (note: IdeaNote) => Promise<void>;
   onRestore: (note: IdeaNote) => Promise<void>;
@@ -37,6 +38,7 @@ export function NoteCardHeader({
   searchQuery,
   onOpen,
   onToggleCompleted,
+  onTogglePin,
   onArchive,
   onTrash,
   onRestore,
@@ -56,6 +58,11 @@ export function NoteCardHeader({
         <h3 className="note-title">{highlightText(note.title, searchText)}</h3>
       )}
       <div className="note-header-actions">
+        {note.pinned ? (
+          <span className="note-pin-indicator" role="img" aria-label={copy.pinNote}>
+            <PushPinIcon aria-hidden="true" weight="fill" />
+          </span>
+        ) : null}
         {canEdit ? (
           <AppButton
             className="note-icon-btn"
@@ -74,6 +81,7 @@ export function NoteCardHeader({
           isInTrash={isInTrash}
           onOpen={onOpen}
           onToggleCompleted={onToggleCompleted}
+          onTogglePin={onTogglePin}
           onArchive={onArchive}
           onTrash={onTrash}
           onRestore={onRestore}

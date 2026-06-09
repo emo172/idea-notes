@@ -19,6 +19,8 @@ export const defaultSettings: IdeaSettings = {
     enabled: false,
     leadMinutes: 10,
   },
+  fontFamily: "system",
+  fontSize: 14,
 };
 
 export function getDefaultData(now = Date.now()): IdeaNotesData {
@@ -56,6 +58,7 @@ export function getDefaultData(now = Date.now()): IdeaNotesData {
         dueAt: "2026-05-24T18:00",
         createdAt: now - 86_400_000,
         updatedAt: now - 3_600_000,
+        pinned: false,
       },
       {
         id: "seed-naming",
@@ -67,6 +70,7 @@ export function getDefaultData(now = Date.now()): IdeaNotesData {
         checklist: [],
         createdAt: now - 172_800_000,
         updatedAt: now - 7_200_000,
+        pinned: false,
       },
     ],
   };

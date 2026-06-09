@@ -95,8 +95,14 @@ export async function importDataFile(
     const importedData = await readImportFile(filePath);
     if (!importedData) return { ok: false, filePath, reason: "invalid" };
 
+    // 导入时过滤 windowBounds，避免跨设备显示器配置污染本地窗口位置
     const dataToSave =
-      mode === "overwrite" ? importedData : mergeData(await readData(), importedData);
+      mode === "overwrite"
+        ? {
+            ...importedData,
+            settings: { ...importedData.settings, windowBounds: undefined },
+          }
+        : mergeData(await readData(), importedData);
     const savedData = await saveData(dataToSave);
     return { ok: true, filePath, data: savedData };
   } catch {

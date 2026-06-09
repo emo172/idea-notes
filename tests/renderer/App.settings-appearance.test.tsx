@@ -37,6 +37,8 @@ describe("App settings appearance", () => {
   });
 
   afterEach(() => {
+    document.documentElement.style.removeProperty("--app-font-family");
+    document.documentElement.style.removeProperty("--app-font-size");
     vi.restoreAllMocks();
   });
 
@@ -75,6 +77,109 @@ describe("App settings appearance", () => {
     expect(
       screen.getByText("导出当前数据，或从灵感笔记 JSON 文件恢复数据"),
     ).toBeTruthy();
+  });
+
+  it("界面设置提供固定字体族和字号选项", async () => {
+    installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    const fontFamilySelect = screen.getByRole("combobox", {
+      name: "字体族",
+    }) as HTMLSelectElement;
+    const fontSizeSelect = screen.getByRole("combobox", {
+      name: /字号/,
+    }) as HTMLSelectElement;
+
+    expect(Array.from(fontFamilySelect.options).map((option) => option.value)).toEqual([
+      "system",
+      "SimSun, serif",
+      "SimHei, sans-serif",
+      "KaiTi, serif",
+      "DengXian, sans-serif",
+      "Consolas, monospace",
+      "Monaco, monospace",
+    ]);
+    expect(Array.from(fontFamilySelect.options).map((option) => option.text)).toEqual([
+      "系统默认",
+      "宋体",
+      "黑体",
+      "楷体",
+      "等线",
+      "Consolas",
+      "Monaco",
+    ]);
+    expect(Array.from(fontSizeSelect.options).map((option) => option.value)).toEqual([
+      "12",
+      "14",
+      "16",
+      "18",
+      "20",
+      "22",
+      "24",
+    ]);
+  });
+
+  it("字体设置会持久化并更新根 CSS 变量", async () => {
+    const { api, saved } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await user.click(await screen.findByRole("button", { name: "设置" }));
+    await user.selectOptions(
+      screen.getByRole("combobox", { name: /字体/ }),
+      "KaiTi, serif",
+    );
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+    expect(saved.at(-1)?.settings.fontFamily).toBe("KaiTi, serif");
+    expect(document.documentElement.style.getPropertyValue("--app-font-family")).toBe(
+      "KaiTi, serif",
+    );
+
+    await user.selectOptions(screen.getByRole("combobox", { name: /字号/ }), "20");
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(2));
+    expect(saved.at(-1)?.settings.fontSize).toBe(20);
+    expect(document.documentElement.style.getPropertyValue("--app-font-size")).toBe(
+      "20px",
+    );
+  });
+
+  it("系统字体会清理字体族变量并保留字号变量", async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.settings = {
+      ...data.settings,
+      fontFamily: "SimSun, serif",
+      fontSize: 18,
+    };
+    const { api, saved } = installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    await screen.findByText("重构 Desktop App 导航栏");
+    await waitFor(() =>
+      expect(document.documentElement.style.getPropertyValue("--app-font-family")).toBe(
+        "SimSun, serif",
+      ),
+    );
+    expect(document.documentElement.style.getPropertyValue("--app-font-size")).toBe(
+      "18px",
+    );
+
+    await user.click(screen.getByRole("button", { name: "设置" }));
+    await user.selectOptions(screen.getByRole("combobox", { name: /字体/ }), "system");
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+
+    expect(saved.at(-1)?.settings.fontFamily).toBe("system");
+    expect(document.documentElement.style.getPropertyValue("--app-font-family")).toBe(
+      "",
+    );
+    expect(document.documentElement.style.getPropertyValue("--app-font-size")).toBe(
+      "18px",
+    );
   });
 
   it("设置页保存失败提示显示在设置内容区内", async () => {

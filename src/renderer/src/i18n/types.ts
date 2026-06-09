@@ -17,6 +17,15 @@ export interface SettingsCopy {
   dataSettings: string;
   themeMode: string;
   themeDescription: string;
+  fontFamily: string;
+  fontSize: string;
+  fontSystemDefault: string;
+  fontSimSun: string;
+  fontSimHei: string;
+  fontKaiTi: string;
+  fontDengXian: string;
+  fontConsolas: string;
+  fontMonaco: string;
   startupBehavior: string;
   startupDescription: string;
   silentStart: string;
@@ -67,6 +76,10 @@ export interface AppCopy {
   alwaysOnTop: string;
   cancelAlwaysOnTop: string;
   settings: string;
+  shortcutHelp: string;
+  shortcutCategoryNavigation: string;
+  shortcutCategoryEditing: string;
+  shortcutCategoryView: string;
   minimize: string;
   maximize: string;
   restoreWindow: string;
@@ -123,6 +136,8 @@ export interface AppCopy {
   markComplete: string;
   duplicate: string;
   duplicateTitleSuffix: string;
+  copyTitle: string;
+  copyBody: string;
   delete: string;
   deleteConfirmTitle: string;
   deleteConfirmBody: string;
@@ -131,6 +146,8 @@ export interface AppCopy {
   confirmDelete: string;
   editNote: string;
   moreActions: string;
+  pinNote: string;
+  unpinNote: string;
   menuEdit: string;
   menuComplete: string;
   menuArchive: string;
@@ -139,6 +156,7 @@ export interface AppCopy {
   menuRestoreArchive: string;
   menuRestoreProgress: string;
   menuRestoreTrash: string;
+  notificationNoteDeleted: string;
   newNoteTitle: string;
   backToList: string;
   saveNote: string;

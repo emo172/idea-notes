@@ -49,6 +49,10 @@ export function filterAndSortNotes(
     )
     .filter((note) => includesSearchText(note, parsedQuery.text))
     .sort((left, right) => {
+      const leftPinned = !!left.pinned;
+      const rightPinned = !!right.pinned;
+      if (leftPinned && !rightPinned) return -1;
+      if (!leftPinned && rightPinned) return 1;
       if (filters.sortMode === "newest") return right.updatedAt - left.updatedAt;
       if (filters.sortMode === "progress")
         return getCompletion(right).ratio - getCompletion(left).ratio;

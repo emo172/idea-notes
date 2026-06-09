@@ -108,6 +108,17 @@ function normalizeSettings(settings: unknown): IdeaNotesData["settings"] {
           ? legacyReminders.leadMinutes
           : defaultSettings.reminders.leadMinutes,
     },
+    fontFamily:
+      typeof legacySettings.fontFamily === "string" &&
+      legacySettings.fontFamily.trim().length > 0
+        ? legacySettings.fontFamily
+        : defaultSettings.fontFamily,
+    fontSize:
+      typeof legacySettings.fontSize === "number" &&
+      Number.isFinite(legacySettings.fontSize) &&
+      legacySettings.fontSize > 0
+        ? legacySettings.fontSize
+        : defaultSettings.fontSize,
   } as IdeaNotesData["settings"];
 }
 
@@ -142,6 +153,7 @@ export function normalizeData(data: IdeaNotesData): IdeaNotesData {
         ...rest,
         tags: normalizeNoteTags(note.tags),
         notifiedReminderKeys: normalizeNotifiedReminderKeys(note.notifiedReminderKeys),
+        pinned: note.pinned === undefined ? false : note.pinned,
         ...normalizePreviousStatus(note),
       };
     }),

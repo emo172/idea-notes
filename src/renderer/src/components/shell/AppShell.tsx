@@ -26,6 +26,7 @@ interface AppShellProps {
   children?: ReactNode;
   onToggleAlwaysOnTop: () => Promise<void>;
   onOpenSettings: () => void;
+  onOpenShortcutHelp: () => void;
   onMinimizeWindow: () => void;
   onToggleMaximizeWindow: () => Promise<void>;
   onCloseWindow: () => void;
@@ -50,6 +51,7 @@ export function AppShell({
   children,
   onToggleAlwaysOnTop,
   onOpenSettings,
+  onOpenShortcutHelp,
   onMinimizeWindow,
   onToggleMaximizeWindow,
   onCloseWindow,
@@ -67,6 +69,7 @@ export function AppShell({
         pinButtonLabel={pinButtonLabel}
         onToggleAlwaysOnTop={onToggleAlwaysOnTop}
         onOpenSettings={onOpenSettings}
+        onOpenShortcutHelp={onOpenShortcutHelp}
         onMinimizeWindow={onMinimizeWindow}
         onToggleMaximizeWindow={onToggleMaximizeWindow}
         onCloseWindow={onCloseWindow}
