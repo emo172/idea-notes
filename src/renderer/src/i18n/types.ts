@@ -18,6 +18,7 @@ export interface SettingsCopy {
   themeMode: string;
   themeDescription: string;
   fontFamily: string;
+  fontFallbackDescription: string;
   fontSize: string;
   fontSystemDefault: string;
   fontSimSun: string;

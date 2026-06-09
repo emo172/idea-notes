@@ -120,6 +120,11 @@ describe("App settings appearance", () => {
       "22",
       "24",
     ]);
+    expect(
+      screen.getByText(
+        "系统未安装所选字体时，应用会使用操作系统或浏览器的默认回退字体。",
+      ),
+    ).toBeTruthy();
   });
 
   it("字体设置会持久化并更新根 CSS 变量", async () => {

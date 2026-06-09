@@ -18,6 +18,8 @@ export const enSettings: SettingsCopy = {
   themeMode: "Theme Mode",
   themeDescription: "Set the default light or dark appearance",
   fontFamily: "Font Family",
+  fontFallbackDescription:
+    "If the selected font is not installed, the app uses the operating system or browser fallback font.",
   fontSize: "Font Size",
   fontSystemDefault: "System Default",
   fontSimSun: "SimSun",

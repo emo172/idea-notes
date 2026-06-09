@@ -18,6 +18,8 @@ export const zhTWSettings: SettingsCopy = {
   themeMode: "主題模式",
   themeDescription: "設定介面的預設明暗顯示方式",
   fontFamily: "字體族",
+  fontFallbackDescription:
+    "系統未安裝所選字體時，應用會使用作業系統或瀏覽器的預設回退字體。",
   fontSize: "字號",
   fontSystemDefault: "系統預設",
   fontSimSun: "宋體",

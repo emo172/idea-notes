@@ -18,6 +18,8 @@ export const zhCNSettings: SettingsCopy = {
   themeMode: "主题模式",
   themeDescription: "设置界面的默认明暗显示方式",
   fontFamily: "字体族",
+  fontFallbackDescription:
+    "系统未安装所选字体时，应用会使用操作系统或浏览器的默认回退字体。",
   fontSize: "字号",
   fontSystemDefault: "系统默认",
   fontSimSun: "宋体",
