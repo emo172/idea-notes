@@ -81,6 +81,24 @@ describe("App responsive style contracts", () => {
     );
   });
 
+  it("概览统计在 720px 窄屏附近不保持固定 4/3 列", () => {
+    const layoutStyles = readStyleFile("layout.css");
+
+    expect(layoutStyles).toContain("@media (max-width: 760px)");
+    expect(layoutStyles).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*\.stats-summary\s*\{[\s\S]*grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\);/,
+    );
+    expect(layoutStyles).toMatch(
+      /@media \(max-width: 760px\)[\s\S]*\.stats-groups\s*\{[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\);/,
+    );
+    expect(layoutStyles).not.toMatch(
+      /@media \(max-width: 760px\)[\s\S]*\.stats-summary\s*\{[\s\S]*grid-template-columns:\s*repeat\(4,\s*minmax\(0,\s*1fr\)\);/,
+    );
+    expect(layoutStyles).not.toMatch(
+      /@media \(max-width: 760px\)[\s\S]*\.stats-groups\s*\{[\s\S]*grid-template-columns:\s*repeat\(3,\s*minmax\(0,\s*1fr\)\);/,
+    );
+  });
+
   it("长标题、长标签和长按钮文案不会撑破容器", () => {
     const styles = [readRendererStyles(), readStyleFile("note-card-tags.css")].join(
       "\n",
