@@ -7,24 +7,12 @@
 import { BrowserWindow, screen } from "electron";
 import { join } from "node:path";
 import type { DesktopWindowState, IdeaSettings, WindowBounds } from "@shared/types";
+import { isPositionOnScreen } from "./screenBounds";
 
 export const desktopWindowIconPath =
   process.platform === "linux" || process.platform === "win32"
     ? join(__dirname, "../../build/icons/icon.png")
     : undefined;
-
-// 校验给定的 x/y 坐标是否至少在一个显示器的 workArea 内。
-// 使用 workArea 而非 bounds 可避开任务栏等系统 UI 遮挡区域。
-export function isPositionOnScreen(
-  x: number,
-  y: number,
-  displays: { workArea: { x: number; y: number; width: number; height: number } }[],
-): boolean {
-  return displays.some((d) => {
-    const wa = d.workArea;
-    return x >= wa.x && y >= wa.y && x < wa.x + wa.width && y < wa.y + wa.height;
-  });
-}
 
 // 将 Electron 的窗口状态压缩成 renderer 需要展示的最小状态对象。
 export function getWindowState(window: BrowserWindow): DesktopWindowState {

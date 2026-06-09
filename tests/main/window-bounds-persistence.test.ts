@@ -9,11 +9,11 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("离屏坐标校验", () => {
-  // 从 createMainWindow 模块动态导入 isPositionOnScreen
+  // 从纯逻辑模块导入，避免测试环境加载真实 Electron 运行时。
   async function importIsPositionOnScreen(): Promise<
-    (typeof import("../../src/main/window/createMainWindow"))["isPositionOnScreen"]
+    (typeof import("../../src/main/window/screenBounds"))["isPositionOnScreen"]
   > {
-    const mod = await import("../../src/main/window/createMainWindow");
+    const mod = await import("../../src/main/window/screenBounds");
     return mod.isPositionOnScreen;
   }
 
@@ -94,6 +94,7 @@ describe("createMainWindow savedBounds 源码契约", () => {
   it("离屏坐标校验使用 screen API", () => {
     expect(windowSource).toContain('from "electron"');
     expect(windowSource).toContain("isPositionOnScreen");
+    expect(windowSource).toContain("screen.getAllDisplays()");
   });
 
   it("提供 savedBounds 且未最大化时调用 setBounds 恢复位置", () => {
