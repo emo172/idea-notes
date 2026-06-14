@@ -5,6 +5,7 @@
 // 2. 覆盖保存失败和保存中忙碌反馈。
 import {
   act,
+  cleanup,
   fireEvent,
   render,
   screen,
@@ -20,6 +21,7 @@ import { BASE_TIME, installApi } from "./testUtils";
 
 describe("App card actions", () => {
   beforeEach(() => {
+    cleanup();
     document.body.innerHTML = "";
   });
 
@@ -224,6 +226,71 @@ describe("App card actions", () => {
     fireEvent.pointerUp(copyTitle);
 
     expect(api.copyToClipboard).toHaveBeenCalledWith("重构 Desktop App 导航栏");
+  });
+
+  it("更多操作菜单点击各动作时执行对应命令", async () => {
+    const { api, saved } = installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const openMenuItem = async (label: string): Promise<HTMLButtonElement> => {
+      const title = await screen.findByText("重构 Desktop App 导航栏");
+      const card = title.closest("article") as HTMLElement;
+      await user.click(within(card).getByRole("button", { name: "更多操作" }));
+      const menu = screen.getByRole("menu", { name: "更多操作" });
+      return within(menu).getByRole("menuitem", { name: label }) as HTMLButtonElement;
+    };
+
+    await user.click(await openMenuItem("置顶"));
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(1));
+    expect(saved.at(-1)?.notes[0]?.pinned).toBe(true);
+
+    await user.click(await openMenuItem("编辑"));
+    expect(screen.getByRole("heading", { name: "编辑笔记" })).toBeTruthy();
+    await user.click(screen.getByRole("button", { name: "取消" }));
+
+    await user.click(await openMenuItem("完成"));
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(2));
+    expect(saved.at(-1)?.notes[0]?.status).toBe("completed");
+    const nav = screen.getByRole("navigation", { name: "笔记视图" });
+    await user.click(within(nav).getByRole("button", { name: /已完成/ }));
+    const completedCard = (await screen.findByText("重构 Desktop App 导航栏")).closest(
+      "article",
+    ) as HTMLElement;
+    await user.click(within(completedCard).getByRole("button", { name: "更多操作" }));
+    await user.click(
+      within(screen.getByRole("menu", { name: "更多操作" })).getByRole("menuitem", {
+        name: "恢复",
+      }),
+    );
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(3));
+    await user.click(within(nav).getByRole("button", { name: /进行中/ }));
+
+    await user.click(await openMenuItem("归档"));
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(4));
+    expect(saved.at(-1)?.notes[0]?.status).toBe("archive");
+    await user.click(within(nav).getByRole("button", { name: /归档/ }));
+    const archivedCard = (await screen.findByText("重构 Desktop App 导航栏")).closest(
+      "article",
+    ) as HTMLElement;
+    await user.click(within(archivedCard).getByRole("button", { name: "更多操作" }));
+    await user.click(
+      within(screen.getByRole("menu", { name: "更多操作" })).getByRole("menuitem", {
+        name: "恢复",
+      }),
+    );
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(5));
+
+    await user.click(await openMenuItem("复制"));
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(6));
+    expect(saved.at(-1)?.notes[0]?.title).toBe("重构 Desktop App 导航栏 副本");
+
+    await user.click(await openMenuItem("删除"));
+    await waitFor(() => expect(api.saveData).toHaveBeenCalledTimes(7));
+    expect(
+      saved.at(-1)?.notes.find((note) => note.id === "seed-navigation")?.status,
+    ).toBe("trash");
   });
 
   it("更多操作菜单复制正文到剪贴板", async () => {

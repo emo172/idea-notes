@@ -116,9 +116,8 @@ describe("App style boundaries", () => {
     const noteActionStyles = readStyleFile("note-actions.css");
     const contextMenuBlock = readCssRuleBlock(noteActionStyles, ".note-context-menu");
 
+    // Portal 模式下菜单定位由 JS 动态计算，CSS 只保留右对齐方向。
     expect(contextMenuBlock).toContain("right: 0;");
-    expect(contextMenuBlock).toContain("top: calc(100% + 6px);");
-    expect(contextMenuBlock).toContain("bottom: auto;");
   });
 
   it("拆分后的样式模块不混入其他页面职责", () => {
