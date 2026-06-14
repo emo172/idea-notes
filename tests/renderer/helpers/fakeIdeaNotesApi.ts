@@ -8,6 +8,7 @@ import type { DesktopWindowState, IdeaNotesApi, IdeaNotesData } from "@shared/ty
 interface InstallApiOptions {
   getData?: IdeaNotesApi["getData"];
   windowState?: DesktopWindowState;
+  pendingNotificationClicks?: string[];
 }
 
 export function installApi(
@@ -50,6 +51,9 @@ export function installApi(
     })),
     setStartup: vi.fn(async (enabled) => enabled),
     copyToClipboard: vi.fn(async () => undefined),
+    flushPendingNotificationClicks: vi.fn(async () => [
+      ...(options.pendingNotificationClicks ?? []),
+    ]),
     onNotificationClick: vi.fn((callback: (noteId: string) => void) => {
       clickCallback = callback;
       return () => {

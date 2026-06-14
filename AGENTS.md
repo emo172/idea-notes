@@ -28,7 +28,7 @@
   - 主进程：`npm test -- tests/main`。
   - preload：`npm test -- tests/preload`。
   - 渲染层：`npm test -- tests/renderer`。
-  - 主窗口配置：`npm test -- tests/main/window-config.test.ts`。
+  - 主窗口与窗口生命周期：`npm test -- tests/main/window-config.test.ts tests/main/window-bounds-persistence.test.ts tests/main/notification-window-opener.test.ts`。
   - 主进程 IPC：`npm test -- tests/main/ipc-contract.test.ts`。
   - Linux 启动约定：`npm test -- tests/main/linux-startup.test.ts`。
   - smoke 脚本和测试扫描边界：`npm test -- tests/main/smoke-script.test.ts tests/main/vitest-config.test.ts`。
@@ -39,7 +39,7 @@
 
 ## 架构地图
 
-- `src/main/` 是 Electron 主进程；`index.ts` 只做启动编排；`window/createMainWindow.ts` 创建无边框窗口；`ipc/registerIpc.ts` 注册 IPC；`platform/linuxStartup.ts` 处理本地开发 GPU/sandbox 开关；`startup/loginItems.ts` 封装开机自启动；`store.ts` 把 JSON 数据写入 Electron `userData`。
+- `src/main/` 是 Electron 主进程；`index.ts` 只做启动编排；`window/createMainWindow.ts` 创建无边框窗口；`window/screenBounds.ts` 提供窗口离屏判断纯逻辑；`window/windowStatePersistence.ts` 控制窗口 bounds 保存和关闭/退出路径；`window/notificationWindowOpener.ts` 与 `window/pendingNotificationClicks.ts` 处理通知点击建窗、聚焦和待发队列；`ipc/registerIpc.ts` 注册 IPC；`platform/linuxStartup.ts` 处理本地开发 GPU/sandbox 开关；`startup/loginItems.ts` 封装开机自启动；`store.ts` 把 JSON 数据写入 Electron `userData`。
 - `src/main/store/backup.ts` 负责数据导出、覆盖导入和合并导入；`src/main/store/normalizeData.ts` 负责旧数据迁移和归一化；`src/main/store/writeJsonFile.ts` 负责临时文件 + rename 安全写入。
 - `src/main/reminders/reminderScheduler.ts` 负责截止提醒通知调度和已提醒 key 写回。
 - `src/preload/index.ts` 是 renderer 唯一桌面能力入口，只通过 `window.ideaNotes` 暴露固定 API，不暴露 `ipcRenderer`。
@@ -103,14 +103,17 @@
 - 修改 `src/main/store/backup.ts` 跑 `npm test -- tests/main/backup.test.ts`。
 - 修改 `src/main/reminders/` 跑 `npm test -- tests/main/reminder-scheduler.test.ts`。
 - 修改 shared 提醒逻辑跑 `npm test -- tests/shared tests/main/reminder-scheduler.test.ts`。
-- 修改主窗口配置、preload 路径、ESM 设置或 electron-vite 输出路径跑 `npm test -- tests/main/window-config.test.ts`。
+- 修改 `src/main/window/`、主窗口配置、preload 路径、ESM 设置或 electron-vite 输出路径跑 `npm test -- tests/main/window-config.test.ts tests/main/window-bounds-persistence.test.ts tests/main/notification-window-opener.test.ts`。
 - 修改主进程 IPC 注册跑 `npm test -- tests/main/ipc-contract.test.ts`。
 - 修改 Linux 启动参数跑 `npm test -- tests/main/linux-startup.test.ts`。
 - 修改 `src/preload/index.ts` 或 `IdeaNotesApi` 跑 `npm test -- tests/preload/index.test.ts`。
+- 修改快捷键行为或快捷键帮助文案跑 `npm test -- tests/renderer/ShortcutHelpDialog.test.tsx tests/renderer/App.keyboard-shortcuts.test.tsx`，并同步三语言 i18n 文案。
+- 修改 renderer i18n 字段或用户可见文案跑相关 renderer 测试；新增字段必须同步 `src/renderer/src/i18n/types.ts`、`zh-CN.ts`、`zh-TW.ts`、`en.ts`。
+- 修改系统通知文案、提醒语言选择或 `src/shared/reminders/` 跑 `npm test -- tests/main/reminder-scheduler.test.ts`，必要时补 shared 纯逻辑测试。
 - 修改 renderer 交互、i18n、样式或组件跑 `npm test -- tests/renderer`。
 - 修改下拉菜单组件跑 `npm test -- tests/renderer/DropdownMenu.test.tsx`。
 - 修改测试拆分或共享测试工具时跑 `npm test -- tests/renderer`，并确认 `tests/renderer/App.test.tsx` 仍只是结构守护。
-- 修改桌面窄窗口布局、弹层遮挡或菜单定位时，除 renderer 测试外还要手动检查 720px 宽 Electron 桌面窗口；当前不按移动端浏览器支持验收。
+- 修改 UI 或样式时，除 renderer 测试外还要手动检查 720px 宽 Electron 桌面窗口，覆盖主列表、概览、设置页、编辑器和确认弹窗；当前不按移动端浏览器支持验收。
 - 修改 TypeScript、TSX 或配置脚本后跑 `npm run lint`。
 - 修改源码、测试、配置或版本化文档后跑 `npm run format:check`；需要统一格式时运行 `npm run format`。
 - 完成前至少跑 `npm test`；涉及构建、入口、打包、preload、主进程或样式拆分时再跑 `npm run build`。合并前运行 `npm run ci`。
@@ -123,6 +126,8 @@
 - `tests/shared/tags/tagLogic.test.ts`：标签创建、重命名、删除和颜色纯逻辑。
 - `tests/main/packaging-config.test.ts`：跨平台打包脚本、electron-builder 安装包目标和桌面图标配置。
 - `tests/main/window-config.test.ts`：主窗口配置、preload 路径和图标约定。
+- `tests/main/window-bounds-persistence.test.ts`：窗口 bounds 保存、关闭、托盘隐藏和退出路径。
+- `tests/main/notification-window-opener.test.ts`：通知点击后的建窗、聚焦、队列和并发窗口创建。
 - `tests/main/linux-startup.test.ts`：Linux 启动脚本、GPU 和 sandbox 开关约定。
 - `tests/main/ipc-contract.test.ts`：IPC handler 注册、通道和来源校验约定。
 - `tests/main/smoke-script.test.ts`：`package.json` smoke 脚本和 CI 串联。

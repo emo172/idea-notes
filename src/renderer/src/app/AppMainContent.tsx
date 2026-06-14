@@ -32,6 +32,7 @@ interface AppMainContentProps {
   mainSaveFeedback: string | null;
   shouldShowMainSaveError: boolean;
   notificationFeedback: string | null;
+  clipboardFeedback: string | null;
   isSaving: boolean;
   isEditorOpen: boolean;
   hasConfirmDialog: boolean;
@@ -77,7 +78,9 @@ interface AppMainContentProps {
   handleRestore: (note: IdeaNote) => Promise<void>;
   handleRestoreArchivedNote: (note: IdeaNote) => Promise<void>;
   handleDuplicateNote: (note: IdeaNote) => Promise<void>;
+  handleCopyText: (text: string, kind: "title" | "body") => Promise<void>;
   setDeleteTarget: (note: IdeaNote) => void;
+  canCopyToClipboard: boolean;
 }
 
 export function AppMainContent({
@@ -91,6 +94,7 @@ export function AppMainContent({
   mainSaveFeedback,
   shouldShowMainSaveError,
   notificationFeedback,
+  clipboardFeedback,
   isSaving,
   isEditorOpen,
   hasConfirmDialog,
@@ -132,7 +136,9 @@ export function AppMainContent({
   handleRestore,
   handleRestoreArchivedNote,
   handleDuplicateNote,
+  handleCopyText,
   setDeleteTarget,
+  canCopyToClipboard,
 }: AppMainContentProps): ReactElement {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -185,6 +191,7 @@ export function AppMainContent({
       mainSaveFeedback={mainSaveFeedback}
       shouldShowMainSaveError={shouldShowMainSaveError}
       notificationFeedback={notificationFeedback}
+      clipboardFeedback={clipboardFeedback}
       searchInputRef={searchInputRef}
       searchQuery={searchQuery}
       priority={priority}
@@ -212,7 +219,9 @@ export function AppMainContent({
       handleRestore={handleRestore}
       handleRestoreArchivedNote={handleRestoreArchivedNote}
       handleDuplicateNote={handleDuplicateNote}
+      handleCopyText={handleCopyText}
       setDeleteTarget={setDeleteTarget}
+      canCopyToClipboard={canCopyToClipboard}
     />
   );
 }

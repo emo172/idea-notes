@@ -26,7 +26,9 @@ interface NoteCardHeaderProps {
   onRestore: (note: IdeaNote) => Promise<void>;
   onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
+  onCopyText: (text: string, kind: "title" | "body") => Promise<void>;
   onDelete: (note: IdeaNote) => void;
+  canCopyToClipboard: boolean;
 }
 
 export function NoteCardHeader({
@@ -44,7 +46,9 @@ export function NoteCardHeader({
   onRestore,
   onRestoreArchived,
   onDuplicate,
+  onCopyText,
   onDelete,
+  canCopyToClipboard,
 }: NoteCardHeaderProps): ReactElement {
   const searchText = parseSearchQuery(searchQuery).text;
 
@@ -87,7 +91,9 @@ export function NoteCardHeader({
           onRestore={onRestore}
           onRestoreArchived={onRestoreArchived}
           onDuplicate={onDuplicate}
+          onCopyText={onCopyText}
           onDelete={onDelete}
+          canCopyToClipboard={canCopyToClipboard}
         />
       </div>
     </div>

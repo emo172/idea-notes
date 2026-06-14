@@ -78,4 +78,40 @@ describe("App search query", () => {
     expect(await screen.findByText("书单整理")).toBeTruthy();
     expect(screen.queryByText("桌面窗口实现")).toBeNull();
   });
+
+  it('搜索框支持 tag:"..." 匹配带空格标签', async () => {
+    const data = getDefaultData(BASE_TIME);
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "quoted-tag",
+        title: "产品路线",
+        body: "整理下一版方向",
+        tags: ["产品 想法"],
+        updatedAt: BASE_TIME + 20,
+      },
+      {
+        ...data.notes[1],
+        id: "split-tag",
+        title: "产品复盘",
+        body: "普通产品标签",
+        tags: ["产品"],
+        updatedAt: BASE_TIME + 40,
+      },
+    ];
+    data.tags = [
+      { id: "tag-product-idea", name: "产品 想法", color: "#2f80ed" },
+      { id: "tag-product", name: "产品", color: "#27ae60" },
+    ];
+    installApi(data);
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const searchInput = await screen.findByLabelText("搜索");
+    await user.type(searchInput, 'tag:"产品 想法"');
+
+    expect(await screen.findByText("产品路线")).toBeTruthy();
+    expect(screen.queryByText("产品复盘")).toBeNull();
+  });
 });

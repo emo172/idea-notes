@@ -29,11 +29,13 @@ function assertMainWindow(
 interface RegisterIpcOptions {
   getMainWindow: () => BrowserWindow | null;
   onSettingsSaved: (settings: IdeaSettings) => void;
+  flushPendingNotificationClicks: () => string[];
 }
 
 export function registerIpc({
   getMainWindow,
   onSettingsSaved,
+  flushPendingNotificationClicks,
 }: RegisterIpcOptions): void {
   ipcMain.handle("notes:get-data", async (event) => {
     assertMainWindow(BrowserWindow.fromWebContents(event.sender), getMainWindow());
@@ -123,6 +125,11 @@ export function registerIpc({
       throw new Error("Invalid clipboard payload");
     }
     clipboard.writeText(text);
+  });
+
+  ipcMain.handle("notification:flush-pending-clicks", (event) => {
+    assertMainWindow(BrowserWindow.fromWebContents(event.sender), getMainWindow());
+    return flushPendingNotificationClicks();
   });
 
   ipcMain.handle("app:set-startup", (event, enabled: boolean) => {

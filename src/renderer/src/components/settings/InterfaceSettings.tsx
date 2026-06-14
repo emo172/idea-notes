@@ -92,8 +92,10 @@ export function InterfaceSettings({
       <label className="setting-row">
         <span className="setting-copy">
           <span>{copy.fontFamily}</span>
+          <small>{copy.fontFallbackDescription}</small>
         </span>
         <select
+          aria-label={copy.fontFamily}
           disabled={isSaving}
           value={settings.fontFamily ?? defaultSettings.fontFamily}
           onChange={(event) =>

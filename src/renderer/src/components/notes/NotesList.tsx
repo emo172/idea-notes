@@ -33,7 +33,9 @@ interface NotesListProps {
   onRestore: (note: IdeaNote) => Promise<void>;
   onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
+  onCopyText: (text: string, kind: "title" | "body") => Promise<void>;
   onDelete: (note: IdeaNote) => void;
+  canCopyToClipboard: boolean;
 }
 
 export function NotesList({
@@ -56,7 +58,9 @@ export function NotesList({
   onRestore,
   onRestoreArchived,
   onDuplicate,
+  onCopyText,
   onDelete,
+  canCopyToClipboard,
 }: NotesListProps): ReactElement {
   return (
     <section className="notes-list" aria-label={copy.statusLabels[noteViewMode]}>
@@ -93,7 +97,9 @@ export function NotesList({
               onRestore={onRestore}
               onRestoreArchived={onRestoreArchived}
               onDuplicate={onDuplicate}
+              onCopyText={onCopyText}
               onDelete={onDelete}
+              canCopyToClipboard={canCopyToClipboard}
             />
           ))
         ) : (

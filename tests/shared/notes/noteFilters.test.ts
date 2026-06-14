@@ -125,6 +125,47 @@ describe("noteFilters", () => {
     expect(result.map((item) => item.id)).toEqual(["n1"]);
   });
 
+  it('解析 tag:"..." 语法支持带空格标签', () => {
+    const notes = [
+      note({
+        id: "quoted-tag",
+        title: "产品路线",
+        tags: ["产品 想法"],
+      }),
+      note({
+        id: "split-tag",
+        title: "产品复盘",
+        tags: ["产品"],
+      }),
+    ];
+
+    const parsed = parseSearchQuery('tag:"产品 想法"');
+    const result = filterAndSortNotes(notes, {
+      status: "active",
+      selectedTags: [],
+      priority: "all",
+      searchQuery: 'tag:"产品 想法"',
+      sortMode: "newest",
+    });
+
+    expect(parsed).toEqual({
+      text: "",
+      tags: ["产品 想法"],
+      priorities: [],
+      due: null,
+    });
+    expect(result.map((item) => item.id)).toEqual(["quoted-tag"]);
+  });
+
+  it("未闭合的标签引号作为普通搜索文本处理", () => {
+    expect(parseSearchQuery('tag:"产品 想法')).toEqual({
+      text: 'tag:"产品 想法',
+      tags: [],
+      priorities: [],
+      due: null,
+    });
+  });
+
   it("普通搜索同时匹配标题、正文和笔记标签名", () => {
     const notes = [
       note({

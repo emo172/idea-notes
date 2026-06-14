@@ -147,6 +147,68 @@ describe("App card actions", () => {
     expect(api.copyToClipboard).toHaveBeenCalledWith("重构 Desktop App 导航栏");
   });
 
+  it("更多操作菜单复制标题成功后显示短成功提示", async () => {
+    installApi(getDefaultData(BASE_TIME));
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+
+    await user.click(within(menu).getByRole("menuitem", { name: "复制标题" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe("标题已复制。");
+  });
+
+  it("更多操作菜单复制标题失败后显示错误提示", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    api.copyToClipboard = vi.fn(async () => {
+      throw new Error("clipboard denied");
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+
+    await user.click(within(menu).getByRole("menuitem", { name: "复制标题" }));
+
+    const alert = await screen.findByRole("alert");
+    expect(alert.textContent).toBe("复制失败，请重试。");
+  });
+
+  it("剪贴板 API 缺失时禁用复制标题和复制正文菜单项", async () => {
+    const { api } = installApi(getDefaultData(BASE_TIME));
+    delete api.copyToClipboard;
+    Object.defineProperty(window, "ideaNotes", {
+      configurable: true,
+      value: api,
+    });
+    const user = userEvent.setup();
+
+    render(<App />);
+
+    const title = await screen.findByText("重构 Desktop App 导航栏");
+    const card = title.closest("article") as HTMLElement;
+    await user.click(within(card).getByRole("button", { name: "更多操作" }));
+    const menu = screen.getByRole("menu", { name: "更多操作" });
+    const copyTitle = within(menu).getByRole("menuitem", { name: "复制标题" });
+    const copyBody = within(menu).getByRole("menuitem", { name: "复制正文" });
+
+    expect((copyTitle as HTMLButtonElement).disabled).toBe(true);
+    expect((copyBody as HTMLButtonElement).disabled).toBe(true);
+    await user.click(copyTitle);
+
+    expect(api.copyToClipboard).toBeUndefined();
+  });
+
   it("更多操作菜单指针点击复制标题时在菜单关闭前写入剪贴板", async () => {
     const { api } = installApi(getDefaultData(BASE_TIME));
     const user = userEvent.setup();

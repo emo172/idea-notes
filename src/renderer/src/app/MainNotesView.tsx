@@ -23,6 +23,7 @@ interface MainNotesViewProps {
   mainSaveFeedback: string | null;
   shouldShowMainSaveError: boolean;
   notificationFeedback: string | null;
+  clipboardFeedback: string | null;
   searchInputRef: RefObject<HTMLInputElement | null>;
   searchQuery: string;
   priority: NotePriority | "all";
@@ -54,7 +55,9 @@ interface MainNotesViewProps {
   handleRestore: (note: IdeaNote) => Promise<void>;
   handleRestoreArchivedNote: (note: IdeaNote) => Promise<void>;
   handleDuplicateNote: (note: IdeaNote) => Promise<void>;
+  handleCopyText: (text: string, kind: "title" | "body") => Promise<void>;
   setDeleteTarget: (note: IdeaNote) => void;
+  canCopyToClipboard: boolean;
 }
 
 export function MainNotesView({
@@ -64,6 +67,7 @@ export function MainNotesView({
   mainSaveFeedback,
   shouldShowMainSaveError,
   notificationFeedback,
+  clipboardFeedback,
   searchInputRef,
   searchQuery,
   priority,
@@ -91,12 +95,15 @@ export function MainNotesView({
   handleRestore,
   handleRestoreArchivedNote,
   handleDuplicateNote,
+  handleCopyText,
   setDeleteTarget,
+  canCopyToClipboard,
 }: MainNotesViewProps): ReactElement {
   return (
     <>
       <SaveFeedbackAlert message={shouldShowMainSaveError ? mainSaveFeedback : null} />
       <SaveFeedbackAlert message={notificationFeedback} />
+      <SaveFeedbackAlert message={clipboardFeedback} />
       <NotesToolbar
         copy={copy}
         searchInputRef={searchInputRef}
@@ -133,7 +140,9 @@ export function MainNotesView({
         onRestore={handleRestore}
         onRestoreArchived={handleRestoreArchivedNote}
         onDuplicate={handleDuplicateNote}
+        onCopyText={handleCopyText}
         onDelete={setDeleteTarget}
+        canCopyToClipboard={canCopyToClipboard}
       />
     </>
   );

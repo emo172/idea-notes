@@ -108,6 +108,56 @@ describe("主进程截止提醒调度器", () => {
     );
   });
 
+  it("英文设置下使用英文通知标题回退和正文", async () => {
+    const data = getDefaultData(baseTime);
+    data.settings.language = "en";
+    data.settings.reminders = { enabled: true, leadMinutes: 10 };
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "english-reminder-note",
+        title: "",
+        dueAt: "2026-05-29T09:00:00",
+        notifiedReminderKeys: undefined,
+      },
+    ];
+    storeMock.readData.mockResolvedValue(data);
+    storeMock.saveData.mockImplementation(async (nextData) => nextData);
+    const { checkRemindersOnce } = await importScheduler();
+
+    await checkRemindersOnce(Date.parse("2026-05-29T08:50:00"));
+
+    expect(notificationConstructor).toHaveBeenCalledWith({
+      title: "Idea Notes reminder",
+      body: "Due time: 2026-05-29T09:00:00",
+    });
+  });
+
+  it("繁体设置下使用繁体通知标题回退和正文", async () => {
+    const data = getDefaultData(baseTime);
+    data.settings.language = "zh-TW";
+    data.settings.reminders = { enabled: true, leadMinutes: 10 };
+    data.notes = [
+      {
+        ...data.notes[0],
+        id: "traditional-reminder-note",
+        title: "",
+        dueAt: "2026-05-29T09:00:00",
+        notifiedReminderKeys: undefined,
+      },
+    ];
+    storeMock.readData.mockResolvedValue(data);
+    storeMock.saveData.mockImplementation(async (nextData) => nextData);
+    const { checkRemindersOnce } = await importScheduler();
+
+    await checkRemindersOnce(Date.parse("2026-05-29T08:50:00"));
+
+    expect(notificationConstructor).toHaveBeenCalledWith({
+      title: "靈感筆記提醒",
+      body: "截止時間：2026-05-29T09:00:00",
+    });
+  });
+
   it("通知构造失败时仍写回已提醒 key 避免重复触发", async () => {
     const data = getDefaultData(baseTime);
     data.settings.reminders = { enabled: true, leadMinutes: 10 };

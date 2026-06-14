@@ -5,6 +5,7 @@
 // 3. 通过回调传递通知点击事件，由主进程入口负责窗口激活和渲染层通信。
 import { Notification } from "electron";
 import { findDueReminders, markReminderNotified } from "@shared/noteLogic";
+import { getReminderNotificationCopy } from "@shared/reminders/reminderCopy";
 import { readData, saveData } from "../store";
 
 const reminderIntervalMs = 60_000;
@@ -23,11 +24,13 @@ export async function checkRemindersOnce(
   let nextData = data;
   for (const reminder of reminders) {
     try {
+      const notificationCopy = getReminderNotificationCopy(
+        data.settings.language,
+        reminder.note,
+      );
       const notification = new Notification({
-        title: reminder.note.title || "灵感笔记提醒",
-        body: reminder.note.dueAt
-          ? `截止时间：${reminder.note.dueAt}`
-          : "笔记已到提醒时间",
+        title: notificationCopy.title,
+        body: notificationCopy.body,
       });
       if (cb) {
         notification.on("click", () => cb(reminder.note.id));

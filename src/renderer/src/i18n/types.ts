@@ -18,6 +18,7 @@ export interface SettingsCopy {
   themeMode: string;
   themeDescription: string;
   fontFamily: string;
+  fontFallbackDescription: string;
   fontSize: string;
   fontSystemDefault: string;
   fontSimSun: string;
@@ -77,9 +78,20 @@ export interface AppCopy {
   cancelAlwaysOnTop: string;
   settings: string;
   shortcutHelp: string;
+  shortcutIntro: string;
   shortcutCategoryNavigation: string;
   shortcutCategoryEditing: string;
   shortcutCategoryView: string;
+  shortcutDescriptions: {
+    search: string;
+    help: string;
+    newNoteInList: string;
+    saveEditor: string;
+    viewActiveInList: string;
+    viewCompletedInList: string;
+    viewArchiveInList: string;
+    viewTrashInList: string;
+  };
   minimize: string;
   maximize: string;
   restoreWindow: string;
@@ -138,6 +150,9 @@ export interface AppCopy {
   duplicateTitleSuffix: string;
   copyTitle: string;
   copyBody: string;
+  copyTitleSuccess: string;
+  copyBodySuccess: string;
+  copyFailed: string;
   delete: string;
   deleteConfirmTitle: string;
   deleteConfirmBody: string;

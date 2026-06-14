@@ -40,29 +40,37 @@ describe("主进程 IPC 契约", () => {
 
     expect(mainSource).toContain('from "./reminders/reminderScheduler"');
 
-    // 提取 startReminderScheduler 回调块，锁定窗口恢复→显示→聚焦→推送契约
-    const schedulerBlock = mainSource.match(
-      /startReminderScheduler\(\(noteId\) => \{[\s\S]*?\}\);/,
-    )?.[0];
-    expect(schedulerBlock).toBeTruthy();
-
-    expect(schedulerBlock).toContain("const win = mainWindow");
-    expect(schedulerBlock).toContain("if (!win) return");
-    expect(schedulerBlock).toContain("win.isMinimized()");
-    expect(schedulerBlock).toContain("win.restore()");
-    expect(schedulerBlock).toContain("win.show()");
-    expect(schedulerBlock).toContain("win.focus()");
-    expect(schedulerBlock).toContain(
-      'webContents.send("notification:open-note", noteId)',
+    // 通知点击可能发生在主窗口被销毁后，必须走统一打开或聚焦入口。
+    const openerSource = readFileSync(
+      resolve("src/main/window/notificationWindowOpener.ts"),
+      "utf8",
     );
+
+    expect(mainSource).toContain("startReminderScheduler((noteId)");
+    expect(mainSource).toContain("openOrFocusWindowForNotification({");
+    expect(mainSource).toContain("getWindow: () => mainWindow");
+    expect(mainSource).toContain("openWindow: openMainWindowFromCurrentSettings");
+    expect(mainSource).toContain("pendingClicks");
+    expect(mainSource).toContain(".catch");
+
+    expect(openerSource).toContain("openOrFocusWindowForNotification");
+    expect(openerSource).toContain("pendingClicks");
 
     // 主入口不应注册 ipcMain handler（这是 main→renderer push，不是 handle）
     expect(mainSource).not.toContain('ipcMain.handle("notification:open-note")');
   });
 
-  it("IPC 注册文件不含通知通道的 handle", () => {
+  it("注册待发通知点击 flush IPC 并校验消息来源", () => {
     const ipcSource = readFileSync(resolve("src/main/ipc/registerIpc.ts"), "utf8");
-    expect(ipcSource).not.toContain("notification:open-note");
+    const notificationHandler = ipcSource.match(
+      /ipcMain\.handle\("notification:flush-pending-clicks"[\s\S]*?\n  \}\);/,
+    )?.[0];
+
+    expect(notificationHandler).toBeTruthy();
+    expect(notificationHandler).toContain("assertMainWindow");
+    expect(notificationHandler).toContain("BrowserWindow.fromWebContents");
+    expect(notificationHandler).toContain("flushPendingNotificationClicks()");
+    expect(ipcSource).not.toContain('ipcMain.handle("notification:open-note")');
   });
 
   it("注册数据导出和导入 IPC 并校验消息来源", () => {

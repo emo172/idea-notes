@@ -53,6 +53,7 @@ export default function App(): ReactElement {
   const [isResetSettingsConfirmOpen, setIsResetSettingsConfirmOpen] = useState(false);
   const [isShortcutHelpOpen, setIsShortcutHelpOpen] = useState(false);
   const [notificationFeedback, setNotificationFeedback] = useState<string | null>(null);
+  const [clipboardFeedback, setClipboardFeedback] = useState<string | null>(null);
   const currentLanguage = data?.settings.language ?? defaultSettings.language;
   const currentFontFamily =
     data?.settings.fontFamily ?? defaultSettings.fontFamily ?? "system";
@@ -111,16 +112,29 @@ export default function App(): ReactElement {
   openExistingNoteRef.current = noteEditor.openExistingNote;
   const copyRef = useRef(copy);
   copyRef.current = copy;
+  const hasFlushedPendingNotificationsRef = useRef(false);
+  const handleNotificationClickRef = useRef((noteId: string) => {
+    const notes = dataRef.current?.notes ?? [];
+    const note = notes.find((n) => n.id === noteId);
+    if (note && note.status !== "trash") {
+      openExistingNoteRef.current(note);
+    } else {
+      setNotificationFeedback(copyRef.current.notificationNoteDeleted);
+    }
+  });
+  handleNotificationClickRef.current = (noteId: string) => {
+    const notes = dataRef.current?.notes ?? [];
+    const note = notes.find((n) => n.id === noteId);
+    if (note && note.status !== "trash") {
+      openExistingNoteRef.current(note);
+    } else {
+      setNotificationFeedback(copyRef.current.notificationNoteDeleted);
+    }
+  };
 
   useEffect(() => {
     const unsub = window.ideaNotes.onNotificationClick?.((noteId) => {
-      const notes = dataRef.current?.notes ?? [];
-      const note = notes.find((n) => n.id === noteId);
-      if (note && note.status !== "trash") {
-        openExistingNoteRef.current(note);
-      } else {
-        setNotificationFeedback(copyRef.current.notificationNoteDeleted);
-      }
+      handleNotificationClickRef.current(noteId);
     });
     return () => {
       unsub?.();
@@ -128,10 +142,29 @@ export default function App(): ReactElement {
   }, []);
 
   useEffect(() => {
+    if (!data || hasFlushedPendingNotificationsRef.current) return;
+    void window.ideaNotes
+      .flushPendingNotificationClicks()
+      .then((noteIds) => {
+        hasFlushedPendingNotificationsRef.current = true;
+        noteIds.forEach((noteId) => handleNotificationClickRef.current(noteId));
+      })
+      .catch(() => {
+        // 待发通知领取失败时保持未完成状态，后续挂载可再次重试。
+      });
+  }, [data]);
+
+  useEffect(() => {
     if (!notificationFeedback) return;
     const timer = setTimeout(() => setNotificationFeedback(null), 5000);
     return () => clearTimeout(timer);
   }, [notificationFeedback]);
+
+  useEffect(() => {
+    if (!clipboardFeedback) return;
+    const timer = setTimeout(() => setClipboardFeedback(null), 2500);
+    return () => clearTimeout(timer);
+  }, [clipboardFeedback]);
 
   const {
     tagName,
@@ -167,6 +200,21 @@ export default function App(): ReactElement {
     setDeleteTarget,
     setIsClearTrashConfirmOpen,
   });
+  async function handleCopyText(text: string, kind: "title" | "body"): Promise<void> {
+    if (!window.ideaNotes.copyToClipboard) {
+      setClipboardFeedback(copy.copyFailed);
+      return;
+    }
+    try {
+      await window.ideaNotes.copyToClipboard(text);
+      setClipboardFeedback(
+        kind === "title" ? copy.copyTitleSuccess : copy.copyBodySuccess,
+      );
+    } catch {
+      setClipboardFeedback(copy.copyFailed);
+    }
+  }
+
   const { handleSettingsChange, handleConfirmResetSettings, handleStartupChange } =
     useSettingsCommands({
       data,
@@ -248,6 +296,7 @@ export default function App(): ReactElement {
           mainSaveFeedback={mainSaveFeedback}
           shouldShowMainSaveError={shouldShowMainSaveError}
           notificationFeedback={notificationFeedback}
+          clipboardFeedback={clipboardFeedback}
           isSaving={isSaving}
           isEditorOpen={noteEditor.isEditorOpen}
           hasConfirmDialog={hasConfirmDialog}
@@ -289,7 +338,9 @@ export default function App(): ReactElement {
           handleRestore={handleRestore}
           handleRestoreArchivedNote={handleRestoreArchivedNote}
           handleDuplicateNote={handleDuplicateNote}
+          handleCopyText={handleCopyText}
           setDeleteTarget={setDeleteTarget}
+          canCopyToClipboard={Boolean(window.ideaNotes.copyToClipboard)}
         />
       }
       onToggleAlwaysOnTop={toggleAlwaysOnTop}

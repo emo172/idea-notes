@@ -28,7 +28,9 @@ interface NoteCardProps {
   onRestore: (note: IdeaNote) => Promise<void>;
   onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
+  onCopyText: (text: string, kind: "title" | "body") => Promise<void>;
   onDelete: (note: IdeaNote) => void;
+  canCopyToClipboard: boolean;
 }
 
 export function NoteCard({
@@ -46,7 +48,9 @@ export function NoteCard({
   onRestore,
   onRestoreArchived,
   onDuplicate,
+  onCopyText,
   onDelete,
+  canCopyToClipboard,
 }: NoteCardProps): ReactElement {
   const completion = getCompletion(note);
   const deadlineStatus = getDeadlineStatus(note.dueAt);
@@ -76,7 +80,9 @@ export function NoteCard({
         onRestore={onRestore}
         onRestoreArchived={onRestoreArchived}
         onDuplicate={onDuplicate}
+        onCopyText={onCopyText}
         onDelete={onDelete}
+        canCopyToClipboard={canCopyToClipboard}
       />
       <NoteCardMeta
         note={note}

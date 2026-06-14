@@ -25,6 +25,9 @@ const api: IdeaNotesApi = {
   toggleAlwaysOnTop: () => ipcRenderer.invoke("window:toggle-always-on-top"),
   // 开机自启动需要主进程调用系统集成能力。
   setStartup: (enabled: boolean) => ipcRenderer.invoke("app:set-startup", enabled),
+  // renderer ready 后主动领取新窗口创建期间缓存的通知点击。
+  flushPendingNotificationClicks: () =>
+    ipcRenderer.invoke("notification:flush-pending-clicks"),
   // 通知点击订阅使用本地 listener 引用，确保取消订阅时移除的是同一函数引用。
   onNotificationClick: (callback) => {
     const listener = (_event: unknown, noteId: string) => callback(noteId);
