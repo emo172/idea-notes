@@ -27,9 +27,7 @@
 }
 
 .note-context-menu {
-  top: calc(100% + 6px);
   right: 0;
-  bottom: auto;
 }
 
 .card-actions {

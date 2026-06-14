@@ -4,7 +4,7 @@
 // 1. 锁定通用下拉按钮的可访问状态和菜单角色。
 // 2. 验证 Escape、外部点击和菜单动作都会关闭浮层。
 // 3. 让笔记卡片重构前先拥有可复用组件的行为契约。
-import { render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { DotsThreeIcon } from "@phosphor-icons/react";
@@ -13,6 +13,7 @@ import { DropdownMenu } from "../../src/renderer/src/components/ui/dropdown/Drop
 
 describe("DropdownButton", () => {
   beforeEach(() => {
+    cleanup();
     document.body.innerHTML = "";
   });
 
@@ -206,5 +207,32 @@ describe("DropdownButton", () => {
 
     expect(onDuplicate).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("menu", { name: "更多操作" })).toBeNull();
+  });
+
+  it("菜单项点击时先执行动作再关闭菜单", () => {
+    const events: string[] = [];
+
+    render(
+      <DropdownMenu
+        label="更多操作"
+        onClose={() => {
+          events.push("close");
+        }}
+      >
+        <button
+          type="button"
+          role="menuitem"
+          onClick={() => {
+            events.push("action");
+          }}
+        >
+          完成
+        </button>
+      </DropdownMenu>,
+    );
+
+    screen.getByRole("menuitem", { name: "完成" }).click();
+
+    expect(events).toEqual(["action", "close"]);
   });
 });
