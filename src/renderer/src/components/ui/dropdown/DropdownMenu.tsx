@@ -25,7 +25,7 @@ export function DropdownMenu({
     getMenuItems(menuRef.current).at(0)?.focus();
   }, []);
 
-  function handleClickCapture(event: MouseEvent<HTMLDivElement>): void {
+  function handleClick(event: MouseEvent<HTMLDivElement>): void {
     if ((event.target as HTMLElement).closest('[role="menuitem"]')) onClose?.();
   }
 
@@ -83,7 +83,7 @@ export function DropdownMenu({
       className={classNames}
       role="menu"
       aria-label={label}
-      onClickCapture={handleClickCapture}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
     >
       {children}
