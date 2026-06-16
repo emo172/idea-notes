@@ -120,6 +120,17 @@ export interface DataFileResult {
   reason?: "cancelled" | "invalid" | "failed";
 }
 
+// Markdown 文件导入导出结果会返回数量摘要，便于 renderer 展示批量操作反馈。
+export interface MarkdownFileResult extends DataFileResult {
+  importedCount?: number;
+  exportedCount?: number;
+  skippedFiles?: string[];
+}
+
+export interface MarkdownImportResult extends MarkdownFileResult {
+  data?: IdeaNotesData;
+}
+
 // 通知点击回调，接收被点击笔记的 id，用于打开对应编辑器。
 export type NotificationClickCallback = (noteId: string) => void;
 
@@ -131,6 +142,14 @@ export interface IdeaNotesApi {
   importData: (
     mode: ImportDataMode,
   ) => Promise<DataFileResult & { data?: IdeaNotesData }>;
+  exportNoteMarkdown: (noteId: string) => Promise<MarkdownFileResult>;
+  exportNotesMarkdown: (noteIds: string[]) => Promise<MarkdownFileResult>;
+  importMarkdownFiles: (fallbackTitle: string) => Promise<MarkdownImportResult>;
+  importDroppedMarkdownFiles: (
+    filePaths: string[],
+    fallbackTitle: string,
+  ) => Promise<MarkdownImportResult>;
+  getDroppedFilePath: (file: File) => string;
   getWindowState: () => Promise<DesktopWindowState>;
   minimizeWindow: () => Promise<DesktopWindowState>;
   toggleMaximizeWindow: () => Promise<DesktopWindowState>;

@@ -12,6 +12,7 @@ const electronMock = vi.hoisted(() => ({
   invoke: vi.fn(),
   on: vi.fn(),
   removeListener: vi.fn(),
+  getPathForFile: vi.fn(),
 }));
 
 vi.mock("electron", () => ({
@@ -22,6 +23,9 @@ vi.mock("electron", () => ({
     invoke: electronMock.invoke,
     on: electronMock.on,
     removeListener: electronMock.removeListener,
+  },
+  webUtils: {
+    getPathForFile: electronMock.getPathForFile,
   },
 }));
 
@@ -50,10 +54,15 @@ describe("preload 暴露的桌面能力 API", () => {
       "closeWindow",
       "copyToClipboard",
       "exportData",
+      "exportNoteMarkdown",
+      "exportNotesMarkdown",
       "flushPendingNotificationClicks",
       "getData",
+      "getDroppedFilePath",
       "getWindowState",
       "importData",
+      "importDroppedMarkdownFiles",
+      "importMarkdownFiles",
       "minimizeWindow",
       "onNotificationClick",
       "saveData",
@@ -100,6 +109,49 @@ describe("preload 暴露的桌面能力 API", () => {
       2,
       "notes:import-data",
       "merge",
+    );
+  });
+
+  it("将 Markdown 文件能力映射到固定 IPC 通道", async () => {
+    const api = await loadPreloadApi();
+    const result = { ok: true, importedCount: 2, exportedCount: 2 };
+    const droppedFile = { name: "a.md" } as File;
+    electronMock.getPathForFile.mockReturnValue("/tmp/a.md");
+    electronMock.invoke
+      .mockResolvedValueOnce(result)
+      .mockResolvedValueOnce(result)
+      .mockResolvedValueOnce(result)
+      .mockResolvedValueOnce(result);
+
+    expect(api.getDroppedFilePath(droppedFile)).toBe("/tmp/a.md");
+    await expect(api.exportNoteMarkdown("note-1")).resolves.toBe(result);
+    await expect(api.exportNotesMarkdown(["note-1", "note-2"])).resolves.toBe(result);
+    await expect(api.importMarkdownFiles("未命名笔记")).resolves.toBe(result);
+    await expect(
+      api.importDroppedMarkdownFiles(["/tmp/a.md"], "未命名笔记"),
+    ).resolves.toBe(result);
+
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(
+      1,
+      "notes:export-note-markdown",
+      "note-1",
+    );
+    expect(electronMock.getPathForFile).toHaveBeenCalledWith(droppedFile);
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(
+      2,
+      "notes:export-notes-markdown",
+      ["note-1", "note-2"],
+    );
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(
+      3,
+      "notes:import-markdown-files",
+      "未命名笔记",
+    );
+    expect(electronMock.invoke).toHaveBeenNthCalledWith(
+      4,
+      "notes:import-dropped-markdown-files",
+      ["/tmp/a.md"],
+      "未命名笔记",
     );
   });
 

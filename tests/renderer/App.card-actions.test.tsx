@@ -119,7 +119,15 @@ describe("App card actions", () => {
 
     await user.click(screen.getAllByRole("button", { name: "更多操作" })[0]);
     const menu = screen.getByRole("menu", { name: "更多操作" });
-    for (const label of ["编辑", "完成", "复制", "复制标题", "复制正文", "删除"]) {
+    for (const label of [
+      "编辑",
+      "完成",
+      "复制",
+      "复制标题",
+      "复制正文",
+      "导出文档",
+      "删除",
+    ]) {
       expect(within(menu).getByRole("menuitem", { name: label })).toBeTruthy();
     }
 
@@ -369,7 +377,17 @@ describe("App card actions", () => {
       within(menu)
         .getAllByRole("menuitem")
         .map((item) => item.textContent),
-    ).toEqual(["置顶", "编辑", "完成", "归档", "复制", "复制标题", "复制正文", "删除"]);
+    ).toEqual([
+      "置顶",
+      "编辑",
+      "完成",
+      "归档",
+      "复制",
+      "复制标题",
+      "复制正文",
+      "导出文档",
+      "删除",
+    ]);
 
     await user.click(within(menu).getByRole("menuitem", { name: "置顶" }));
 
@@ -399,6 +417,7 @@ describe("App card actions", () => {
       "复制",
       "复制标题",
       "复制正文",
+      "导出文档",
       "删除",
     ]);
 

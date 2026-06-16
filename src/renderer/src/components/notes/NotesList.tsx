@@ -2,6 +2,7 @@
 // 作用：
 // 1. 承载笔记列表的加载失败、加载中、空状态和卡片映射。
 // 2. 保持 notes-list 区域 DOM、ARIA 与卡片回调语义稳定。
+import { useState } from "react";
 import type { ReactElement } from "react";
 import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import type { AppLanguage, IdeaNote, IdeaTag, NoteStatus } from "@shared/types";
@@ -34,6 +35,8 @@ interface NotesListProps {
   onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
   onCopyText: (text: string, kind: "title" | "body") => Promise<void>;
+  onDropMarkdownFiles: (filePaths: string[]) => Promise<void>;
+  onExportNoteMarkdown: (noteId: string) => Promise<void>;
   onDelete: (note: IdeaNote) => void;
   canCopyToClipboard: boolean;
 }
@@ -59,11 +62,40 @@ export function NotesList({
   onRestoreArchived,
   onDuplicate,
   onCopyText,
+  onDropMarkdownFiles,
+  onExportNoteMarkdown,
   onDelete,
   canCopyToClipboard,
 }: NotesListProps): ReactElement {
+  const [isDraggingMarkdown, setIsDraggingMarkdown] = useState(false);
+  const sectionClassName = isDraggingMarkdown
+    ? "notes-list notes-list-dragging"
+    : "notes-list";
+
+  function extractDroppedFilePaths(files: FileList): string[] {
+    return Array.from(files)
+      .map((file) => window.ideaNotes.getDroppedFilePath(file))
+      .filter(Boolean);
+  }
+
   return (
-    <section className="notes-list" aria-label={copy.statusLabels[noteViewMode]}>
+    <section
+      className={sectionClassName}
+      aria-label={copy.statusLabels[noteViewMode]}
+      onDragOver={(event) => {
+        event.preventDefault();
+        setIsDraggingMarkdown(true);
+      }}
+      onDragLeave={() => setIsDraggingMarkdown(false)}
+      onDrop={(event) => {
+        event.preventDefault();
+        setIsDraggingMarkdown(false);
+        void onDropMarkdownFiles(extractDroppedFilePaths(event.dataTransfer.files));
+      }}
+    >
+      {isDraggingMarkdown ? (
+        <div className="markdown-drop-indicator">{copy.markdownDropActive}</div>
+      ) : null}
       {hasLoadError ? (
         <div className="empty-state">
           <strong>{copy.loadErrorTitle}</strong>
@@ -98,6 +130,7 @@ export function NotesList({
               onRestoreArchived={onRestoreArchived}
               onDuplicate={onDuplicate}
               onCopyText={onCopyText}
+              onExportMarkdown={onExportNoteMarkdown}
               onDelete={onDelete}
               canCopyToClipboard={canCopyToClipboard}
             />

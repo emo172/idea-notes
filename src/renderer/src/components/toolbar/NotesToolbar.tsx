@@ -4,7 +4,12 @@
 // 2. 保持工具栏 DOM、className 与 ARIA 结构稳定，让 App 只负责状态编排。
 import type { ReactElement } from "react";
 import type { RefObject } from "react";
-import { ArrowCounterClockwiseIcon, TrashIcon } from "@phosphor-icons/react";
+import {
+  ArrowCounterClockwiseIcon,
+  FileArrowDownIcon,
+  FileArrowUpIcon,
+  TrashIcon,
+} from "@phosphor-icons/react";
 import type { NotePriority, NoteStatus, SortMode } from "@shared/types";
 import { SidebarToggleIcon } from "../titlebar/TitlebarIcons";
 import { AppButton } from "../ui/AppButton";
@@ -25,6 +30,8 @@ interface NotesToolbarProps {
   onToggleSidebar: () => void;
   onResetFilters: () => void;
   onClearTrash: () => void;
+  onExportVisibleMarkdown: () => Promise<void>;
+  onImportMarkdownFiles: () => Promise<void>;
 }
 
 export function NotesToolbar({
@@ -42,6 +49,8 @@ export function NotesToolbar({
   onToggleSidebar,
   onResetFilters,
   onClearTrash,
+  onExportVisibleMarkdown,
+  onImportMarkdownFiles,
 }: NotesToolbarProps): ReactElement {
   return (
     <section className="toolbar" aria-label={copy.toolbar}>
@@ -95,6 +104,20 @@ export function NotesToolbar({
           <option value="progress">{copy.sortProgress}</option>
         </select>
       </label>
+      <AppButton
+        className="btn-subtle"
+        icon={<FileArrowUpIcon weight="bold" />}
+        onClick={onImportMarkdownFiles}
+      >
+        {copy.importMarkdown}
+      </AppButton>
+      <AppButton
+        className="btn-subtle"
+        icon={<FileArrowDownIcon weight="bold" />}
+        onClick={onExportVisibleMarkdown}
+      >
+        {copy.exportMarkdownCurrentList}
+      </AppButton>
       <AppButton
         className="btn-subtle"
         icon={<ArrowCounterClockwiseIcon weight="bold" />}

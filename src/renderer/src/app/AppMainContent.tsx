@@ -30,6 +30,7 @@ interface AppMainContentProps {
   tagName: string;
   tagInputError: TagInputError | null;
   mainSaveFeedback: string | null;
+  backupFeedback: string | null;
   shouldShowMainSaveError: boolean;
   notificationFeedback: string | null;
   clipboardFeedback: string | null;
@@ -79,6 +80,10 @@ interface AppMainContentProps {
   handleRestoreArchivedNote: (note: IdeaNote) => Promise<void>;
   handleDuplicateNote: (note: IdeaNote) => Promise<void>;
   handleCopyText: (text: string, kind: "title" | "body") => Promise<void>;
+  handleExportNoteMarkdown: (noteId: string) => Promise<void>;
+  handleExportVisibleMarkdown: (noteIds: string[]) => Promise<void>;
+  handleImportMarkdownFiles: () => Promise<void>;
+  handleImportDroppedMarkdownFiles: (filePaths: string[]) => Promise<void>;
   setDeleteTarget: (note: IdeaNote) => void;
   canCopyToClipboard: boolean;
 }
@@ -92,6 +97,7 @@ export function AppMainContent({
   tagName,
   tagInputError,
   mainSaveFeedback,
+  backupFeedback,
   shouldShowMainSaveError,
   notificationFeedback,
   clipboardFeedback,
@@ -137,10 +143,15 @@ export function AppMainContent({
   handleRestoreArchivedNote,
   handleDuplicateNote,
   handleCopyText,
+  handleExportNoteMarkdown,
+  handleExportVisibleMarkdown,
+  handleImportMarkdownFiles,
+  handleImportDroppedMarkdownFiles,
   setDeleteTarget,
   canCopyToClipboard,
 }: AppMainContentProps): ReactElement {
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+  const visibleNoteIds = visibleNotes.map((note) => note.id);
 
   useKeyboardShortcuts({
     searchInputRef,
@@ -189,6 +200,7 @@ export function AppMainContent({
       currentLanguage={currentLanguage}
       tags={tags}
       mainSaveFeedback={mainSaveFeedback}
+      backupFeedback={noteViewMode === viewMode ? backupFeedback : null}
       shouldShowMainSaveError={shouldShowMainSaveError}
       notificationFeedback={notificationFeedback}
       clipboardFeedback={clipboardFeedback}
@@ -198,6 +210,7 @@ export function AppMainContent({
       sortMode={sortMode}
       noteViewMode={noteViewMode}
       visibleNotes={visibleNotes}
+      visibleNoteIds={visibleNoteIds}
       hasData={hasData}
       isLoading={isLoading}
       hasLoadError={hasLoadError}
@@ -220,6 +233,10 @@ export function AppMainContent({
       handleRestoreArchivedNote={handleRestoreArchivedNote}
       handleDuplicateNote={handleDuplicateNote}
       handleCopyText={handleCopyText}
+      handleExportNoteMarkdown={handleExportNoteMarkdown}
+      handleExportVisibleMarkdown={handleExportVisibleMarkdown}
+      handleImportMarkdownFiles={handleImportMarkdownFiles}
+      handleImportDroppedMarkdownFiles={handleImportDroppedMarkdownFiles}
       setDeleteTarget={setDeleteTarget}
       canCopyToClipboard={canCopyToClipboard}
     />

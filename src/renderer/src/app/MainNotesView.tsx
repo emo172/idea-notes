@@ -21,6 +21,7 @@ interface MainNotesViewProps {
   currentLanguage: AppLanguage;
   tags: IdeaTag[];
   mainSaveFeedback: string | null;
+  backupFeedback: string | null;
   shouldShowMainSaveError: boolean;
   notificationFeedback: string | null;
   clipboardFeedback: string | null;
@@ -30,6 +31,7 @@ interface MainNotesViewProps {
   sortMode: SortMode;
   noteViewMode: NoteStatus;
   visibleNotes: IdeaNote[];
+  visibleNoteIds: string[];
   hasData: boolean;
   isLoading: boolean;
   hasLoadError: boolean;
@@ -56,6 +58,10 @@ interface MainNotesViewProps {
   handleRestoreArchivedNote: (note: IdeaNote) => Promise<void>;
   handleDuplicateNote: (note: IdeaNote) => Promise<void>;
   handleCopyText: (text: string, kind: "title" | "body") => Promise<void>;
+  handleExportNoteMarkdown: (noteId: string) => Promise<void>;
+  handleExportVisibleMarkdown: (noteIds: string[]) => Promise<void>;
+  handleImportMarkdownFiles: () => Promise<void>;
+  handleImportDroppedMarkdownFiles: (filePaths: string[]) => Promise<void>;
   setDeleteTarget: (note: IdeaNote) => void;
   canCopyToClipboard: boolean;
 }
@@ -65,6 +71,7 @@ export function MainNotesView({
   currentLanguage,
   tags,
   mainSaveFeedback,
+  backupFeedback,
   shouldShowMainSaveError,
   notificationFeedback,
   clipboardFeedback,
@@ -74,6 +81,7 @@ export function MainNotesView({
   sortMode,
   noteViewMode,
   visibleNotes,
+  visibleNoteIds,
   hasData,
   isLoading,
   hasLoadError,
@@ -96,6 +104,10 @@ export function MainNotesView({
   handleRestoreArchivedNote,
   handleDuplicateNote,
   handleCopyText,
+  handleExportNoteMarkdown,
+  handleExportVisibleMarkdown,
+  handleImportMarkdownFiles,
+  handleImportDroppedMarkdownFiles,
   setDeleteTarget,
   canCopyToClipboard,
 }: MainNotesViewProps): ReactElement {
@@ -104,6 +116,7 @@ export function MainNotesView({
       <SaveFeedbackAlert message={shouldShowMainSaveError ? mainSaveFeedback : null} />
       <SaveFeedbackAlert message={notificationFeedback} />
       <SaveFeedbackAlert message={clipboardFeedback} />
+      <SaveFeedbackAlert message={backupFeedback} />
       <NotesToolbar
         copy={copy}
         searchInputRef={searchInputRef}
@@ -119,6 +132,8 @@ export function MainNotesView({
         onToggleSidebar={onToggleSidebar}
         onResetFilters={resetFilters}
         onClearTrash={onClearTrash}
+        onExportVisibleMarkdown={() => handleExportVisibleMarkdown(visibleNoteIds)}
+        onImportMarkdownFiles={handleImportMarkdownFiles}
       />
       <NotesList
         copy={copy}
@@ -141,6 +156,8 @@ export function MainNotesView({
         onRestoreArchived={handleRestoreArchivedNote}
         onDuplicate={handleDuplicateNote}
         onCopyText={handleCopyText}
+        onDropMarkdownFiles={handleImportDroppedMarkdownFiles}
+        onExportNoteMarkdown={handleExportNoteMarkdown}
         onDelete={setDeleteTarget}
         canCopyToClipboard={canCopyToClipboard}
       />

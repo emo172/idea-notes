@@ -11,3 +11,17 @@
   overflow: auto;
   padding-right: 4px;
 }
+
+.notes-list-dragging {
+  outline: 2px dashed var(--accent);
+  outline-offset: -6px;
+}
+
+.markdown-drop-indicator {
+  border: 1px dashed var(--accent);
+  border-radius: 12px;
+  padding: 16px;
+  text-align: center;
+  color: var(--accent);
+  background: var(--surface-muted);
+}
