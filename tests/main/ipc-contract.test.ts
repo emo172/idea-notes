@@ -7,6 +7,15 @@ import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
 describe("主进程 IPC 契约", () => {
+  function getHandlerSource(source: string, channel: string): string | undefined {
+    const channelIndex = source.indexOf(`"${channel}"`);
+    if (channelIndex === -1) return undefined;
+    const start = source.lastIndexOf("ipcMain.handle", channelIndex);
+    if (start === -1) return undefined;
+    const next = source.indexOf("\n\n  ipcMain.handle", start + 1);
+    return source.slice(start, next === -1 ? undefined : next);
+  }
+
   it("注册初始窗口状态 IPC 并校验消息来源", () => {
     const ipcSource = readFileSync(resolve("src/main/ipc/registerIpc.ts"), "utf8");
     const getStateHandler = ipcSource.match(
@@ -96,6 +105,49 @@ describe("主进程 IPC 契约", () => {
     expect(importHandler).toContain("if (result.data)");
     expect(importHandler).toContain("onSettingsSaved(result.data.settings)");
     expect(importHandler).toContain("return result");
+  });
+
+  it("注册 Markdown 文件 IPC 并校验来源与 payload", () => {
+    const ipcSource = readFileSync(resolve("src/main/ipc/registerIpc.ts"), "utf8");
+    const singleExportHandler = getHandlerSource(
+      ipcSource,
+      "notes:export-note-markdown",
+    );
+    const batchExportHandler = getHandlerSource(
+      ipcSource,
+      "notes:export-notes-markdown",
+    );
+    const dialogImportHandler = getHandlerSource(
+      ipcSource,
+      "notes:import-markdown-files",
+    );
+    const dropImportHandler = getHandlerSource(
+      ipcSource,
+      "notes:import-dropped-markdown-files",
+    );
+
+    expect(ipcSource).toContain('from "../store/markdownFiles"');
+    expect(singleExportHandler).toBeTruthy();
+    expect(singleExportHandler).toContain("assertMainWindow");
+    expect(singleExportHandler).toContain('typeof noteId !== "string"');
+    expect(singleExportHandler).toContain("exportNoteMarkdownFile(window, noteId)");
+    expect(batchExportHandler).toBeTruthy();
+    expect(batchExportHandler).toContain("assertMainWindow");
+    expect(batchExportHandler).toContain("Array.isArray(noteIds)");
+    expect(batchExportHandler).toContain("exportNotesMarkdownFiles(window, noteIds)");
+    expect(dialogImportHandler).toBeTruthy();
+    expect(dialogImportHandler).toContain("assertMainWindow");
+    expect(dialogImportHandler).toContain('typeof fallbackTitle !== "string"');
+    expect(dialogImportHandler).toContain(
+      "importMarkdownFilesFromDialog(window, fallbackTitle)",
+    );
+    expect(dropImportHandler).toBeTruthy();
+    expect(dropImportHandler).toContain("assertMainWindow");
+    expect(dropImportHandler).toContain("Array.isArray(filePaths)");
+    expect(dropImportHandler).toContain("filePaths.every");
+    expect(dropImportHandler).toContain(
+      "importDroppedMarkdownFiles(filePaths, fallbackTitle)",
+    );
   });
 
   it("注册剪贴板写入 IPC 并校验消息来源与 payload 类型", () => {

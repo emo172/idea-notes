@@ -7,6 +7,12 @@ import { app, BrowserWindow, clipboard, ipcMain } from "electron";
 import { checkRemindersOnce } from "../reminders/reminderScheduler";
 import { readData, saveData } from "../store";
 import { exportDataFile, importDataFile } from "../store/backup";
+import {
+  exportNoteMarkdownFile,
+  exportNotesMarkdownFiles,
+  importDroppedMarkdownFiles,
+  importMarkdownFilesFromDialog,
+} from "../store/markdownFiles";
 import { setStartup } from "../startup/loginItems";
 import { getWindowState } from "../window/createMainWindow";
 import {
@@ -74,6 +80,64 @@ export function registerIpc({
     if (result.data) onSettingsSaved(result.data.settings);
     return result;
   });
+
+  ipcMain.handle("notes:export-note-markdown", async (event, noteId: unknown) => {
+    const window = assertMainWindow(
+      BrowserWindow.fromWebContents(event.sender),
+      getMainWindow(),
+    );
+    if (typeof noteId !== "string") {
+      throw new Error("Invalid Markdown export payload");
+    }
+    return exportNoteMarkdownFile(window, noteId);
+  });
+
+  ipcMain.handle("notes:export-notes-markdown", async (event, noteIds: unknown) => {
+    const window = assertMainWindow(
+      BrowserWindow.fromWebContents(event.sender),
+      getMainWindow(),
+    );
+    if (
+      !Array.isArray(noteIds) ||
+      !noteIds.every((noteId) => typeof noteId === "string")
+    ) {
+      throw new Error("Invalid Markdown batch export payload");
+    }
+    return exportNotesMarkdownFiles(window, noteIds);
+  });
+
+  ipcMain.handle(
+    "notes:import-markdown-files",
+    async (event, fallbackTitle: unknown) => {
+      const window = assertMainWindow(
+        BrowserWindow.fromWebContents(event.sender),
+        getMainWindow(),
+      );
+      if (typeof fallbackTitle !== "string") {
+        throw new Error("Invalid Markdown import payload");
+      }
+      const result = await importMarkdownFilesFromDialog(window, fallbackTitle);
+      if (result.data) onSettingsSaved(result.data.settings);
+      return result;
+    },
+  );
+
+  ipcMain.handle(
+    "notes:import-dropped-markdown-files",
+    async (event, filePaths: unknown, fallbackTitle: unknown) => {
+      assertMainWindow(BrowserWindow.fromWebContents(event.sender), getMainWindow());
+      if (
+        !Array.isArray(filePaths) ||
+        !filePaths.every((filePath) => typeof filePath === "string") ||
+        typeof fallbackTitle !== "string"
+      ) {
+        throw new Error("Invalid dropped Markdown import payload");
+      }
+      const result = await importDroppedMarkdownFiles(filePaths, fallbackTitle);
+      if (result.data) onSettingsSaved(result.data.settings);
+      return result;
+    },
+  );
 
   ipcMain.handle("window:get-state", (event) => {
     const window = assertMainWindow(
