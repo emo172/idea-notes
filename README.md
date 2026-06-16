@@ -250,6 +250,7 @@ idea-notes/
 - 首次启动或数据文件不存在时，主进程会写入 `src/shared/defaultData.ts` 中的默认数据。
 - 保存数据使用临时文件 + `rename` 写入，降低中断导致 JSON 损坏的风险。
 - 如果已有数据文件是损坏 JSON 或无法按 `IdeaNotesData` 结构校验，应用会抛出错误并显示加载失败状态，不会静默覆盖用户数据。
+- Markdown 文件可从工具栏批量导入 `.md/.markdown` 文件，也可把当前列表批量导出为多个 Markdown 文件；单条笔记可在卡片更多菜单中导出为一个 Markdown 文件。
 
 ## CI 与合并门禁
 
