@@ -153,6 +153,15 @@ export interface AppCopy {
   copyTitleSuccess: string;
   copyBodySuccess: string;
   copyFailed: string;
+  exportMarkdown: string;
+  exportMarkdownCurrentList: string;
+  importMarkdown: string;
+  markdownExportSuccess: string;
+  markdownExportFailed: string;
+  markdownImportSuccess: string;
+  markdownImportPartialSuccess: string;
+  markdownImportFailed: string;
+  markdownDropActive: string;
   delete: string;
   deleteConfirmTitle: string;
   deleteConfirmBody: string;

@@ -39,6 +39,18 @@ export function installApi(
     }),
     exportData: vi.fn(async () => ({ ok: true })),
     importData: vi.fn(async () => ({ ok: true, data })),
+    exportNoteMarkdown: vi.fn(async () => ({ ok: true, exportedCount: 1 })),
+    exportNotesMarkdown: vi.fn(async () => ({
+      ok: true,
+      exportedCount: data.notes.length,
+    })),
+    importMarkdownFiles: vi.fn(async () => ({ ok: true, importedCount: 1, data })),
+    importDroppedMarkdownFiles: vi.fn(async () => ({
+      ok: true,
+      importedCount: 1,
+      data,
+    })),
+    getDroppedFilePath: vi.fn(() => ""),
     minimizeWindow: vi.fn(async () => windowState),
     toggleMaximizeWindow: vi.fn(async () => ({
       ...windowState,

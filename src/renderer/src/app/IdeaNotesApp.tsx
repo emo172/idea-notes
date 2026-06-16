@@ -230,6 +230,10 @@ export default function App(): ReactElement {
     clearBackupFeedback,
     handleExportData,
     handleConfirmImportData,
+    handleExportNoteMarkdown,
+    handleExportVisibleMarkdown,
+    handleImportMarkdownFiles,
+    handleImportDroppedMarkdownFiles,
   } = useDataBackupCommands({
     currentLanguage,
     replaceData,
@@ -294,6 +298,7 @@ export default function App(): ReactElement {
           tagName={tagName}
           tagInputError={tagInputError}
           mainSaveFeedback={mainSaveFeedback}
+          backupFeedback={backupFeedback}
           shouldShowMainSaveError={shouldShowMainSaveError}
           notificationFeedback={notificationFeedback}
           clipboardFeedback={clipboardFeedback}
@@ -339,6 +344,10 @@ export default function App(): ReactElement {
           handleRestoreArchivedNote={handleRestoreArchivedNote}
           handleDuplicateNote={handleDuplicateNote}
           handleCopyText={handleCopyText}
+          handleExportNoteMarkdown={handleExportNoteMarkdown}
+          handleExportVisibleMarkdown={handleExportVisibleMarkdown}
+          handleImportMarkdownFiles={handleImportMarkdownFiles}
+          handleImportDroppedMarkdownFiles={handleImportDroppedMarkdownFiles}
           setDeleteTarget={setDeleteTarget}
           canCopyToClipboard={Boolean(window.ideaNotes.copyToClipboard)}
         />

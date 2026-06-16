@@ -24,6 +24,7 @@ interface NoteCardMenuProps {
   onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
   onCopyText: (text: string, kind: "title" | "body") => Promise<void>;
+  onExportMarkdown: (noteId: string) => Promise<void>;
   onDelete: (note: IdeaNote) => void;
   canCopyToClipboard: boolean;
 }
@@ -43,6 +44,7 @@ export function NoteCardMenu({
   onRestoreArchived,
   onDuplicate,
   onCopyText,
+  onExportMarkdown,
   onDelete,
   canCopyToClipboard,
 }: NoteCardMenuProps): ReactElement {
@@ -86,6 +88,13 @@ export function NoteCardMenu({
               }}
             >
               {copy.copyBody}
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              onClick={() => onExportMarkdown(note.id)}
+            >
+              {copy.exportMarkdown}
             </button>
             <button type="button" role="menuitem" onClick={() => onTrash(note)}>
               {copy.menuMoveTrash}

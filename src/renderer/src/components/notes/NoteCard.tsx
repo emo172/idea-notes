@@ -29,6 +29,7 @@ interface NoteCardProps {
   onRestoreArchived: (note: IdeaNote) => Promise<void>;
   onDuplicate: (note: IdeaNote) => Promise<void>;
   onCopyText: (text: string, kind: "title" | "body") => Promise<void>;
+  onExportMarkdown: (noteId: string) => Promise<void>;
   onDelete: (note: IdeaNote) => void;
   canCopyToClipboard: boolean;
 }
@@ -49,6 +50,7 @@ export function NoteCard({
   onRestoreArchived,
   onDuplicate,
   onCopyText,
+  onExportMarkdown,
   onDelete,
   canCopyToClipboard,
 }: NoteCardProps): ReactElement {
@@ -81,6 +83,7 @@ export function NoteCard({
         onRestoreArchived={onRestoreArchived}
         onDuplicate={onDuplicate}
         onCopyText={onCopyText}
+        onExportMarkdown={onExportMarkdown}
         onDelete={onDelete}
         canCopyToClipboard={canCopyToClipboard}
       />
