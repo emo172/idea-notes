@@ -24,6 +24,12 @@ export {
   toggleNotePin,
 } from "./notes/noteMutations";
 export {
+  buildMarkdownExportFileName,
+  isMarkdownFilePath,
+  parseMarkdownNoteDraft,
+  serializeNoteToMarkdown,
+} from "./markdownNoteFiles";
+export {
   moveNoteToTrash,
   permanentlyDeleteAllTrash,
   permanentlyDeleteNote,
